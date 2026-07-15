@@ -1,0 +1,34 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500&display=swap');
+@import 'tailwindcss';
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+  font-family: 'Inter Tight', system-ui, sans-serif;
+  font-weight: 500;
+  color: #000;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+@media (min-width: 1024px) {
+  html,
+  body,
+  #scroll-spacer,
+  #scroll-spacer * {
+    cursor: none !important;
+  }
+}
+
+#scroll-spacer {
+  position: relative;
+  user-select: none;
+  background: #ffffff;
+}
