@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 — Hello?? Is somebody there?!?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@600;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    background: #0d141a;
+    font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
+    overflow: hidden;
+  }
+
+  .page {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .scene {
+    position: relative;
+    width: 100%;
+    max-width: 1100px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .scene svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .copy {
+    position: absolute;
+    top: 7%;
+    left: 37%;
+    width: 59%;
+    pointer-events: none;
+  }
+
+  .copy h1 {
+    color: #ffffff;
+    font-weight: 900;
+    font-size: clamp(18px, 3.4vw, 34px);
+    letter-spacing: 0.2px;
+  }
+
+  .copy p {
+    margin-top: 0.7em;
+    color: #8ba7ba;
+    font-weight: 600;
+    font-size: clamp(11px, 1.55vw, 16px);
+    max-width: 34em;
+  }
+
+  .hint {
+    position: absolute;
+    bottom: 3.5%;
+    right: 3%;
+    color: #3d5a6e;
+    font-size: clamp(10px, 1.2vw, 13px);
+    font-weight: 600;
+    pointer-events: none;
+  }
+
+  @media (max-width: 560px) {
+    .copy { top: 5%; left: 34%; width: 63%; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="scene" id="scene" title="Click to toggle the flashlight">
+
+    <svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg" aria-label="A scared yeti in a dark cave shines a flashlight on fallen 404 letters">
+      <!-- cave background -->
+      <rect x="0" y="0" width="800" height="600" fill="#17262f"/>
+      <path d="M0,600 L800,600 L800,430 Q400,470 0,410 Z" fill="#152430"/>
+
+      <!-- flashlight beam -->
+      <g id="light">
+        <polygon points="115,178 800,300 800,600 175,600 88,235" fill="#f2f2df"/>
+        <polygon points="115,178 800,300 800,345 96,215 88,235" fill="#fbfaee" opacity="0.55"/>
+        <circle cx="116" cy="179" r="13" fill="#fff9cf"/>
+      </g>
+
+      <!-- shadows cast by the letters -->
+      <g id="lettersShadow" opacity="0.05">
+        <polygon points="150,275 268,252 388,332 402,388 232,368" fill="#7d8a74"/>
+        <polygon points="300,332 420,318 588,430 470,468 330,420" fill="#7d8a74"/>
+        <polygon points="430,395 520,392 600,478 470,472" fill="#7d8a74"/>
+      </g>
+
+      <!-- fallen 404 letters -->
+      <defs>
+        <text id="glyph4a" text-anchor="middle" font-family="'Fredoka One','Arial Black',sans-serif" font-size="150" font-weight="900">4</text>
+        <text id="glyph0"  text-anchor="middle" font-family="'Fredoka One','Arial Black',sans-serif" font-size="150" font-weight="900">0</text>
+        <text id="glyph4b" text-anchor="middle" font-family="'Fredoka One','Arial Black',sans-serif" font-size="150" font-weight="900">4</text>
+      </defs>
+
+      <g id="letters" stroke-linejoin="round">
+        <g transform="translate(210,255) rotate(-14)">
+          <use href="#glyph4a" class="lettersSide" transform="translate(-16,12)" stroke-width="6"/>
+          <use href="#glyph4a" class="lettersSide" transform="translate(-12,9)" stroke-width="6"/>
+          <use href="#glyph4a" class="lettersSide" transform="translate(-8,6)" stroke-width="6"/>
+          <use href="#glyph4a" class="lettersSide" transform="translate(-4,3)" stroke-width="6"/>
+          <use href="#glyph4a" class="lettersFront" stroke-width="5"/>
+        </g>
+        <g transform="translate(345,300) rotate(7)">
+          <use href="#glyph0" class="lettersSide" transform="translate(-16,12)" stroke-width="6"/>
+          <use href="#glyph0" class="lettersSide" transform="translate(-12,9)" stroke-width="6"/>
+          <use href="#glyph0" class="lettersSide" transform="translate(-8,6)" stroke-width="6"/>
+          <use href="#glyph0" class="lettersSide" transform="translate(-4,3)" stroke-width="6"/>
+          <use href="#glyph0" class="lettersFront" stroke-width="5"/>
+        </g>
+        <g transform="translate(478,368) rotate(24)">
+          <use href="#glyph4b" class="lettersSide" transform="translate(-16,12)" stroke-width="6"/>
+          <use href="#glyph4b" class="lettersSide" transform="translate(-12,9)" stroke-width="6"/>
+          <use href="#glyph4b" class="lettersSide" transform="translate(-8,6)" stroke-width="6"/>
+          <use href="#glyph4b" class="lettersSide" transform="translate(-4,3)" stroke-width="6"/>
+          <use href="#glyph4b" class="lettersFront" stroke-width="5"/>
+        </g>
+      </g>
+
+      <!-- yeti peeking out of the rocks, holding the flashlight -->
+      <g id="yeti" stroke="#0c1a24" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+        <!-- body fur -->
+        <path class="hlFur" d="M62,185 Q52,140 58,105 L66,74 L80,92 L88,62 L102,80 L112,52 L126,72 L138,48 L152,70 L162,54 L176,76 L184,62 L194,86 Q204,120 196,150 Q190,175 176,186 L164,176 L150,188 L136,178 L122,190 L108,180 L94,190 L80,180 Z"/>
+        <!-- face -->
+        <path class="hlSkin" d="M92,108 Q92,76 128,74 Q164,76 164,110 Q162,140 128,142 Q94,140 92,108 Z"/>
+        <!-- eyes -->
+        <ellipse cx="112" cy="103" rx="9" ry="11" fill="#ffffff" stroke-width="2.5"/>
+        <ellipse cx="146" cy="101" rx="9" ry="11" fill="#ffffff" stroke-width="2.5"/>
+        <circle cx="115" cy="107" r="3.4" fill="#0c1a24" stroke="none"/>
+        <circle cx="149" cy="105" r="3.4" fill="#0c1a24" stroke="none"/>
+        <!-- worried brows -->
+        <path d="M102,86 Q110,81 120,85" fill="none" stroke-width="3.5"/>
+        <path d="M138,84 Q146,79 156,83" fill="none" stroke-width="3.5"/>
+        <!-- scared mouth -->
+        <ellipse cx="130" cy="128" rx="9" ry="6" fill="#0c1a24" stroke="none"/>
+        <!-- hand over mouth, biting nails -->
+        <path class="hlFur" d="M112,126 Q112,116 124,116 L123,122 L131,117 L131,124 L139,119 Q148,122 146,132 Q142,142 128,141 Q114,139 112,126 Z" stroke-width="2.5"/>
+        <!-- arm reaching down to the flashlight -->
+        <path class="hlFur" d="M76,140 Q66,150 70,164 Q76,178 92,176 Q104,172 102,158 Q100,146 88,140 Q80,136 76,140 Z" stroke-width="2.5"/>
+      </g>
+
+      <!-- flashlight -->
+      <g transform="translate(100,170) rotate(30)">
+        <rect x="-30" y="-8" width="28" height="16" rx="5" fill="#22303a" stroke="#0c1a24" stroke-width="2.5"/>
+        <polygon points="-2,-9 12,-13 12,13 -2,9" fill="#33454f" stroke="#0c1a24" stroke-width="2.5"/>
+        <rect x="12" y="-13" width="5" height="26" rx="2" fill="#f6e58d" stroke="#0c1a24" stroke-width="2"/>
+      </g>
+      <!-- paw wrapped around the flashlight -->
+      <path class="hlFur" d="M80,162 Q74,150 84,145 Q96,140 104,150 Q110,160 102,169 Q92,177 84,171 Q80,168 80,162 Z" stroke="#0c1a24" stroke-width="2.5" stroke-linejoin="round"/>
+
+      <!-- cave rocks framing the corner -->
+      <g fill="#0e1b24" stroke="#2a4456" stroke-width="4" stroke-linejoin="round">
+        <path d="M-10,-10 L290,-10 L280,14 Q252,28 232,12 Q212,32 184,18 Q174,42 146,28 Q118,50 94,30 Q76,56 50,38 Q38,64 10,50 L-10,66 Z"/>
+        <path d="M-10,30 Q34,52 26,96 Q64,110 48,152 Q80,170 60,208 Q88,232 64,266 Q84,296 58,322 L-10,340 Z"/>
+        <path d="M224,-10 Q252,24 236,54 Q258,76 240,102 L206,92 Q192,60 206,30 Z"/>
+      </g>
+    </svg>
+
+    <div class="copy">
+      <h1>Hello?? Is somebody there?!?</h1>
+      <p>We know it's scary, but the page you're trying to reach can't be found.</p>
+    </div>
+    <div class="hint">click to toggle the flashlight</div>
+  </div>
+</div>
+
+<script>
+  var lettersSideDark   = '#132b3a';
+  var lettersFrontDark  = '#173444';
+  var lettersStrokeDark = '#1e3e52';
+  var lettersSideLight   = '#4f86ae';
+  var lettersFrontLight  = '#7fb1d4';
+  var lettersStrokeLight = '#2e5d81';
+  var furDarkColor  = '#23404f';
+  var furLightColor = '#e3ecf1';
+  var skinDarkColor  = '#1d3644';
+  var skinLightColor = '#c2dae6';
+
+  function set(selector, props) {
+    document.querySelectorAll(selector).forEach(function (el) {
+      for (var key in props) el.style[key] = props[key];
+    });
+  }
+
+  function goDark() {
+    set('#light', { visibility: 'hidden' });
+    set('.lettersSide', { fill: lettersSideDark, stroke: lettersStrokeDark });
+    set('.lettersFront', { fill: lettersFrontDark, stroke: lettersStrokeDark });
+    set('#lettersShadow', { opacity: 0.05 });
+    set('.hlFur', { fill: furDarkColor });
+    set('.hlSkin', { fill: skinDarkColor });
+  }
+
+  function goLight() {
+    set('#light', { visibility: 'visible' });
+    set('.lettersSide', { fill: lettersSideLight, stroke: lettersStrokeLight });
+    set('.lettersFront', { fill: lettersFrontLight, stroke: lettersStrokeLight });
+    set('#lettersShadow', { opacity: 0.2 });
+    set('.hlFur', { fill: furLightColor });
+    set('.hlSkin', { fill: skinLightColor });
+  }
+
+  var lightOn = false;
+  var busy = false;
+
+  // run a flicker sequence: array of [state, delay-before-next-step]
+  function flicker(steps, done) {
+    busy = true;
+    var i = 0;
+    (function step() {
+      if (i >= steps.length) { busy = false; if (done) done(); return; }
+      var s = steps[i++];
+      s[0] ? goLight() : goDark();
+      setTimeout(step, s[1]);
+    })();
+  }
+
+  function turnOn() {
+    flicker([[1, 70], [0, 90], [1, 50], [0, 130], [1, 0]], function () { lightOn = true; });
+  }
+
+  function turnOff() {
+    flicker([[0, 80], [1, 60], [0, 0]], function () { lightOn = false; });
+  }
+
+  document.getElementById('scene').addEventListener('click', function () {
+    if (busy) return;
+    lightOn ? turnOff() : turnOn();
+  });
+
+  // occasionally the flashlight flickers on its own
+  setInterval(function () {
+    if (lightOn && !busy && Math.random() < 0.5) {
+      flicker([[0, 60], [1, 40], [0, 70], [1, 0]]);
+    }
+  }, 5000);
+
+  // start in the dark, then the yeti finds the switch
+  goDark();
+  setTimeout(turnOn, 900);
+</script>
+</body>
+</html>
