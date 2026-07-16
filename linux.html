@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #musicBtn {
+    position: fixed;
+    top: 22px;
+    right: 24px;
+    z-index: 10;
+    padding: 11px 26px;
+    font: 700 15px/1 "Courier New", monospace;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #46d3ff;
+    background: rgba(10, 20, 30, 0.55);
+    border: 2px solid #46d3ff;
+    border-radius: 999px;
+    cursor: pointer;
+    outline: none;
+    box-shadow: 0 0 14px rgba(70, 211, 255, 0.45),
+                inset 0 0 10px rgba(70, 211, 255, 0.15);
+    transition: color .35s, background .35s, border-color .35s, box-shadow .35s, transform .15s;
+    user-select: none;
+  }
+  #musicBtn:hover { transform: scale(1.06); }
+  #musicBtn:active { transform: scale(0.95); }
+  #musicBtn.on {
+    color: #1a0e00;
+    border-color: #ffb347;
+    background: linear-gradient(135deg, #ffd75e, #ff7a18);
+    box-shadow: 0 0 26px rgba(255, 160, 40, 0.85),
+                inset 0 0 12px rgba(255, 255, 255, 0.35);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 18px rgba(255, 160, 40, 0.6),  inset 0 0 12px rgba(255,255,255,0.35); }
+    50%      { box-shadow: 0 0 34px rgba(255, 190, 60, 0.95), inset 0 0 12px rgba(255,255,255,0.35); }
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<button id="musicBtn">&#9835; Music</button>
+<script>
+(function () {
+  'use strict';
+
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  let W = 0, H = 0, DPR = 1;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function hash2(a, b) {
+    let h = (a * 374761393 + b * 668265263) | 0;
+    h = (h ^ (h >> 13)) | 0;
+    h = Math.imul(h, 1274126177);
+    h = (h ^ (h >> 16)) >>> 0;
+    return h / 4294967295;
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Tux the penguin, built from particles on simple 3D shapes          *
+   * ------------------------------------------------------------------ */
+  const particles = [];
+
+  const BLACK  = [82, 90, 110];    // "black" feathers, readable on black bg
+  const BLACK2 = [58, 64, 82];
+  const WHITE  = [242, 244, 248];
+  const ORANGE = [247, 164, 29];
+  const ORANGE2= [255, 200, 60];
+  const DARK   = [16, 16, 20];     // pupils
+
+  const LIGHT = normalize3(0.35, 0.6, 0.75);
+
+  function normalize3(x, y, z) {
+    const l = Math.hypot(x, y, z) || 1;
+    return [x / l, y / l, z / l];
+  }
+
+  function shade(nx, ny, nz) {
+    const d = nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2];
+    return 0.55 + 0.5 * Math.max(0.12, d);
+  }
+
+  function addP(x, y, z, rgb, bright) {
+    particles.push({
+      x: x, y: y, z: z,
+      r: rgb[0], g: rgb[1], b: rgb[2],
+      br: bright,
+      flick: Math.random() * Math.PI * 2
+    });
+  }
+
+  // random point on the surface of an ellipsoid + its (approx) normal
+  function ellipsoid(cx, cy, cz, rx, ry, rz, count, colorFn, tiltZ) {
+    const sT = Math.sin(tiltZ || 0), cT = Math.cos(tiltZ || 0);
+    for (let i = 0; i < count; i++) {
+      let dx = 0, dy = 0, dz = 0, l = 0;
+      do {
+        dx = Math.random() * 2 - 1;
+        dy = Math.random() * 2 - 1;
+        dz = Math.random() * 2 - 1;
+        l = dx * dx + dy * dy + dz * dz;
+      } while (l > 1 || l < 0.04);
+      l = Math.sqrt(l);
+      dx /= l; dy /= l; dz /= l;
+      let px = dx * rx, py = dy * ry, pz = dz * rz;
+      // tilt the part around its own z axis (for the wings)
+      const tx = px * cT - py * sT;
+      const ty = px * sT + py * cT;
+      px = tx; py = ty;
+      const col = colorFn(dx, dy, dz);
+      addP(cx + px, cy + py, cz + pz, col, shade(dx, dy, dz) * col[3]);
+    }
+  }
+
+  function buildTux() {
+    // body: black with a white belly facing the camera
+    ellipsoid(0, -0.25, 0, 1.02, 1.38, 0.92, 3600, (dx, dy, dz) => {
+      if (dz > 0.30 && Math.abs(dx) < 0.78 && dy < 0.85) return [...WHITE, 1];
+      return (Math.random() < 0.5 ? [...BLACK, 1] : [...BLACK2, 1]);
+    });
+    // head: black with a white face patch
+    ellipsoid(0, 1.18, 0, 0.66, 0.62, 0.60, 1500, (dx, dy, dz) => {
+      if (dz > 0.30 && dy < 0.25 && Math.abs(dx) < 0.8) return [...WHITE, 1];
+      return (Math.random() < 0.5 ? [...BLACK, 1] : [...BLACK2, 1]);
+    });
+    // eyes
+    ellipsoid(-0.24, 1.36, 0.47, 0.13, 0.15, 0.10, 70, () => [...WHITE, 1.25]);
+    ellipsoid( 0.24, 1.36, 0.47, 0.13, 0.15, 0.10, 70, () => [...WHITE, 1.25]);
+    // pupils
+    ellipsoid(-0.21, 1.34, 0.56, 0.055, 0.07, 0.04, 26, () => [...DARK, 1]);
+    ellipsoid( 0.21, 1.34, 0.56, 0.055, 0.07, 0.04, 26, () => [...DARK, 1]);
+    // beak
+    ellipsoid(0, 1.04, 0.58, 0.27, 0.14, 0.32, 150, (dx, dy, dz) =>
+      dy > 0.2 ? [...ORANGE2, 1.1] : [...ORANGE, 1]);
+    // wings (tilted outward)
+    ellipsoid(-1.06, -0.18, 0.05, 0.24, 0.86, 0.46, 420, () =>
+      (Math.random() < 0.5 ? [...BLACK, 1] : [...BLACK2, 1]),  0.30);
+    ellipsoid( 1.06, -0.18, 0.05, 0.24, 0.86, 0.46, 420, () =>
+      (Math.random() < 0.5 ? [...BLACK, 1] : [...BLACK2, 1]), -0.30);
+    // feet
+    ellipsoid(-0.44, -1.62, 0.30, 0.40, 0.13, 0.52, 260, () => [...ORANGE, 1]);
+    ellipsoid( 0.44, -1.62, 0.30, 0.40, 0.13, 0.52, 260, () => [...ORANGE, 1]);
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Extruded 3D "LINUX" headline above the penguin                     *
+   * ------------------------------------------------------------------ */
+  const FONT = {
+    'L': ['10000','10000','10000','10000','10000','10000','11111'],
+    'I': ['11111','00100','00100','00100','00100','00100','11111'],
+    'N': ['10001','11001','10101','10011','10001','10001','10001'],
+    'U': ['10001','10001','10001','10001','10001','10001','01110'],
+    'X': ['10001','01010','00100','00100','00100','01010','10001']
+  };
+
+  function buildText() {
+    const word = 'LINUX';
+    const px = 0.17;                       // pixel size in model units
+    const cols = word.length * 7 - 2;      // 5 wide + 2 spacing
+    const x0 = -cols * px / 2;
+    const yTop = 3.30;
+    for (let li = 0; li < word.length; li++) {
+      const glyph = FONT[word[li]];
+      for (let row = 0; row < 7; row++) {
+        for (let col = 0; col < 5; col++) {
+          if (glyph[row][col] !== '1') continue;
+          const bx = x0 + (li * 7 + col) * px;
+          const by = yTop - row * px;
+          // extrude backwards in three layers for the 3D depth
+          for (let layer = 0; layer < 3; layer++) {
+            const k = 1 - row / 7;
+            const colr = [
+              255,
+              215 + 40 * k,
+              (94 + 130 * k) | 0
+            ]; // amber at the bottom -> near-white at the top
+            addP(
+              bx + (Math.random() - 0.5) * px * 0.6,
+              by + (Math.random() - 0.5) * px * 0.6,
+              -0.13 * layer + (Math.random() - 0.5) * 0.05,
+              colr,
+              (1.15 - layer * 0.34)
+            );
+          }
+        }
+      }
+    }
+  }
+
+  buildTux();
+  buildText();
+  const N = particles.length;
+
+  /* ------------------------------------------------------------------ *
+   *  State                                                              *
+   * ------------------------------------------------------------------ */
+  let time = 0;
+  let last = performance.now();
+
+  let phase  = 'forming';
+  let bloom  = 0;
+
+  let mouseRotX = 0, mouseRotY = 0;
+  let targetMouseRotX = 0, targetMouseRotY = 0;
+  const PIVOT_Y = 0.8;
+
+  let renderMode = 0;
+  let densTimer  = 0;
+  let densDir    = 0;
+  let grid       = 11;
+  let gridTarget = 11;
+  let glyphEpoch = 1;
+  let glitchT    = 0;
+
+  const GLYPHS = 'LINUX$&@#%*+?TUX';
+
+  function triggerGlitch() {
+    glitchT = 0.35;
+    glyphEpoch++;
+  }
+
+  let mouseX = W / 2, mouseY = H / 2;
+  let moveAccum = 0;
+  function onMove(x, y) {
+    moveAccum += Math.abs(x - mouseX) + Math.abs(y - mouseY);
+    mouseX = x; mouseY = y;
+  }
+  window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+  window.addEventListener('touchmove', e => {
+    if (e.touches.length) onMove(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+
+  /* ------------------------------------------------------------------ *
+   *  Grid accumulation buffers (RGB this time)                          *
+   * ------------------------------------------------------------------ */
+  let gw = 0, gh = 0;
+  let cellR = new Float32Array(0);
+  let cellG = new Float32Array(0);
+  let cellBc = new Float32Array(0);
+  let cellW = new Float32Array(0);   // brightness weight
+  let cellN = new Float32Array(0);
+
+  function ensureGrid(g) {
+    const nw = Math.ceil(W / g) + 2;
+    const nh = Math.ceil(H / g) + 2;
+    if (nw !== gw || nh !== gh || cellW.length < nw * nh) {
+      gw = nw; gh = nh;
+      cellR = new Float32Array(gw * gh);
+      cellG = new Float32Array(gw * gh);
+      cellBc = new Float32Array(gw * gh);
+      cellW = new Float32Array(gw * gh);
+      cellN = new Float32Array(gw * gh);
+    } else {
+      cellR.fill(0); cellG.fill(0); cellBc.fill(0); cellW.fill(0); cellN.fill(0);
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Music — generated live with the Web Audio API, no files            *
+   * ------------------------------------------------------------------ */
+  const btn = document.getElementById('musicBtn');
+  let audio = null;        // { ctx, master, timer }
+  let musicOn = false;
+
+  const SCALE_HZ = [220.00, 261.63, 293.66, 329.63, 392.00,
+                    440.00, 523.25, 587.33, 659.26, 784.00];
+
+  function startMusic() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const actx = new AC();
+    const master = actx.createGain();
+    master.gain.value = 0.0001;
+    master.gain.linearRampToValueAtTime(0.30, actx.currentTime + 0.8);
+
+    // space: feedback delay
+    const delay = actx.createDelay(1.0);
+    delay.delayTime.value = 0.34;
+    const fb = actx.createGain(); fb.gain.value = 0.42;
+    const wet = actx.createGain(); wet.gain.value = 0.35;
+    delay.connect(fb); fb.connect(delay);
+    delay.connect(wet); wet.connect(master);
+
+    const lp = actx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 2200;
+    lp.connect(master); lp.connect(delay);
+
+    master.connect(actx.destination);
+
+    // deep drone
+    const droneG = actx.createGain(); droneG.gain.value = 0.09;
+    const d1 = actx.createOscillator(); d1.type = 'sine';     d1.frequency.value = 55;
+    const d2 = actx.createOscillator(); d2.type = 'triangle'; d2.frequency.value = 110.4;
+    const d2g = actx.createGain(); d2g.gain.value = 0.4;
+    const lfo = actx.createOscillator(); lfo.frequency.value = 0.09;
+    const lfoG = actx.createGain(); lfoG.gain.value = 0.18;
+    lfo.connect(lfoG); lfoG.connect(d2g.gain);
+    d1.connect(droneG); d2.connect(d2g); d2g.connect(droneG);
+    droneG.connect(lp);
+    d1.start(); d2.start(); lfo.start();
+
+    // wandering pentatonic arpeggio
+    let idx = 3, step = 0;
+    const timer = setInterval(() => {
+      idx += (Math.random() * 3 | 0) - 1;
+      if (Math.random() < 0.15) idx += (Math.random() < 0.5 ? -3 : 3);
+      idx = Math.max(0, Math.min(SCALE_HZ.length - 1, idx));
+      const t0 = actx.currentTime;
+
+      const o = actx.createOscillator();
+      o.type = 'triangle';
+      o.frequency.value = SCALE_HZ[idx];
+      const g = actx.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(0.16, t0 + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.5);
+      o.connect(g); g.connect(lp);
+      o.start(t0); o.stop(t0 + 0.55);
+
+      // occasional bell an octave up
+      if (step % 4 === 0 && Math.random() < 0.4) {
+        const b = actx.createOscillator();
+        b.type = 'sine';
+        b.frequency.value = SCALE_HZ[idx] * 2;
+        const bg = actx.createGain();
+        bg.gain.setValueAtTime(0.0001, t0);
+        bg.gain.linearRampToValueAtTime(0.05, t0 + 0.02);
+        bg.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.4);
+        b.connect(bg); bg.connect(lp);
+        b.start(t0); b.stop(t0 + 1.5);
+      }
+      step++;
+    }, 240);
+
+    audio = { ctx: actx, master, timer };
+  }
+
+  function stopMusic() {
+    if (!audio) return;
+    const a = audio;
+    audio = null;
+    clearInterval(a.timer);
+    a.master.gain.linearRampToValueAtTime(0.0001, a.ctx.currentTime + 0.4);
+    setTimeout(() => a.ctx.close(), 600);
+  }
+
+  btn.addEventListener('click', () => {
+    musicOn = !musicOn;
+    btn.classList.toggle('on', musicOn);
+    if (musicOn) startMusic(); else stopMusic();
+    triggerGlitch();
+  });
+
+  /* ------------------------------------------------------------------ *
+   *  Main loop                                                          *
+   * ------------------------------------------------------------------ */
+  function frame(now) {
+    let dt = (now - last) / 1000;
+    last = now;
+    if (dt > 0.1) dt = 0.1;
+    time += dt;
+
+    targetMouseRotX = ((mouseY - H / 2) / H) * 0.5;
+    targetMouseRotY = ((mouseX - W / 2) / W) * 1.0;
+    mouseRotX += (targetMouseRotX - mouseRotX) * Math.min(1, 3.2 * dt);
+    mouseRotY += (targetMouseRotY - mouseRotY) * Math.min(1, 3.2 * dt);
+
+    // idle sway + waddle
+    const rotX = mouseRotX * 1.0 - 0.04;
+    const rotY = mouseRotY + 0.16 * Math.sin(time * 0.7);
+    const rotZ = 0.045 * Math.sin(time * 1.9);
+    const bobY = 0.06 * Math.sin(time * 1.3);
+
+    if (phase === 'forming') {
+      bloom += (1 - bloom) * 0.8 * dt;
+      if (bloom > 0.98) { bloom = 1; phase = 'interactive'; }
+    }
+
+    densTimer += dt + Math.min(0.05, moveAccum * 0.0006);
+    moveAccum *= Math.pow(0.02, dt);
+    if (densTimer > 3.4 && phase === 'interactive') {
+      densTimer = 0;
+      triggerGlitch();
+      renderMode = (renderMode + 1) % 3;
+      densDir = (densDir + 1) % 2;
+      gridTarget = densDir === 1 ? 14 : 9;
+    }
+    grid += (gridTarget - grid) * Math.min(1, 2.5 * dt);
+    if (glitchT > 0) glitchT = Math.max(0, glitchT - dt);
+
+    render(rotX, rotY, rotZ, bobY);
+    requestAnimationFrame(frame);
+  }
+
+  function render(rotX, rotY, rotZ, bobY) {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    const scale = Math.min(H * 0.15, W * 0.13) * (0.35 + 0.65 * easeOut(bloom));
+    const cx = W / 2;
+    const cy = H / 2 + 0.8 * scale;
+
+    const sX = Math.sin(rotX), cX = Math.cos(rotX);
+    const sY = Math.sin(rotY), cY = Math.cos(rotY);
+    const sZ = Math.sin(rotZ), cZ = Math.cos(rotZ);
+
+    const g = Math.max(6, grid);
+    ensureGrid(g);
+
+    const flickT = time * 6;
+    const beat = musicOn ? 1 + 0.09 * Math.sin(time * 4.2) : 1;
+
+    for (let i = 0; i < N; i++) {
+      const p = particles[i];
+      const px = p.x;
+      const py = p.y - PIVOT_Y + bobY;
+      const pz = p.z;
+
+      // rotate Y (turn), X (nod), Z (waddle)
+      let x1 = px * cY + pz * sY;
+      let z1 = -px * sY + pz * cY;
+      let y2 = py * cX - z1 * sX;
+      let z2 = py * sX + z1 * cX;
+      let x3 = x1 * cZ - y2 * sZ;
+      let y3 = x1 * sZ + y2 * cZ;
+
+      const persp = 6 / (6 - z2);
+      const sx = x3 * persp * scale + cx;
+      const sy = -(y3 + PIVOT_Y) * persp * scale + cy;
+
+      if (sx < 0 || sy < 0 || sx >= W || sy >= H) continue;
+
+      const bright = p.br * beat
+        * (0.88 + 0.12 * Math.sin(flickT + p.flick))
+        * easeOut(bloom);
+
+      const ix = (sx / g) | 0;
+      const iy = (sy / g) | 0;
+      const idx = iy * gw + ix;
+      // depth weighting: nearer particles occlude the ones behind them
+      const w = bright * Math.exp(z2 * 3.6);
+      cellR[idx] += p.r * w;
+      cellG[idx] += p.g * w;
+      cellBc[idx] += p.b * w;
+      cellW[idx] += w;
+      cellN[idx] += bright;
+    }
+
+    drawCells(g);
+  }
+
+  function drawCells(g) {
+    const glitch = glitchT > 0;
+    const gAmp = glitch ? glitchT / 0.35 : 0;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if (renderMode === 1) {
+      ctx.font = '700 ' + (g * 1.15).toFixed(1) + 'px "Courier New", monospace';
+    }
+
+    for (let iy = 0; iy < gh; iy++) {
+      let rowOff = 0;
+      if (glitch && hash2(iy, glyphEpoch * 7 + ((time * 30) | 0)) > 0.72) {
+        rowOff = (hash2(iy * 3 + 1, (time * 60) | 0) - 0.5) * g * 9 * gAmp;
+      }
+      for (let ix = 0; ix < gw; ix++) {
+        const idx = iy * gw + ix;
+        const wgt = cellW[idx];
+        if (!wgt) continue;
+        let b = cellN[idx] / (1 + cellN[idx] * 0.22);
+        if (b < 0.10) continue;
+
+        let x = ix * g + g / 2 + rowOff;
+        let y = iy * g + g / 2;
+
+        if (glitch && hash2(idx, glyphEpoch) < 0.18 * gAmp) continue;
+
+        const boost = 0.55 + Math.min(1.3, b) * 0.62;
+        const r = Math.min(255, cellR[idx] / wgt * boost);
+        const gg = Math.min(255, cellG[idx] / wgt * boost);
+        const bb = Math.min(255, cellBc[idx] / wgt * boost);
+        ctx.fillStyle = 'rgb(' + (r | 0) + ',' + (gg | 0) + ',' + (bb | 0) + ')';
+
+        if (renderMode === 0) {
+          const rad = g * 0.42 * Math.min(1, 0.4 + b * 0.7);
+          ctx.beginPath();
+          ctx.arc(x, y, rad, 0, 6.2832);
+          ctx.fill();
+        } else if (renderMode === 1) {
+          const ch = GLYPHS[(hash2(ix * 31 + iy, glyphEpoch) * GLYPHS.length) | 0];
+          ctx.fillText(ch, x, y);
+        } else {
+          const s = g * Math.min(1, 0.5 + b * 0.65);
+          ctx.fillRect(x - s / 2, y - s / 2, s * 0.96, s * 0.96);
+        }
+
+        if (glitch && gAmp > 0.4 && hash2(idx * 5 + 2, glyphEpoch) > 0.86) {
+          ctx.fillStyle = 'rgba(255,40,40,0.55)';
+          ctx.fillRect(x - g * 0.3 + 3, y - g * 0.3, g * 0.6, g * 0.6);
+          ctx.fillStyle = 'rgba(40,220,255,0.4)';
+          ctx.fillRect(x - g * 0.3 - 3, y - g * 0.3, g * 0.6, g * 0.6);
+        }
+      }
+    }
+
+    if (glitch) {
+      const bars = 3 + ((gAmp * 5) | 0);
+      for (let i = 0; i < bars; i++) {
+        const ry = hash2(i + 9, (time * 40) | 0) * H;
+        const rh = 1 + hash2(i + 40, (time * 50) | 0) * 3;
+        ctx.fillStyle = 'rgba(255,255,255,' + (0.03 + 0.05 * gAmp) + ')';
+        ctx.fillRect(0, ry, W, rh);
+      }
+    }
+  }
+
+  function easeOut(t) { return 1 - Math.pow(1 - Math.max(0, Math.min(1, t)), 3); }
+
+  requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
+})();
+</script>
+</body>
+</html>
