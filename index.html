@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ELLIOTT — сайты, которые притягивают клиентов</title>
+  <meta name="description" content="Создаю современные сайты под ключ: лендинги, визитки, интернет-магазины. Дизайн, анимации, запуск.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='34' fill='%23000'/><circle cx='50' cy='50' r='42' fill='none' stroke='%237c6cff' stroke-width='6'/></svg>">
+</head>
+<body>
+
+  <!-- ===== Навигация (liquid glass, правый верхний угол) ===== -->
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <span class="brand__hole" aria-hidden="true"></span>
+      <span class="brand__name">ELLIOTT<span class="brand__accent">·studio</span></span>
+    </a>
+
+    <nav class="xmenu" aria-label="Разделы сайта">
+      <a class="xmenu__item is-active" href="index.html" title="Главная">
+        <span class="xmenu__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>
+        </span>
+        <span class="xmenu__label">Главная</span>
+      </a>
+      <a class="xmenu__item" href="lab.html" title="Анимации">
+        <span class="xmenu__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>
+        </span>
+        <span class="xmenu__label">Анимации</span>
+      </a>
+      <a class="xmenu__item" href="#contact" title="Контакт">
+        <span class="xmenu__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4 11 13"/><path d="M22 4 15 21l-4-8-8-4 19-5z"/></svg>
+        </span>
+        <span class="xmenu__label">Контакт</span>
+      </a>
+      <button class="xmenu__item xmenu__theme" id="themeToggle" type="button" title="Сменить тему" aria-label="Сменить тему">
+        <span class="xmenu__icon" aria-hidden="true">
+          <span class="theme-orb">
+            <svg class="theme-orb__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg>
+            <svg class="theme-orb__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.4 14.2A8.5 8.5 0 1 1 9.8 3.6a7 7 0 1 0 10.6 10.6z"/></svg>
+          </span>
+        </span>
+        <span class="xmenu__label">Тема</span>
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ===== HERO + чёрная дыра ===== -->
+    <section class="hero" id="home">
+      <div class="hero__bh">
+        <canvas id="blackhole" aria-label="Интерактивная чёрная дыра"></canvas>
+      </div>
+      <div class="hero__inner">
+        <p class="hero__kicker reveal">— веб-студия полного цикла</p>
+        <h1 class="hero__title">
+          <span class="reveal">Создаю сайты,</span>
+          <span class="reveal d1">которые</span>
+          <span class="hero__grad reveal d2">притягивают клиентов</span>
+        </h1>
+        <p class="hero__sub reveal d3">Современные сайты для бизнеса — от идеи до результата.
+          Дизайн, анимации, разработка и запуск под ключ.</p>
+        <div class="hero__cta reveal d4">
+          <a class="btn btn--solid magnetic" href="lab.html">Смотреть анимации</a>
+          <a class="btn btn--ghost magnetic" href="#contact">Обсудить проект</a>
+        </div>
+        <p class="hero__hint reveal d5">чёрная дыра — интерактивная: поводите курсором и кликните по ней</p>
+      </div>
+      <div class="hero__scroll" aria-hidden="true"><span></span></div>
+    </section>
+
+    <!-- ===== Бегущая строка ===== -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee__track">
+        <span>Под ключ · Лендинги · Интернет-магазины · Корпоративные сайты · Анимации · Дизайн · </span>
+        <span>Под ключ · Лендинги · Интернет-магазины · Корпоративные сайты · Анимации · Дизайн · </span>
+      </div>
+    </div>
+
+    <!-- ===== Обо мне ===== -->
+    <section class="section" id="about">
+      <p class="section__kicker reveal">— кто я</p>
+      <h2 class="section__title reveal">Обо <span class="grad">мне</span></h2>
+      <div class="about">
+        <div class="about__card glass reveal">
+          <div class="about__hole" aria-hidden="true"></div>
+          <p class="about__status">на связи 24/7</p>
+        </div>
+        <div class="about__text reveal d1">
+          <p>Привет! Я делаю сайты, которые не просто красиво выглядят, а реально работают
+            на бизнес: привлекают клиентов, генерируют заявки и строят доверие к бренду.</p>
+          <p>Подход простой: сначала разбираюсь в вашем бизнесе и целях, потом делаю.
+            Никаких шаблонов — каждый проект уникален. Объясняю понятно, держу в курсе
+            и не пропадаю после оплаты.</p>
+          <p class="about__stack-title">— мой стек</p>
+          <ul class="chips">
+            <li class="chip">HTML / CSS <em>вёрстка</em></li>
+            <li class="chip">JavaScript <em>логика</em></li>
+            <li class="chip">Анимации <em>motion</em></li>
+            <li class="chip">Liquid Glass <em>стиль</em></li>
+            <li class="chip">Figma <em>дизайн</em></li>
+            <li class="chip">Адаптив <em>все экраны</em></li>
+            <li class="chip">Чистый код <em>подход</em></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Цены ===== -->
+    <section class="section" id="services">
+      <p class="section__kicker reveal">— для вашего бизнеса</p>
+      <h2 class="section__title reveal">Какой сайт <span class="grad">нужен вам?</span></h2>
+      <div class="prices">
+        <article class="price glass reveal">
+          <span class="price__num">01</span>
+          <div class="price__body">
+            <h3>Сайт-визитка</h3>
+            <p>Компактное онлайн-представительство. Подходит для специалистов и малого бизнеса.</p>
+          </div>
+          <span class="price__tag">от 5 000 ₽</span>
+        </article>
+        <article class="price glass reveal d1">
+          <span class="price__num">02</span>
+          <div class="price__body">
+            <h3>Одностраничный лендинг</h3>
+            <p>Идеален для запуска продукта, акции или услуги. Конвертирует трафик в заявки.</p>
+          </div>
+          <span class="price__tag">от 6 000 ₽</span>
+        </article>
+        <article class="price glass reveal d2">
+          <span class="price__num">03</span>
+          <div class="price__body">
+            <h3>Многостраничный сайт</h3>
+            <p>Полноценный сайт компании с несколькими разделами. Вызывает доверие у клиентов.</p>
+          </div>
+          <span class="price__tag">от 8 000 ₽</span>
+        </article>
+        <article class="price glass reveal d3">
+          <span class="price__num">04</span>
+          <div class="price__body">
+            <h3>Интернет-магазин</h3>
+            <p>Полноценный магазин с корзиной, оплатой и каталогом. Продажи онлайн 24/7.</p>
+          </div>
+          <span class="price__tag">от 15 000 ₽</span>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== Этапы ===== -->
+    <section class="section" id="process">
+      <p class="section__kicker reveal">— как я работаю</p>
+      <h2 class="section__title reveal">Этапы <span class="grad">работы</span></h2>
+      <ol class="steps">
+        <li class="step glass reveal"><span class="step__num">01</span><h3>Бриф</h3><p>Обсуждаем задачу, цели и аудиторию. Фиксируем сроки и стоимость.</p></li>
+        <li class="step glass reveal d1"><span class="step__num">02</span><h3>Дизайн</h3><p>Собираю структуру и визуал: стиль, типографика, анимации.</p></li>
+        <li class="step glass reveal d2"><span class="step__num">03</span><h3>Разработка</h3><p>Верстаю и программирую. Чистый код, быстрая загрузка, адаптив.</p></li>
+        <li class="step glass reveal d3"><span class="step__num">04</span><h3>Наполнение</h3><p>Тексты, изображения, тесты на всех устройствах и браузерах.</p></li>
+        <li class="step glass reveal d4"><span class="step__num">05</span><h3>Запуск</h3><p>Размещаем на хостинге, настраиваем домен и аналитику. Плюс поддержка после сдачи.</p></li>
+      </ol>
+    </section>
+
+    <!-- ===== Преимущества ===== -->
+    <section class="section" id="why">
+      <p class="section__kicker reveal">— почему я</p>
+      <h2 class="section__title reveal">Преиму<span class="grad">щества</span></h2>
+      <div class="feats">
+        <article class="feat glass reveal">
+          <span class="feat__icon">⚡</span>
+          <h3>Быстрая разработка</h3>
+          <p>Лендинг за 3–5 дней, штрафую сам себя за срыв сроков.</p>
+        </article>
+        <article class="feat glass reveal d1">
+          <span class="feat__icon">🎯</span>
+          <h3>Фокус на конверсию</h3>
+          <p>Каждый элемент работает на то, чтобы посетитель стал клиентом.</p>
+        </article>
+        <article class="feat glass reveal d2">
+          <span class="feat__icon">📱</span>
+          <h3>100% адаптив</h3>
+          <p>Все сайты идеально выглядят на телефонах, планшетах и компьютерах.</p>
+        </article>
+        <article class="feat glass reveal d3">
+          <span class="feat__icon">✨</span>
+          <h3>Живые анимации</h3>
+          <p>Интерактив и motion-дизайн, которые запоминаются. Примеры — на странице «Анимации».</p>
+        </article>
+      </div>
+      <div class="why-cta reveal">
+        <a class="btn btn--solid magnetic" href="lab.html">Посмотреть, что я умею →</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== Подвал с контактом ===== -->
+  <footer class="footer" id="contact">
+    <div class="footer__glow" aria-hidden="true"></div>
+    <p class="section__kicker reveal">— давайте работать</p>
+    <h2 class="footer__title reveal">Обсудим <span class="grad">ваш проект?</span></h2>
+    <p class="footer__sub reveal d1">Напишите мне в Telegram — отвечаю быстро.</p>
+    <a class="tg-btn magnetic reveal d2" href="https://t.me/nysh4real" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.6c.3-1.3-.9-2.4-2.1-1.9L2.7 9.3c-1.4.5-1.3 2.5.1 2.9l4.4 1.3 1.7 5.4c.4 1.2 1.9 1.5 2.7.6l2.4-2.5 4.5 3.3c1 .8 2.5.2 2.8-1.1l2.6-14.6zM8.2 12.4l9.6-6-7.5 7 0 .1-.3 3.3-1.8-4.4z"/></svg>
+      <span>@nysh4real</span>
+    </a>
+    <div class="footer__bottom">
+      <span>© <span id="year">2026</span> ELLIOTT·studio</span>
+      <span>Сайты · Дизайн · Анимации</span>
+      <a href="https://t.me/nysh4real" target="_blank" rel="noopener">Telegram: @nysh4real</a>
+    </div>
+  </footer>
+
+  <script src="js/blackhole.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>
