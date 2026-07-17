@@ -25,7 +25,7 @@
 .demo__num {
   font-family: var(--font-display);
   font-size: 2rem;
-  font-weight: 800;
+  font-weight: 400;
   color: var(--accent);
   display: block;
   margin-bottom: 14px;
@@ -33,7 +33,7 @@
 
 .demo__info h2 {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 400;
   font-size: 1.35rem;
   margin-bottom: 14px;
 }
@@ -45,7 +45,7 @@
   padding: 8px 14px;
   border-radius: 999px;
   font-size: .74rem;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: .12em;
   text-transform: uppercase;
   color: var(--accent-2);
@@ -94,7 +94,7 @@
 }
 
 .win-card__title {
-  font-weight: 800;
+  font-weight: 400;
   font-size: 1.05rem;
   color: #43392c;
   margin-bottom: 16px;
@@ -280,7 +280,7 @@
 
 .win-card.night .win-card__footer { color: #9f9ac8; }
 
-.win-card__mode { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.win-card__mode { display: flex; align-items: center; gap: 8px; font-weight: 400; }
 
 .win-dot {
   width: 20px;
@@ -442,7 +442,7 @@
   text-align: center;
   color: #f2ecdf;
   font-family: var(--font-body);
-  font-weight: 800;
+  font-weight: 400;
   letter-spacing: .02em;
 }
 
@@ -479,7 +479,7 @@
   border: none;
   border-radius: 10px;
   font-family: var(--font-body);
-  font-weight: 800;
+  font-weight: 400;
   font-size: .95rem;
   color: #4a3413;
   cursor: pointer;
@@ -639,7 +639,7 @@
   background: linear-gradient(135deg, var(--accent), #5a48e8);
   color: #fff;
   font-family: var(--font-body);
-  font-weight: 800;
+  font-weight: 400;
   font-size: 1rem;
   cursor: pointer;
   overflow: hidden;
@@ -794,7 +794,7 @@
 
 .lab__cta-card h2 {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 400;
   font-size: clamp(1.4rem, 3.6vw, 2.2rem);
   margin-bottom: 14px;
 }

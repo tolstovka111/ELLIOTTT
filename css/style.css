@@ -4,6 +4,20 @@
    Liquid glass: полупрозрачные слои + blur + внутренние блики
    ============================================================ */
 
+@font-face {
+  font-family: 'Starseed Pro';
+  src: url('../fonts/StarseedPro.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pixeloid Sans';
+  src: url('../fonts/PixeloidSans.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   --bg: #08080d;
   --bg-2: #0d0d15;
@@ -16,8 +30,8 @@
   --glass-brd: rgba(255, 255, 255, .12);
   --glass-shine: rgba(255, 255, 255, .09);
   --shadow: rgba(0, 0, 0, .55);
-  --font-display: 'Unbounded', 'Arial Black', sans-serif;
-  --font-body: 'Manrope', 'Segoe UI', sans-serif;
+  --font-display: 'Starseed Pro', 'Arial Black', sans-serif;
+  --font-body: 'Pixeloid Sans', 'Courier New', monospace;
 }
 
 [data-theme="light"] {
@@ -126,7 +140,7 @@ body {
 .brand__name {
   font-family: var(--font-display);
   font-size: .82rem;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: .06em;
 }
 
@@ -186,7 +200,7 @@ body {
   opacity: 0;
   max-width: 0;
   transform: translateX(-8px);
-  font-weight: 700;
+  font-weight: 400;
   font-size: .95rem;
   letter-spacing: .03em;
   transition: opacity .25s ease, max-width .45s ease, transform .35s ease;
@@ -240,8 +254,8 @@ body {
   min-height: 100svh;
   display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
+  justify-content: flex-start;
+  text-align: left;
   padding: 110px 20px 80px;
 }
 
@@ -261,7 +275,8 @@ body {
 .hero__inner {
   position: relative;
   z-index: 1;
-  max-width: 900px;
+  max-width: 640px;
+  margin-left: max(4vw, 24px);
   pointer-events: none;
 }
 
@@ -278,13 +293,11 @@ body {
 
 .hero__title {
   font-family: var(--font-display);
-  font-weight: 800;
-  font-size: clamp(2rem, 6.4vw, 4.4rem);
-  line-height: 1.08;
+  font-weight: 400;
+  font-size: clamp(1.4rem, 3.4vw, 2.5rem);
+  line-height: 1.28;
   text-wrap: balance;
 }
-
-.hero__title span { display: block; }
 
 .hero__grad,
 .grad {
@@ -295,18 +308,18 @@ body {
 }
 
 .hero__sub {
-  margin: 26px auto 0;
-  max-width: 560px;
+  margin: 24px 0 0;
+  max-width: 480px;
   color: var(--muted);
-  font-size: 1.06rem;
-  line-height: 1.65;
+  font-size: .98rem;
+  line-height: 1.7;
 }
 
 .hero__cta {
   margin-top: 34px;
   display: flex;
   gap: 14px;
-  justify-content: center;
+  justify-content: flex-start;
   flex-wrap: wrap;
 }
 
@@ -356,7 +369,7 @@ body {
   padding: 15px 30px;
   border-radius: 999px;
   font-family: var(--font-body);
-  font-weight: 800;
+  font-weight: 400;
   font-size: .95rem;
   letter-spacing: .04em;
   text-decoration: none;
@@ -418,7 +431,7 @@ body {
 .marquee__track span {
   font-family: var(--font-display);
   font-size: .95rem;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: .18em;
   text-transform: uppercase;
   color: var(--muted);
@@ -440,7 +453,7 @@ body {
 
 .section__title {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 400;
   font-size: clamp(1.7rem, 4.6vw, 3rem);
   margin-bottom: 46px;
 }
@@ -509,7 +522,7 @@ body {
   gap: 8px;
   padding: 10px 16px;
   border-radius: 12px;
-  font-weight: 800;
+  font-weight: 400;
   font-size: .92rem;
   background: var(--glass-bg);
   border: 1px solid var(--glass-brd);
@@ -522,7 +535,7 @@ body {
 .chip em {
   font-style: normal;
   font-size: .68rem;
-  font-weight: 500;
+  font-weight: 400;
   letter-spacing: .12em;
   text-transform: uppercase;
   color: var(--accent-2);
@@ -532,49 +545,6 @@ body {
   transform: translateY(-4px);
   border-color: var(--accent);
   box-shadow: 0 10px 26px rgba(124, 108, 255, .25);
-}
-
-/* ---------- цены ---------- */
-.prices { display: flex; flex-direction: column; gap: 16px; }
-
-.price {
-  display: flex;
-  align-items: center;
-  gap: 26px;
-  padding: 26px 30px;
-  transition: transform .3s ease, border-color .3s ease;
-}
-
-.price:hover { transform: translateX(10px); border-color: var(--accent); }
-
-.price__num {
-  font-family: var(--font-display);
-  font-size: 1.9rem;
-  font-weight: 800;
-  color: var(--accent);
-  min-width: 64px;
-}
-
-.price__body { flex: 1; }
-
-.price__body h3 {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 1.15rem;
-  margin-bottom: 6px;
-}
-
-.price__body p { color: var(--muted); line-height: 1.55; font-size: .95rem; max-width: 520px; }
-
-.price__tag {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 1.2rem;
-  white-space: nowrap;
-  background: linear-gradient(92deg, var(--accent-2), var(--accent-hot));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
 /* ---------- этапы ---------- */
@@ -597,14 +567,14 @@ body {
   display: block;
   font-family: var(--font-display);
   font-size: 1.7rem;
-  font-weight: 800;
+  font-weight: 400;
   color: var(--accent);
   margin-bottom: 14px;
 }
 
 .step h3 {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 400;
   font-size: 1rem;
   margin-bottom: 10px;
 }
@@ -637,7 +607,7 @@ body {
 
 .feat h3 {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 400;
   font-size: 1.02rem;
   margin-bottom: 10px;
 }
@@ -671,7 +641,7 @@ body {
 
 .footer__title {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 400;
   font-size: clamp(1.7rem, 4.6vw, 3rem);
 }
 
@@ -685,7 +655,7 @@ body {
   padding: 17px 36px;
   border-radius: 999px;
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 400;
   font-size: 1.05rem;
   text-decoration: none;
   color: #fff;
@@ -741,9 +711,6 @@ body {
 @media (max-width: 860px) {
   .about { grid-template-columns: 1fr; }
   .about__card { max-width: 320px; margin: 0 auto; }
-  .price { flex-wrap: wrap; gap: 14px; }
-  .price__num { min-width: auto; }
-  .price__tag { width: 100%; }
 }
 
 @media (max-width: 640px) {
