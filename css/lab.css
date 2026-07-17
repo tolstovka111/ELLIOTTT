@@ -592,7 +592,10 @@
   width: min(360px, 90%);
 }
 
-.weather-ctl__icon { font-size: 1.1rem; }
+.weather-ctl__icon { display: inline-flex; }
+.weather-ctl__icon svg.pix { width: 20px; height: 20px; }
+.weather-ctl__icon--sun { color: #ffc93d; }
+.weather-ctl__icon--storm { color: #8f9bb8; }
 
 .weather-ctl input[type="range"] {
   flex: 1;

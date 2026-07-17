@@ -18,6 +18,54 @@
     });
   }
 
+  /* ---------- анимация печати ---------- */
+  const noMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function typeEl(el) {
+    const speed = +el.dataset.typeSpeed || 30;
+    // собираем все текстовые узлы (включая вложенные span с градиентом)
+    const nodes = [];
+    (function walk(n) {
+      n.childNodes.forEach((c) => {
+        if (c.nodeType === 3) nodes.push(c);
+        else walk(c);
+      });
+    })(el);
+    const full = nodes.map((n) => n.nodeValue.replace(/\s+/g, ' '));
+    // фиксируем высоту, чтобы страница не прыгала
+    el.style.minHeight = el.offsetHeight + 'px';
+    nodes.forEach((n) => { n.nodeValue = ''; });
+    el.classList.add('is-typing');
+
+    let ni = 0, ci = 0;
+    const timer = setInterval(() => {
+      while (ni < nodes.length && full[ni].length === 0) ni++;
+      if (ni >= nodes.length) {
+        clearInterval(timer);
+        el.classList.remove('is-typing');
+        el.classList.add('is-typed');
+        return;
+      }
+      ci++;
+      nodes[ni].nodeValue = full[ni].slice(0, ci);
+      if (ci >= full[ni].length) { ni++; ci = 0; }
+    }, speed);
+  }
+
+  if (noMotion) {
+    document.querySelectorAll('.type').forEach((el) => el.classList.add('is-typed'));
+  } else {
+    const typeIO = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) {
+          typeIO.unobserve(e.target);
+          typeEl(e.target);
+        }
+      }
+    }, { threshold: .35 });
+    document.querySelectorAll('.type').forEach((el) => typeIO.observe(el));
+  }
+
   /* ---------- появление при скролле ---------- */
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) {

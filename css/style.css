@@ -18,6 +18,13 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: '8bitoperator JVE';
+  src: url('../fonts/8bitoperatorJVE.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   --bg: #08080d;
   --bg-2: #0d0d15;
@@ -125,26 +132,31 @@ body {
 
 .brand:hover { transform: translateY(-2px); }
 
-.brand__hole {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 50%, #000 0 44%, transparent 46%),
-              conic-gradient(from 0deg, #7c6cff, #ffb26b, #ff6ba8, #7c6cff);
-  animation: spin 6s linear infinite;
-  flex-shrink: 0;
-}
-
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.brand__name {
-  font-family: var(--font-display);
-  font-size: .82rem;
-  font-weight: 400;
-  letter-spacing: .06em;
+.brand__tux {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  image-rendering: pixelated;
+  object-fit: cover;
 }
 
-.brand__accent { color: var(--accent); }
+.brand__name {
+  font-family: '8bitoperator JVE', var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 400;
+  letter-spacing: .05em;
+  transform: translateY(-1px);
+}
+
+/* пиксельные иконки */
+svg.pix {
+  width: 22px;
+  height: 22px;
+  shape-rendering: crispEdges;
+}
 
 /* --- пилюля с раскрывающимися кнопками (как в прошлых работах) --- */
 .xmenu {
@@ -516,20 +528,19 @@ body {
   margin-top: 6px;
 }
 
+/* чипы стека — плоский пиксельный стиль, без liquid glass */
 .chip {
   display: inline-flex;
   align-items: baseline;
   gap: 8px;
-  padding: 10px 16px;
-  border-radius: 12px;
+  padding: 10px 14px;
+  border-radius: 0;
   font-weight: 400;
   font-size: .92rem;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-brd);
-  box-shadow: inset 0 1px 0 var(--glass-shine);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+  background: var(--bg-2);
+  border: 2px solid var(--glass-brd);
+  box-shadow: 4px 4px 0 rgba(124, 108, 255, .3);
+  transition: transform .15s steps(2, end), box-shadow .15s steps(2, end), border-color .15s ease;
 }
 
 .chip em {
@@ -542,9 +553,9 @@ body {
 }
 
 .chip:hover {
-  transform: translateY(-4px);
+  transform: translate(-2px, -2px);
   border-color: var(--accent);
-  box-shadow: 0 10px 26px rgba(124, 108, 255, .25);
+  box-shadow: 6px 6px 0 var(--accent);
 }
 
 /* ---------- этапы ---------- */
@@ -598,12 +609,15 @@ body {
   height: 52px;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  border-radius: 14px;
-  background: rgba(124, 108, 255, .16);
-  box-shadow: inset 0 0 0 1px rgba(124, 108, 255, .35);
+  border-radius: 0;
+  color: var(--accent-2);
+  background: rgba(124, 108, 255, .14);
+  border: 2px solid rgba(124, 108, 255, .4);
+  box-shadow: 4px 4px 0 rgba(124, 108, 255, .25);
   margin-bottom: 18px;
 }
+
+.feat__icon svg.pix { width: 26px; height: 26px; }
 
 .feat h3 {
   font-family: var(--font-display);
@@ -682,6 +696,27 @@ body {
 
 .footer__bottom a { color: var(--accent-2); text-decoration: none; }
 .footer__bottom a:hover { text-decoration: underline; }
+
+/* ============================================================
+   Анимация печати текста
+   ============================================================ */
+.type { visibility: hidden; }
+
+.type.is-typing,
+.type.is-typed { visibility: visible; }
+
+.type.is-typing::after {
+  content: "▮";
+  margin-left: 3px;
+  color: var(--accent);
+  animation: caret-blink .6s steps(1) infinite;
+}
+
+@keyframes caret-blink { 50% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .type { visibility: visible; }
+}
 
 /* ============================================================
    Появление при скролле

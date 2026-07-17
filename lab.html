@@ -13,33 +13,33 @@
 
   <header class="topbar">
     <a class="brand" href="index.html">
-      <span class="brand__hole" aria-hidden="true"></span>
-      <span class="brand__name">ELLIOTT<span class="brand__accent">·studio</span></span>
+      <img class="brand__tux" src="img/tux_pixel.png" alt="Элиот — логотип" width="32" height="32">
+      <span class="brand__name">Элиот</span>
     </a>
     <nav class="xmenu" aria-label="Разделы сайта">
       <a class="xmenu__item" href="index.html" title="Главная">
         <span class="xmenu__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>
+          <svg class="pix" viewBox="0 0 16 16" fill="currentColor" shape-rendering="crispEdges"><path d="M7 1h2v1H7zM6 2h4v1H6zM5 3h6v1H5zM4 4h8v1H4zM3 5h10v1H3zM4 6h8v1H4zM4 7h8v3H4zM4 10h3v3H4zM9 10h3v3H9z"/></svg>
         </span>
         <span class="xmenu__label">Главная</span>
       </a>
       <a class="xmenu__item is-active" href="lab.html" title="Анимации">
         <span class="xmenu__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>
+          <svg class="pix" viewBox="0 0 16 16" fill="currentColor" shape-rendering="crispEdges"><path d="M9 1h3v2H9zM8 3h3v2H8zM7 5h3v1H7zM4 6h8v2H4zM7 8h2v2H7zM6 10h2v2H6zM5 12h2v2H5z"/></svg>
         </span>
         <span class="xmenu__label">Анимации</span>
       </a>
       <a class="xmenu__item" href="index.html#contact" title="Контакт">
         <span class="xmenu__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4 11 13"/><path d="M22 4 15 21l-4-8-8-4 19-5z"/></svg>
+          <svg class="pix" viewBox="0 0 16 16" fill="currentColor" shape-rendering="crispEdges"><path d="M3 2h2v12H3zM5 3h2v10H5zM7 4h2v8H7zM9 5h2v6H9zM11 6h2v4H11zM13 7h1v2h-1z"/></svg>
         </span>
         <span class="xmenu__label">Контакт</span>
       </a>
       <button class="xmenu__item xmenu__theme" id="themeToggle" type="button" title="Сменить тему" aria-label="Сменить тему">
         <span class="xmenu__icon" aria-hidden="true">
           <span class="theme-orb">
-            <svg class="theme-orb__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg>
-            <svg class="theme-orb__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.4 14.2A8.5 8.5 0 1 1 9.8 3.6a7 7 0 1 0 10.6 10.6z"/></svg>
+            <svg class="pix theme-orb__sun" viewBox="0 0 16 16" fill="currentColor" shape-rendering="crispEdges"><path d="M7 0h2v2H7zM7 14h2v2H7zM0 7h2v2H0zM14 7h2v2H14zM2 2h2v2H2zM12 2h2v2H12zM2 12h2v2H2zM12 12h2v2H12zM5 5h6v6H5z"/></svg>
+            <svg class="pix theme-orb__moon" viewBox="0 0 16 16" fill="currentColor" shape-rendering="crispEdges"><path d="M6 1h5v1H6zM5 2h3v1H5zM4 3h3v1H4zM3 4h3v1H3zM2 5h4v1H2zM2 6h4v1H2zM1 7h4v2H1zM2 9h4v1H2zM2 10h4v1H2zM3 11h4v1H3zM4 12h4v1H4zM5 13h6v1H5zM6 14h5v1H6z"/></svg>
           </span>
         </span>
         <span class="xmenu__label">Тема</span>
@@ -49,8 +49,8 @@
 
   <main class="lab">
     <section class="lab__head">
-      <p class="section__kicker reveal">— живые примеры</p>
-      <h1 class="section__title reveal">Анимации, которые <span class="grad">мы делаем</span></h1>
+      <p class="section__kicker type">— живые примеры</p>
+      <h1 class="section__title type">Анимации, которые <span class="grad">мы делаем</span></h1>
       <p class="lab__sub reveal d1">Всё ниже — не видео и не картинки. Это работающий код:
         нажимайте, тяните и двигайте. Такие же анимации могут жить на вашем сайте.</p>
     </section>
@@ -59,7 +59,7 @@
     <section class="demo reveal">
       <div class="demo__info">
         <span class="demo__num">01</span>
-        <h2>Переключатель темы «Окно»</h2>
+        <h2 class="type">Переключатель темы «Окно»</h2>
         <p>Скеоморфный тумблер: за окном день или ночь. Клик по окну — и солнце с облаками
           сменяются луной, звёздами и падающей кометой.</p>
         <span class="demo__tag">CSS-переходы · интерактив</span>
@@ -93,7 +93,7 @@
     <section class="demo demo--rev reveal">
       <div class="demo__info">
         <span class="demo__num">02</span>
-        <h2>Лампа и форма входа</h2>
+        <h2 class="type">Лампа и форма входа</h2>
         <p>Потяните за шнурок — лампа включается, комната озаряется тёплым светом,
           а стеклянная форма входа «просыпается». Golden button в комплекте.</p>
         <span class="demo__tag">Liquid glass · свет и тени</span>
@@ -125,7 +125,7 @@
     <section class="demo reveal">
       <div class="demo__info">
         <span class="demo__num">03</span>
-        <h2>Симуляция погоды</h2>
+        <h2 class="type">Симуляция погоды</h2>
         <p>Живое объёмное облако на чистом CSS + JS. Двигайте ползунок: ясное небо
           постепенно превращается в грозу с дождём и молниями.</p>
         <span class="demo__tag">Генеративная графика · физика</span>
@@ -137,9 +137,9 @@
           <div class="lightning" id="lightning"></div>
         </div>
         <div class="weather-ctl glass">
-          <span class="weather-ctl__icon">☀️</span>
+          <span class="weather-ctl__icon weather-ctl__icon--sun"><svg class="pix" viewBox="0 0 16 16" fill="currentColor" shape-rendering="crispEdges"><path d="M7 0h2v2H7zM7 14h2v2H7zM0 7h2v2H0zM14 7h2v2H14zM2 2h2v2H2zM12 2h2v2H12zM2 12h2v2H2zM12 12h2v2H12zM5 5h6v6H5z"/></svg></span>
           <input type="range" id="weatherRange" min="0" max="100" value="10" aria-label="Погода: от ясно до грозы">
-          <span class="weather-ctl__icon">⛈️</span>
+          <span class="weather-ctl__icon weather-ctl__icon--storm"><svg class="pix" viewBox="0 0 16 16" fill="currentColor" shape-rendering="crispEdges"><path d="M5 3h6v2H5zM3 5h10v4H3zM8 10h2v1H8zM7 11h2v1H7zM6 12h2v1H6z"/></svg></span>
         </div>
       </div>
     </section>
@@ -148,7 +148,7 @@
     <section class="demo demo--rev reveal">
       <div class="demo__info">
         <span class="demo__num">04</span>
-        <h2>Кнопка оформления заказа</h2>
+        <h2 class="type">Кнопка оформления заказа</h2>
         <p>Микровзаимодействие для интернет-магазина: нажмите — коробка грузится
           в фургон, грузовик уезжает, заказ оформлен. Мелочь, а клиенты запоминают.</p>
         <span class="demo__tag">Микроанимации · e-commerce</span>
@@ -177,7 +177,7 @@
         <h2>Хотите такие же анимации <span class="grad">на своём сайте?</span></h2>
         <p>Любую из этих механик — и десятки других — можно адаптировать под ваш бренд.</p>
         <a class="tg-btn magnetic" href="https://t.me/nysh4real" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.6c.3-1.3-.9-2.4-2.1-1.9L2.7 9.3c-1.4.5-1.3 2.5.1 2.9l4.4 1.3 1.7 5.4c.4 1.2 1.9 1.5 2.7.6l2.4-2.5 4.5 3.3c1 .8 2.5.2 2.8-1.1l2.6-14.6zM8.2 12.4l9.6-6-7.5 7 0 .1-.3 3.3-1.8-4.4z"/></svg>
+          <svg class="pix" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" shape-rendering="crispEdges"><path d="M3 2h2v12H3zM5 3h2v10H5zM7 4h2v8H7zM9 5h2v6H9zM11 6h2v4H11zM13 7h1v2h-1z"/></svg>
           <span>@nysh4real</span>
         </a>
       </div>
