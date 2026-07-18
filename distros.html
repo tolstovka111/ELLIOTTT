@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LINUX DOJO // энциклопедия дистрибутивов</title>
+<meta name="description" content="Все дистрибутивы Linux от простых к сложным: сколько едят оперативы, насколько трудны, чем отличаются, какой пакетный менеджер. С мемами.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2316161b'/%3E%3Ctext x='4' y='23' font-family='monospace' font-size='20' fill='%235bc873'%3E%3E_%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/base.css">
+<style>
+/* hero banner */
+#dhero{padding-top:calc(84px + var(--sp-6));position:relative}
+.banner{
+  position:relative;border:2px solid var(--border-2);box-shadow:6px 6px 0 rgba(0,0,0,.5);
+  overflow:hidden;background:#26262a;margin-bottom:var(--sp-6);
+}
+.banner img{width:100%;height:230px;object-fit:cover;object-position:center;filter:saturate(1.05)}
+.banner .ov{
+  position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+  padding:0 var(--sp-6);background:linear-gradient(90deg,rgba(13,13,16,.9) 30%,rgba(13,13,16,.15))
+}
+.banner h1{font-family:var(--f-display);font-size:clamp(26px,5vw,52px);color:var(--cream);text-shadow:3px 3px 0 rgba(0,0,0,.6);line-height:1}
+.banner p{font-family:var(--f-term);font-size:22px;color:var(--text);margin-top:12px;max-width:30ch}
+.banner p b{color:var(--green)}
+@media (max-width:640px){.banner img{height:300px}.banner .ov{background:linear-gradient(0deg,rgba(13,13,16,.92) 40%,rgba(13,13,16,.3))}}
+
+/* controls */
+.controls{display:flex;gap:var(--sp-3);flex-wrap:wrap;align-items:center;margin-bottom:var(--sp-5)}
+.controls .lbl{font-family:var(--f-pixel);font-size:11px;color:var(--muted)}
+.sortbtn{font-family:var(--f-pixel);font-size:10px;padding:11px 15px;cursor:pointer;background:var(--panel);border:2px solid var(--border-2);color:var(--muted);box-shadow:3px 3px 0 rgba(0,0,0,.4);transition:all .15s}
+.sortbtn:hover{color:var(--text);border-color:var(--amber)}
+.sortbtn[aria-pressed="true"]{background:var(--amber);color:#221800;border-color:#5a4410}
+
+/* distro grid */
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:var(--sp-5)}
+.distro{
+  background:var(--panel);border:2px solid var(--border-2);box-shadow:5px 5px 0 rgba(0,0,0,.45);
+  display:flex;flex-direction:column;overflow:hidden;
+  transition:transform .16s var(--ease),box-shadow .16s var(--ease),border-color .2s;
+}
+.distro:hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 rgba(0,0,0,.5)}
+.distro-top{display:flex;gap:var(--sp-3);padding:var(--sp-4);align-items:center;border-bottom:2px solid var(--border)}
+.badge{
+  width:64px;height:64px;flex:none;display:flex;align-items:center;justify-content:center;
+  font-family:var(--f-display);font-size:26px;color:#0d0d10;border:2px solid rgba(0,0,0,.45);
+  box-shadow:3px 3px 0 rgba(0,0,0,.4);overflow:hidden;
+}
+.badge img{width:100%;height:100%;object-fit:cover}
+.distro-id{min-width:0}
+.distro-id h3{font-family:var(--f-pixel);font-size:16px;color:var(--cream);line-height:1.1}
+.distro-id .base{font-family:var(--f-term);font-size:18px;color:var(--muted)}
+.rank{margin-left:auto;font-family:var(--f-pixel);font-size:9px;color:var(--muted);text-align:right;flex:none}
+.distro-body{padding:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-3);flex:1}
+.tagline{font-family:var(--f-term);font-size:20px;color:var(--text)}
+.meters{display:flex;flex-direction:column;gap:8px}
+.meter{font-family:var(--f-term);font-size:17px;color:var(--muted)}
+.meter .row{display:flex;justify-content:space-between;margin-bottom:3px}
+.meter .row b{color:var(--text);font-weight:400}
+.rambar{height:12px;background:var(--bg2);border:2px solid var(--border);overflow:hidden}
+.rambar i{display:block;height:100%;width:0;transition:width .7s var(--ease)}
+.diff{display:flex;gap:4px}
+.diff span{width:16px;height:16px;border:2px solid var(--border-2);background:var(--bg2)}
+.diff span.on{background:var(--amber);border-color:#5a4410}
+.diff span.hard{background:var(--red);border-color:#5a1a15}
+.pm{font-family:var(--f-term);font-size:18px}
+.pm code{background:var(--bg2);color:var(--green);padding:2px 8px;border:1px solid var(--border)}
+.proscons{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);font-family:var(--f-term);font-size:16px}
+.proscons ul{list-style:none;display:flex;flex-direction:column;gap:4px}
+.proscons .pro li{color:var(--green)}
+.proscons .con li{color:var(--red)}
+.proscons b{font-family:var(--f-pixel);font-size:9px;display:block;margin-bottom:5px;color:var(--muted)}
+.install{margin-top:auto;padding-top:var(--sp-3);border-top:1px dashed var(--border);font-family:var(--f-term);font-size:17px;color:var(--muted)}
+.install code{color:var(--amber)}
+
+/* meme strip */
+.memes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:var(--sp-4)}
+.meme{border:2px solid var(--border-2);box-shadow:4px 4px 0 rgba(0,0,0,.45);background:#000;overflow:hidden;position:relative;transition:transform .16s var(--ease)}
+.meme:hover{transform:rotate(-1deg) scale(1.02)}
+.meme img{width:100%;height:210px;object-fit:cover}
+.meme .cap{position:absolute;left:0;right:0;bottom:0;font-family:var(--f-term);font-size:16px;color:var(--cream);background:rgba(13,13,16,.8);padding:6px 10px}
+
+/* legend */
+.legend{display:flex;gap:var(--sp-5);flex-wrap:wrap;font-family:var(--f-term);font-size:17px;color:var(--muted);margin-bottom:var(--sp-5)}
+.legend b{color:var(--amber)}
+
+.backbar{display:flex;gap:var(--sp-3);flex-wrap:wrap;margin-top:var(--sp-6)}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#grid">К списку дистрибутивов</a>
+
+<nav class="nav">
+  <div class="nav-in">
+    <a class="brand" href="index.html"><span class="c">tux@dojo</span>:~$ cd ..</a>
+    <ul class="nav-links">
+      <li><a href="index.html">терминал</a></li>
+      <li><a href="index.html#missions">уроки</a></li>
+      <li><a href="distros.html" aria-current="page">дистрибутивы</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main>
+<section id="dhero">
+  <div class="wrap">
+    <div class="banner reveal">
+      <img src="assets/img/retro-stripes.jpg" alt="Ретро-постер Linux: пингвин и цветные полосы">
+      <div class="ov">
+        <h1>ВЫБЕРИ СВОЙ<br>ДИСТРИБУТИВ</h1>
+        <p>От самых <b>простых</b> до самых <b>хардкорных</b>. Сколько едят оперативы, насколько сложны и чем отличаются.</p>
+      </div>
+    </div>
+
+    <div class="legend reveal">
+      <span><b>◆ сложность</b> — жёлтые квадраты (1–5), красные = хардкор</span>
+      <span><b>▬ RAM</b> — сколько ест в простое</span>
+      <span><b>⌘ PM</b> — пакетный менеджер</span>
+    </div>
+
+    <div class="controls reveal" role="group" aria-label="Сортировка">
+      <span class="lbl">СОРТИРОВКА:</span>
+      <button class="sortbtn" data-sort="diff" aria-pressed="true">по сложности ▲</button>
+      <button class="sortbtn" data-sort="ram" aria-pressed="false">по аппетиту RAM ▲</button>
+      <button class="sortbtn" data-sort="name" aria-pressed="false">по алфавиту</button>
+    </div>
+  </div>
+</section>
+
+<section id="grid" style="padding-top:0">
+  <div class="wrap">
+    <div class="dgrid" id="dgrid"></div>
+  </div>
+</section>
+
+<section id="memes-sec">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="sec-tag">$ cat /var/memes/*</p>
+      <h2 class="sec-title">Мемы дистрокульта</h2>
+    </div>
+    <div class="memes reveal">
+      <figure class="meme"><img src="assets/img/arch-creation.jpg" alt="Пародия на Микеланджело: пингвин даёт жизнь пользователю Arch Linux"><figcaption class="cap">«Сотворение Arch-юзера»</figcaption></figure>
+      <figure class="meme"><img src="assets/img/tux-jedi.jpg" alt="Пингвин Tux в мантии джедая со световым мечом"><figcaption class="cap">May the source be with you</figcaption></figure>
+      <figure class="meme"><img src="assets/img/mint-pepe.jpg" alt="Мемный пингвин с диском Linux Mint"><figcaption class="cap">Первый диск: Linux Mint</figcaption></figure>
+      <figure class="meme"><img src="assets/img/tux-3d.jpg" alt="Классический 3D пингвин Tux — талисман Linux"><figcaption class="cap">Его величество Tux</figcaption></figure>
+    </div>
+    <div class="backbar reveal">
+      <a class="btn btn-primary" href="index.html#terminal">← вернуться в терминал</a>
+      <a class="btn" href="index.html">на главную</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- MUSIC PLAYER -->
+<aside class="player paused" id="player" aria-label="Музыкальный плеер">
+  <div class="player-bar">
+    <span class="eq" aria-hidden="true"><i style="height:6px"></i><i style="height:14px"></i><i style="height:9px"></i><i style="height:16px"></i></span>
+    <span>CHIPTUNE.MOD</span>
+    <span class="chev">▼</span>
+  </div>
+  <div class="player-body">
+    <div class="player-track"></div>
+    <input class="player-seek" type="range" min="0" max="100" value="0" aria-label="Перемотка">
+    <div class="player-time"><span class="cur">0:00</span><span class="dur">0:00</span></div>
+    <div class="player-ctrl">
+      <button class="prev" aria-label="Предыдущий">◄◄</button>
+      <button class="play" aria-label="Играть/пауза">►</button>
+      <button class="next" aria-label="Следующий">►►</button>
+    </div>
+  </div>
+</aside>
+
+<footer class="foot">
+  <div class="wrap">
+    <p class="made">
+      &lt;/&gt; site was created by
+      <a class="tg" href="https://t.me/your_username" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.8 16.6l-.4 4c.5 0 .8-.2 1.1-.5l2.6-2.5 5.4 3.9c1 .6 1.7.3 1.9-.9l3.5-16.3c.3-1.4-.5-2-1.5-1.6L1.2 9.3C-.1 9.8-.1 10.6 1 10.9l5.2 1.6L18.3 5c.6-.4 1.1-.2.7.2z"/></svg>
+        @your_username
+      </a>
+    </p>
+    <p class="fine">LINUX DOJO — учебный проект. Логотипы дистрибутивов принадлежат их проектам. Мемы — народное творчество.</p>
+  </div>
+</footer>
+
+<script src="assets/js/common.js"></script>
+<script>
+(function(){
+"use strict";
+DOJO.initReveal();
+DOJO.initPlayer([
+  {title:"vandalism — 8bit",     src:"assets/audio/vandalism-8bit.mp3"},
+  {title:"legacy — slowed 8bit", src:"assets/audio/legacy-slowed-8bit.mp3"},
+  {title:"chiptune — bonus",     src:"assets/audio/chiptune-3.mp3"}
+]);
+
+var MAXRAM=1300;
+// diff 1..5 ; ram = idle MB ; img optional (else monogram)
+var D=[
+  {name:"Linux Mint", mono:"Mint", color:"#86c440", base:"Ubuntu / Debian", pm:"apt", diff:1, ram:700,
+   tag:"Самый дружелюбный вход в Linux. Как Windows, только лучше и бесплатно.",
+   pros:["привычный рабочий стол","всё работает «из коробки»","огромное сообщество"],
+   cons:["не самый свежий софт"], install:"sudo apt install <пакет>", img:"assets/img/mint-pepe.jpg"},
+
+  {name:"Ubuntu", mono:"Ub", color:"#e95420", base:"Debian", pm:"apt", diff:1, ram:1000,
+   tag:"Самый популярный дистрибутив. С него начинают миллионы.",
+   pros:["гигантская экосистема","любой гайд подходит","LTS на 5 лет"],
+   cons:["Snap-пакеты спорны","GNOME любит RAM"], install:"sudo apt install <пакет>"},
+
+  {name:"Zorin OS", mono:"Zo", color:"#0cc1f3", base:"Ubuntu", pm:"apt", diff:1, ram:800,
+   tag:"Заточен под переезд с Windows/macOS. Красиво и понятно.",
+   pros:["интерфейс как в Windows","красивый из коробки"],
+   cons:["часть тем — платно (Pro)"], install:"sudo apt install <пакет>"},
+
+  {name:"elementary OS", mono:"el", color:"#64baff", base:"Ubuntu", pm:"apt", diff:2, ram:800,
+   tag:"Эстетика в стиле macOS. Для тех, кто ценит порядок.",
+   pros:["очень красивый (Pantheon)","минимализм и цельность"],
+   cons:["мало предустановленного софта"], install:"sudo apt install <пакет>"},
+
+  {name:"Pop!_OS", mono:"Pop", color:"#48b9c7", base:"Ubuntu", pm:"apt", diff:2, ram:1100,
+   tag:"Выбор разработчиков и геймеров. Тайлинг и драйверы NVIDIA из коробки.",
+   pros:["отличная поддержка GPU","удобное тайловое окно","для работы и игр"],
+   cons:["аппетит к RAM выше среднего"], install:"sudo apt install <пакет>"},
+
+  {name:"Fedora", mono:"Fe", color:"#3c6eb4", base:"независимый (Red Hat)", pm:"dnf", diff:3, ram:1200,
+   tag:"Всегда свежие технологии. Витрина того, куда идёт Linux.",
+   pros:["самый современный софт","чистый GNOME","основа для RHEL"],
+   cons:["быстрый цикл обновлений","несвободное — вручную"], install:"sudo dnf install <пакет>"},
+
+  {name:"openSUSE", mono:"oS", color:"#73ba25", base:"независимый", pm:"zypper", diff:3, ram:900,
+   tag:"Немецкая инженерия. YaST — центр управления всем.",
+   pros:["мощный конфигуратор YaST","snapshots (откат) через Btrfs"],
+   cons:["меньше гайдов на русском"], install:"sudo zypper install <пакет>"},
+
+  {name:"Manjaro", mono:"Ma", color:"#35bf5c", base:"Arch", pm:"pacman", diff:3, ram:900,
+   tag:"Мощь Arch без боли установки. Rolling-release для смелых.",
+   pros:["свежий софт (rolling)","доступ к AUR","проще, чем Arch"],
+   cons:["иногда ломается после обновлений"], install:"sudo pacman -S <пакет>"},
+
+  {name:"Debian", mono:"De", color:"#a80030", base:"независимый", pm:"apt", diff:4, ram:400,
+   tag:"Скала стабильности. На нём стоят половина серверов интернета.",
+   pros:["невероятно стабилен","лёгкий","основа для Ubuntu/Mint"],
+   cons:["старый софт в stable","мастер сам донастраивает"], install:"sudo apt install <пакет>", img:"assets/img/debian-swirl.jpg"},
+
+  {name:"Arch Linux", mono:"Ar", color:"#1793d1", base:"независимый", pm:"pacman", diff:5, ram:350,
+   tag:"Собери систему сам, с нуля. «I use Arch btw». Wiki — легенда.",
+   pros:["полный контроль","самый свежий софт","лучшая вики в мире"],
+   cons:["ставится вручную","легко сломать новичку"], install:"sudo pacman -S <пакет>", img:"assets/img/arch-wall.jpg"},
+
+  {name:"Gentoo", mono:"Ge", color:"#a4b3cf", base:"независимый", pm:"portage", diff:5, ram:300,
+   tag:"Компилируешь ВЕСЬ софт под своё железо. Хардкор ради скорости.",
+   pros:["максимальная оптимизация","тотальная кастомизация"],
+   cons:["компиляция часами","только для энтузиастов"], install:"sudo emerge <пакет>"},
+
+  {name:"Kali Linux", mono:"Ka", color:"#367bf0", base:"Debian", pm:"apt", diff:4, ram:1000,
+   tag:"Арсенал пентестера: 600+ инструментов безопасности из коробки.",
+   pros:["всё для этичного хакинга","готов к аудиту сетей"],
+   cons:["не для повседневки","требует знаний"], install:"sudo apt install <пакет>"}
+];
+
+var grid=document.getElementById("dgrid");
+var sortKey="diff";
+function diffBlocks(n){
+  var h="";
+  for(var i=1;i<=5;i++){
+    var cls=i<=n?(n>=5?"on hard":"on"):"";
+    h+='<span class="'+cls+'"></span>';
+  }
+  return h;
+}
+function ramColor(mb){ return mb<=600?"var(--green)":mb<=1000?"var(--amber)":"var(--red)"; }
+function render(){
+  var arr=D.slice();
+  if(sortKey==="diff") arr.sort(function(a,b){return a.diff-b.diff||a.ram-b.ram;});
+  else if(sortKey==="ram") arr.sort(function(a,b){return a.ram-b.ram;});
+  else arr.sort(function(a,b){return a.name.localeCompare(b.name);});
+  grid.innerHTML="";
+  arr.forEach(function(d,idx){
+    var el=document.createElement("article");
+    el.className="distro reveal d"+((idx%6)+1);
+    var badge = d.img
+      ? '<div class="badge" style="padding:0"><img src="'+d.img+'" alt="'+d.name+'"></div>'
+      : '<div class="badge" style="background:'+d.color+'">'+d.mono+'</div>';
+    var diffLabel=["","очень просто","просто","средне","сложно","хардкор"][d.diff];
+    el.innerHTML=
+      '<div class="distro-top">'+badge+
+        '<div class="distro-id"><h3>'+d.name+'</h3><span class="base">на базе: '+d.base+'</span></div>'+
+        '<span class="rank">#'+(idx+1)+'</span>'+
+      '</div>'+
+      '<div class="distro-body">'+
+        '<p class="tagline">'+d.tag+'</p>'+
+        '<div class="meters">'+
+          '<div class="meter"><div class="row"><span>Сложность</span><b>'+diffLabel+'</b></div><div class="diff">'+diffBlocks(d.diff)+'</div></div>'+
+          '<div class="meter"><div class="row"><span>Аппетит RAM (простой)</span><b>~'+d.ram+' MB</b></div><div class="rambar"><i style="width:'+Math.round(d.ram/MAXRAM*100)+'%;background:'+ramColor(d.ram)+'"></i></div></div>'+
+          '<div class="meter pm"><span>Пакеты: </span><code>'+d.pm+'</code></div>'+
+        '</div>'+
+        '<div class="proscons">'+
+          '<div class="pro"><b>+ ПЛЮСЫ</b><ul>'+d.pros.map(function(p){return "<li>+ "+p+"</li>";}).join("")+'</ul></div>'+
+          '<div class="con"><b>− МИНУСЫ</b><ul>'+d.cons.map(function(c){return "<li>− "+c+"</li>";}).join("")+'</ul></div>'+
+        '</div>'+
+        '<div class="install">установка софта: <code>'+d.install+'</code></div>'+
+      '</div>';
+    grid.appendChild(el);
+  });
+  // re-run reveal + animate ram bars
+  requestAnimationFrame(function(){
+    grid.querySelectorAll(".distro").forEach(function(el){ el.classList.add("on"); });
+  });
+}
+document.querySelectorAll(".sortbtn").forEach(function(b){
+  b.addEventListener("click",function(){
+    document.querySelectorAll(".sortbtn").forEach(function(x){x.setAttribute("aria-pressed","false");});
+    b.setAttribute("aria-pressed","true");
+    sortKey=b.dataset.sort;
+    render();
+  });
+});
+render();
+})();
+</script>
+</body>
+</html>
