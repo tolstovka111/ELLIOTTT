@@ -1,5 +1,5 @@
 /* ============================================================
-   LINUX DOJO — shared base stylesheet
+   LINUX UGUIDE — shared base stylesheet
    Retro-pixel terminal aesthetic. Palette lifted from the
    striped-penguin wallpaper: cream ink on charcoal, with
    green / teal / amber / red accents.
@@ -33,6 +33,9 @@
   --f-display:"Bit8","ProgressPixel",monospace;
   --f-pixel:"ProgressPixel","Bit8",monospace;
   --f-term:"MC","ProgressPixel",monospace;
+  /* real Linux-terminal-style stack, used only for the live console + inline
+     command code — deliberately NOT one of the three supplied pixel fonts */
+  --f-console:ui-monospace,"Cascadia Mono","Fira Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono","Ubuntu Mono","Courier New",monospace;
 
   --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:24px;--sp-6:32px;--sp-7:48px;--sp-8:64px;
   --radius:6px;
@@ -72,6 +75,7 @@ a:hover{text-decoration:underline}
 :focus-visible{outline:3px solid var(--green);outline-offset:3px}
 ::selection{background:var(--green);color:#04140a}
 h1,h2,h3,h4{font-family:var(--f-pixel);line-height:1.1;font-weight:700}
+code,kbd{font-family:var(--f-console)}
 
 .skip-link{position:absolute;left:-9999px;top:0;z-index:200;background:var(--green);color:#04140a;padding:10px 16px;font-family:var(--f-pixel);font-size:12px}
 .skip-link:focus{left:8px;top:8px}
@@ -179,6 +183,48 @@ section{padding:var(--sp-8) 0}
 .foot .tg:active{transform:translate(2px,2px);box-shadow:1px 1px 0 rgba(0,0,0,.5)}
 .foot .tg svg{width:18px;height:18px;fill:#04140a}
 .foot .fine{font-family:var(--f-term);font-size:17px;color:#6f6a5e;margin-top:var(--sp-4)}
+
+/* ---------- mute toggle ---------- */
+.mute-btn{
+  display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+  font-family:var(--f-pixel);font-size:10px;color:var(--muted);
+  background:var(--panel);border:2px solid var(--border-2);padding:8px 10px;
+  box-shadow:3px 3px 0 rgba(0,0,0,.4);transition:all .15s;
+}
+.mute-btn:hover{color:var(--text);border-color:var(--green)}
+.mute-btn[aria-pressed="true"]{color:var(--red);border-color:var(--red)}
+.mute-btn svg{width:14px;height:14px;fill:currentColor;flex:none}
+
+/* ---------- nano / vim editor overlay ---------- */
+.editor-overlay{
+  position:fixed;inset:0;z-index:300;background:rgba(4,5,7,.85);
+  display:flex;align-items:center;justify-content:center;padding:var(--sp-5);
+}
+.editor-win{
+  width:min(760px,100%);background:var(--ink);border:2px solid var(--border-2);
+  box-shadow:8px 8px 0 rgba(0,0,0,.55);display:flex;flex-direction:column;
+}
+.editor-title{
+  background:var(--panel);border-bottom:2px solid var(--border);color:var(--cream);
+  font-family:var(--f-pixel);font-size:11px;padding:10px 14px;
+}
+.editor-area{
+  width:100%;height:min(50vh,420px);resize:vertical;background:var(--ink);color:var(--cream);
+  border:none;padding:14px;font-family:var(--f-console);font-size:16px;line-height:1.5;caret-color:var(--green);
+}
+.editor-area:focus{outline:none}
+.editor-hint{
+  border-top:2px solid var(--border);background:var(--panel);padding:10px 14px;
+  font-family:var(--f-console);font-size:14px;color:var(--muted);display:flex;gap:18px;flex-wrap:wrap;
+}
+.editor-hint span{color:#04140a;background:var(--amber);padding:1px 6px;margin-right:6px;font-weight:700}
+.editor-vimbar{border-top:2px solid var(--border);background:var(--panel);display:flex;align-items:center;gap:10px;padding:8px 12px}
+.editor-vimbar .mode{font-family:var(--f-console);font-size:14px;color:var(--green);white-space:nowrap}
+.editor-cmdline{
+  flex:1;background:var(--ink);border:1px solid var(--border-2);color:var(--cream);
+  font-family:var(--f-console);font-size:15px;padding:6px 8px;min-width:0;
+}
+.editor-cmdline:focus{outline:none;border-color:var(--green)}
 
 /* ---------- reveal on scroll ---------- */
 .reveal{opacity:0;transform:translateY(22px)}

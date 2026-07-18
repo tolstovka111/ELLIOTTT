@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LINUX DOJO // энциклопедия дистрибутивов</title>
+<title>LINUX UGUIDE // энциклопедия дистрибутивов</title>
 <meta name="description" content="Все дистрибутивы Linux от простых к сложным: сколько едят оперативы, насколько трудны, чем отличаются, какой пакетный менеджер. С мемами.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2316161b'/%3E%3Ctext x='4' y='23' font-family='monospace' font-size='20' fill='%235bc873'%3E%3E_%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/css/base.css">
@@ -91,11 +91,12 @@
 
 <nav class="nav">
   <div class="nav-in">
-    <a class="brand" href="index.html"><span class="c">tux@dojo</span>:~$ cd ..</a>
+    <a class="brand" href="index.html"><span class="c">tux@uguide</span>:~$ cd ..</a>
     <ul class="nav-links">
       <li><a href="index.html">терминал</a></li>
       <li><a href="index.html#missions">уроки</a></li>
       <li><a href="distros.html" aria-current="page">дистрибутивы</a></li>
+      <li><a href="faq.html">FAQ</a></li>
     </ul>
   </div>
 </nav>
@@ -175,16 +176,17 @@
   <div class="wrap">
     <p class="made">
       &lt;/&gt; site was created by
-      <a class="tg" href="https://t.me/your_username" target="_blank" rel="noopener noreferrer">
+      <a class="tg" href="https://t.me/nysh4real" target="_blank" rel="noopener noreferrer">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.8 16.6l-.4 4c.5 0 .8-.2 1.1-.5l2.6-2.5 5.4 3.9c1 .6 1.7.3 1.9-.9l3.5-16.3c.3-1.4-.5-2-1.5-1.6L1.2 9.3C-.1 9.8-.1 10.6 1 10.9l5.2 1.6L18.3 5c.6-.4 1.1-.2.7.2z"/></svg>
-        @your_username
+        @nysh4real
       </a>
     </p>
-    <p class="fine">LINUX DOJO — учебный проект. Логотипы дистрибутивов принадлежат их проектам. Мемы — народное творчество.</p>
+    <p class="fine">LINUX UGUIDE — учебный проект. Логотипы дистрибутивов принадлежат их проектам. Мемы — народное творчество.</p>
   </div>
 </footer>
 
 <script src="assets/js/common.js"></script>
+<script src="assets/js/sfx.js"></script>
 <script>
 (function(){
 "use strict";
@@ -201,17 +203,17 @@ var D=[
   {name:"Linux Mint", mono:"Mint", color:"#86c440", base:"Ubuntu / Debian", pm:"apt", diff:1, ram:700,
    tag:"Самый дружелюбный вход в Linux. Как Windows, только лучше и бесплатно.",
    pros:["привычный рабочий стол","всё работает «из коробки»","огромное сообщество"],
-   cons:["не самый свежий софт"], install:"sudo apt install <пакет>", img:"assets/img/mint-pepe.jpg"},
+   cons:["не самый свежий софт"], install:"sudo apt install <пакет>", img:"assets/img/distros/linuxmint.png"},
 
   {name:"Ubuntu", mono:"Ub", color:"#e95420", base:"Debian", pm:"apt", diff:1, ram:1000,
    tag:"Самый популярный дистрибутив. С него начинают миллионы.",
    pros:["гигантская экосистема","любой гайд подходит","LTS на 5 лет"],
-   cons:["Snap-пакеты спорны","GNOME любит RAM"], install:"sudo apt install <пакет>"},
+   cons:["Snap-пакеты спорны","GNOME любит RAM"], install:"sudo apt install <пакет>", img:"assets/img/distros/ubuntu.png"},
 
   {name:"Zorin OS", mono:"Zo", color:"#0cc1f3", base:"Ubuntu", pm:"apt", diff:1, ram:800,
    tag:"Заточен под переезд с Windows/macOS. Красиво и понятно.",
    pros:["интерфейс как в Windows","красивый из коробки"],
-   cons:["часть тем — платно (Pro)"], install:"sudo apt install <пакет>"},
+   cons:["часть тем — платно (Pro)"], install:"sudo apt install <пакет>", img:"assets/img/distros/zorin.png", iconOnly:true},
 
   {name:"elementary OS", mono:"el", color:"#64baff", base:"Ubuntu", pm:"apt", diff:2, ram:800,
    tag:"Эстетика в стиле macOS. Для тех, кто ценит порядок.",
@@ -221,7 +223,7 @@ var D=[
   {name:"Pop!_OS", mono:"Pop", color:"#48b9c7", base:"Ubuntu", pm:"apt", diff:2, ram:1100,
    tag:"Выбор разработчиков и геймеров. Тайлинг и драйверы NVIDIA из коробки.",
    pros:["отличная поддержка GPU","удобное тайловое окно","для работы и игр"],
-   cons:["аппетит к RAM выше среднего"], install:"sudo apt install <пакет>"},
+   cons:["аппетит к RAM выше среднего"], install:"sudo apt install <пакет>", img:"assets/img/distros/popos.jpg"},
 
   {name:"Fedora", mono:"Fe", color:"#3c6eb4", base:"независимый (Red Hat)", pm:"dnf", diff:3, ram:1200,
    tag:"Всегда свежие технологии. Витрина того, куда идёт Linux.",
@@ -246,7 +248,7 @@ var D=[
   {name:"Arch Linux", mono:"Ar", color:"#1793d1", base:"независимый", pm:"pacman", diff:5, ram:350,
    tag:"Собери систему сам, с нуля. «I use Arch btw». Wiki — легенда.",
    pros:["полный контроль","самый свежий софт","лучшая вики в мире"],
-   cons:["ставится вручную","легко сломать новичку"], install:"sudo pacman -S <пакет>", img:"assets/img/arch-wall.jpg"},
+   cons:["ставится вручную","легко сломать новичку"], install:"sudo pacman -S <пакет>", img:"assets/img/distros/archlinux.png", iconOnly:true},
 
   {name:"Gentoo", mono:"Ge", color:"#a4b3cf", base:"независимый", pm:"portage", diff:5, ram:300,
    tag:"Компилируешь ВЕСЬ софт под своё железо. Хардкор ради скорости.",
@@ -280,7 +282,9 @@ function render(){
     var el=document.createElement("article");
     el.className="distro reveal d"+((idx%6)+1);
     var badge = d.img
-      ? '<div class="badge" style="padding:0"><img src="'+d.img+'" alt="'+d.name+'"></div>'
+      ? (d.iconOnly
+          ? '<div class="badge" style="background:'+d.color+';padding:9px"><img src="'+d.img+'" alt="'+d.name+'" style="object-fit:contain"></div>'
+          : '<div class="badge" style="padding:0"><img src="'+d.img+'" alt="'+d.name+'"></div>')
       : '<div class="badge" style="background:'+d.color+'">'+d.mono+'</div>';
     var diffLabel=["","очень просто","просто","средне","сложно","хардкор"][d.diff];
     el.innerHTML=
@@ -310,6 +314,7 @@ function render(){
 }
 document.querySelectorAll(".sortbtn").forEach(function(b){
   b.addEventListener("click",function(){
+    DOJO.sfx && DOJO.sfx.click();
     document.querySelectorAll(".sortbtn").forEach(function(x){x.setAttribute("aria-pressed","false");});
     b.setAttribute("aria-pressed","true");
     sortKey=b.dataset.sort;
