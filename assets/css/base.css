@@ -31,9 +31,8 @@
   --purple:#9b7ad6;
 
   --f-display:"Bit8","ProgressPixel",monospace;
-  --f-pixel:"ProgressPixel","MC",monospace;
-  --f-mc:"MC","ProgressPixel",monospace;
-  --f-term:"VT323","MC",ui-monospace,"Courier New",monospace;
+  --f-pixel:"ProgressPixel","Bit8",monospace;
+  --f-term:"MC","ProgressPixel",monospace;
 
   --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:24px;--sp-6:32px;--sp-7:48px;--sp-8:64px;
   --radius:6px;
