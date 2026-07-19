@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LINUX UGUIDE // linux universal guide — учись Linux в терминале</title>
-<meta name="description" content="Интерактивный тренажёр Linux: настоящий терминал в браузере со 130+ командами, редактором nano/vim, пошаговые уроки, шпаргалка, чиптюн-музыка, FAQ и энциклопедия дистрибутивов.">
+<meta name="description" content="Интерактивный тренажёр Linux: настоящий терминал в браузере со 190+ командами, редактором nano/vim, пошаговые уроки, шпаргалка, чиптюн-музыка, FAQ и энциклопедия дистрибутивов.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2316161b'/%3E%3Ctext x='4' y='23' font-family='monospace' font-size='20' fill='%235bc873'%3E%3E_%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/css/base.css">
 <style>
@@ -131,7 +131,7 @@
     <p class="hero-kicker reveal d1">linux universal guide</p>
     <p class="hero-sub reveal d2">Освой <span class="g">Linux</span> по-настоящему — в живом терминале прямо в браузере. Печатай команды, ломай, чини, учись.</p>
     <div class="hero-stats reveal d3">
-      <div><b>130+</b><span>команд</span></div>
+      <div><b>190+</b><span>команд</span></div>
       <div><b>10</b><span>уроков</span></div>
       <div><b>∞</b><span>практики</span></div>
     </div>
@@ -196,11 +196,12 @@
     <div class="sec-head reveal">
       <p class="sec-tag">$ man everything</p>
       <h2 class="sec-title">Шпаргалка команд</h2>
-      <p class="sec-tag" style="color:var(--muted);font-size:18px;margin-top:8px">130+ команд по категориям. Кликни по карточке — выполнится в терминале.</p>
+      <p class="sec-tag" style="color:var(--muted);font-size:18px;margin-top:8px">190+ команд по категориям. Кликни по карточке — выполнится в терминале.</p>
     </div>
     <div class="cat-tabs reveal" role="tablist" aria-label="Категории команд">
       <button class="cat-tab" role="tab" aria-selected="true" data-cat="nav">навигация</button>
       <button class="cat-tab" role="tab" aria-selected="false" data-cat="files">файлы</button>
+      <button class="cat-tab" role="tab" aria-selected="false" data-cat="text">текст+</button>
       <button class="cat-tab" role="tab" aria-selected="false" data-cat="edit">редакторы</button>
       <button class="cat-tab" role="tab" aria-selected="false" data-cat="shell">оболочка</button>
       <button class="cat-tab" role="tab" aria-selected="false" data-cat="sys">система</button>
@@ -211,6 +212,8 @@
       <button class="cat-tab" role="tab" aria-selected="false" data-cat="hash">хеши</button>
       <button class="cat-tab" role="tab" aria-selected="false" data-cat="net">сеть</button>
       <button class="cat-tab" role="tab" aria-selected="false" data-cat="systemd">systemd</button>
+      <button class="cat-tab" role="tab" aria-selected="false" data-cat="git">git</button>
+      <button class="cat-tab" role="tab" aria-selected="false" data-cat="docker">docker</button>
       <button class="cat-tab" role="tab" aria-selected="false" data-cat="fun">веселье</button>
     </div>
     <div class="cheat-grid" id="cheat-grid"></div>
@@ -301,7 +304,7 @@ DOJO.terminal.matrix=function(){
   window.addEventListener("resize",size);
 };
 
-/* ---- cheat sheet (13 categories, representative sample of the 130+ commands) ---- */
+/* ---- cheat sheet (16 categories, representative sample of the 190+ commands) ---- */
 var CHEATS={
   nav:[
     ["pwd","где я сейчас нахожусь","pwd"],
@@ -322,6 +325,15 @@ var CHEATS={
     ["diff a b","сравнить два файла","diff welcome.txt notes.txt"],
     ["sort file","отсортировать строки","sort notes.txt"],
     ["wc notes.txt","счётчик строк/слов","wc notes.txt"]
+  ],
+  text:[
+    ["seq 5","последовательность чисел","seq 5"],
+    ["cal","календарь на текущий месяц","cal"],
+    ["bc 2+2*10","калькулятор в терминале","bc 2+2*10"],
+    ["basename путь","имя файла из пути","basename /home/tux/notes.txt"],
+    ["rev file","перевернуть строки","rev notes.txt"],
+    ["xxd file","hex-дамп файла","xxd welcome.txt"],
+    ["nproc","число ядер процессора","nproc"]
   ],
   edit:[
     ["nano file","простой текстовый редактор","nano scratch.txt"],
@@ -394,12 +406,33 @@ var CHEATS={
     ["journalctl","системный журнал","journalctl"],
     ["crontab -l","расписание задач","crontab -l"]
   ],
+  git:[
+    ["git init","создать репозиторий","git init"],
+    ["git add + commit","зафиксировать изменения","git add welcome.txt"],
+    ["git commit -m","коммит с сообщением","git commit -m \"first commit\""],
+    ["git log","история коммитов","git log"],
+    ["git branch dev","создать ветку","git branch dev"],
+    ["git checkout -b","создать и переключиться","git checkout -b feature"],
+    ["git status","что изменилось","git status"]
+  ],
+  docker:[
+    ["docker run","запустить контейнер","docker run nginx"],
+    ["docker ps","список контейнеров","docker ps"],
+    ["docker ps -a","все контейнеры","docker ps -a"],
+    ["docker images","список образов","docker images"],
+    ["docker stop id","остановить контейнер","docker stop container_0"],
+    ["docker logs id","логи контейнера","docker logs container_0"]
+  ],
   fun:[
     ["neofetch","ASCII-пингвин + инфо","neofetch"],
     ["cowsay текст","говорящая корова","cowsay Linux рулит"],
+    ["sl","паровозик — опечатался в ls","sl"],
+    ["fortune","случайная мудрость","fortune"],
+    ["figlet текст","крупный текст","figlet HI"],
     ["matrix","цифровой дождь","matrix"],
     ["play","включить чиптюн","play"],
     ["tip","случайный совет","tip"],
+    ["sudo make me a sandwich","мем xkcd про sudo","sudo make me a sandwich"],
     ["distros","→ энциклопедия дистрибутивов","distros"],
     ["faq","→ вопросы про Linux","faq"]
   ]

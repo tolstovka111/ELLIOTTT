@@ -627,6 +627,7 @@ CMD.visudo=function(){ return openEditor("/etc/sudoers","nano"); };
 CMD.sudo=function(a){
   if(!a.length) return err("usage: sudo <команда>");
   if(a[0]==="rm" && a.indexOf("-rf")>-1) return err("[sudo] пароль для "+USER+": ********\n"+USER+" не в списке sudoers для этой операции. Инцидент зарегистрирован (шутка!)");
+  if(a[0]==="make" && a.slice(1).join(" ")==="me a sandwich") return "[sudo] пароль для "+USER+": ********\nОкей.";
   return "[sudo] пароль для "+USER+": ********\n"+run(a.join(" "), true);
 };
 
@@ -921,22 +922,291 @@ CMD.faq=function(){ print("Открываю FAQ по Linux...","ok"); setTimeout
 CMD.mission=function(){ if(DOJO.missions) DOJO.missions.open(); return {out:"Открываю панель уроков слева. Выполняй шаги — они отмечаются автоматически.",cls:"ok"}; };
 CMD.exit=function(){ return {out:"Выйти из браузерного терминала нельзя ;) Но ты молодец. Набери `help` или `faq`.",cls:"ok"}; };
 
+/* ===== GIT (полноценная симуляция с подкомандами) ===== */
+var GIT={ init:false, branch:"main", branches:["main"], staged:[], commits:[], remotes:{} };
+function shortHash(){ return Math.random().toString(16).slice(2,9); }
+CMD.git=function(a){
+  var sub=a[0];
+  if(!sub) return "usage: git <command> [<args>]\n\nосновные команды: init status add commit log branch checkout diff push pull clone remote stash merge";
+  if(sub==="init"){ GIT.init=true; GIT.commits=[]; GIT.staged=[]; GIT.branch="main"; GIT.branches=["main"]; return "Initialized empty Git repository in "+pathStr(cwd)+"/.git/"; }
+  if(!GIT.init) return err("fatal: not a git repository (or any of the parent directories): .git\nПодсказка: сначала `git init`");
+  if(sub==="status"){
+    var st=GIT.staged.length
+      ? "Изменения, подготовленные к коммиту:\n"+GIT.staged.map(function(f){return "  new file:   "+f;}).join("\n")
+      : "рабочий каталог чист, коммитить нечего.";
+    return "На ветке "+GIT.branch+"\n\n"+st;
+  }
+  if(sub==="add"){
+    var files=a.slice(1);
+    if(!files.length) return err("Nothing specified, nothing added.");
+    if(files[0]==="."){ GIT.staged.push("."); return ""; }
+    files.forEach(function(f){ if(GIT.staged.indexOf(f)===-1) GIT.staged.push(f); });
+    return "";
+  }
+  if(sub==="commit"){
+    var mIdx=a.indexOf("-m");
+    var msg=mIdx>-1 ? a.slice(mIdx+1).join(" ").replace(/^["']|["']$/g,"") : null;
+    if(!msg) return err("Aborting commit due to empty commit message.\nПодсказка: git commit -m \"текст\"");
+    if(!GIT.staged.length) return err("nothing to commit, working tree clean\nПодсказка: сначала git add <файл>");
+    var hash=shortHash();
+    GIT.commits.unshift({hash:hash, msg:msg, files:GIT.staged.slice()});
+    var n=GIT.staged.length; GIT.staged=[];
+    return "["+GIT.branch+" "+hash+"] "+msg+"\n "+n+" file(s) changed";
+  }
+  if(sub==="log"){
+    if(!GIT.commits.length) return err("fatal: your current branch '"+GIT.branch+"' does not have any commits yet");
+    return GIT.commits.map(function(c){ return "commit "+c.hash+"\nAuthor: "+USER+" <"+USER+"@"+HOST+">\n\n    "+c.msg+"\n"; }).join("\n");
+  }
+  if(sub==="branch"){
+    if(a[1]){ if(GIT.branches.indexOf(a[1])===-1) GIT.branches.push(a[1]); return ""; }
+    return GIT.branches.map(function(b){ return (b===GIT.branch?"* ":"  ")+b; }).join("\n");
+  }
+  if(sub==="checkout"){
+    var bname=a[1];
+    if(a[1]==="-b"){ bname=a[2]; if(!bname) return err("git checkout: укажи имя новой ветки"); if(GIT.branches.indexOf(bname)===-1) GIT.branches.push(bname); GIT.branch=bname; return "Switched to a new branch '"+bname+"'"; }
+    if(!bname) return err("git checkout: укажи ветку");
+    if(GIT.branches.indexOf(bname)===-1) return err("error: pathspec '"+bname+"' did not match any file(s) known to git");
+    GIT.branch=bname; return "Switched to branch '"+bname+"'";
+  }
+  if(sub==="diff") return GIT.staged.length? "diff --git a/"+GIT.staged[0]+" b/"+GIT.staged[0]+"\n+ (учебная имитация построчных изменений)" : "";
+  if(sub==="remote"){
+    if(a[1]==="-v") return Object.keys(GIT.remotes).map(function(r){return r+"\t"+GIT.remotes[r]+" (fetch)\n"+r+"\t"+GIT.remotes[r]+" (push)";}).join("\n")||"";
+    if(a[1]==="add"){ GIT.remotes[a[2]]=a[3]||"origin-url"; return ""; }
+    return Object.keys(GIT.remotes).join("\n");
+  }
+  if(sub==="push"){ var rs=Object.keys(GIT.remotes); if(!rs.length) return err("fatal: No configured push destination.\nПодсказка: git remote add origin <url>"); return "To "+GIT.remotes[rs[0]]+"\n   "+shortHash().slice(0,7)+".."+shortHash().slice(0,7)+"  "+GIT.branch+" -> "+GIT.branch; }
+  if(sub==="pull") return "Already up to date.";
+  if(sub==="clone") return "Cloning into '"+(a[1]?a[1].split("/").pop().replace(/\.git$/,""):"repo")+"'...\nremote: Enumerating objects... done.\nReceiving objects: 100% (учебная имитация)";
+  if(sub==="stash") return a[1]==="pop" ? "Изменения из стэша восстановлены." : "Сохранено во временный стэш: WIP on "+GIT.branch;
+  if(sub==="merge"){ var b=a[1]; if(!b) return err("git merge: укажи ветку"); return "Merge made by the 'ort' strategy.\n(учебная имитация слияния "+b+" в "+GIT.branch+")"; }
+  return err("git: '"+sub+"' is not a git command. Смотри `git help`.");
+};
+
+/* ===== DOCKER (симуляция с подкомандами) ===== */
+var CONTAINERS=[];
+var IMAGES=["ubuntu:22.04","nginx:latest","node:20","python:3.12","alpine:latest"];
+function shortId(){ return Math.random().toString(16).slice(2,14); }
+CMD.docker=function(a){
+  var sub=a[0];
+  if(!sub) return "Usage: docker [OPTIONS] COMMAND\n\nосновные команды: run ps images pull build stop rm exec logs";
+  if(sub==="ps"){
+    var showAll=a.indexOf("-a")>-1;
+    var list=showAll?CONTAINERS:CONTAINERS.filter(function(c){return c.status==="Up";});
+    if(!list.length) return "CONTAINER ID   IMAGE             STATUS       NAMES";
+    var rows=list.map(function(c){ return c.id.slice(0,12)+"   "+c.image.padEnd(16)+c.status.padEnd(12)+c.name; });
+    return "CONTAINER ID   IMAGE             STATUS       NAMES\n"+rows.join("\n");
+  }
+  if(sub==="images") return "REPOSITORY   TAG      IMAGE ID\n"+IMAGES.map(function(i){ var p=i.split(":"); return p[0].padEnd(12)+(p[1]||"latest").padEnd(9)+shortId().slice(0,12); }).join("\n");
+  if(sub==="pull"){ var img=a[1]||"ubuntu:latest"; if(IMAGES.indexOf(img)===-1) IMAGES.push(img); return img+": Pulling from library\nDigest: sha256:"+shortId()+shortId()+"\nStatus: Downloaded newer image for "+img; }
+  if(sub==="run"){ var img2=a[a.length-1]||"ubuntu:latest"; var id=shortId(); var name="container_"+CONTAINERS.length; CONTAINERS.push({id:id, image:img2, status:"Up", name:name}); return id; }
+  if(sub==="stop"){ var t=a[1]; var c=CONTAINERS.filter(function(x){return x.id.indexOf(t)===0||x.name===t;})[0]; if(!c) return err("Error: No such container: "+t); c.status="Exited"; return t; }
+  if(sub==="rm"){ var t2=a[1]; var i2=-1; CONTAINERS.forEach(function(x,idx){ if(x.id.indexOf(t2)===0||x.name===t2) i2=idx; }); if(i2===-1) return err("Error: No such container: "+t2); CONTAINERS.splice(i2,1); return t2; }
+  if(sub==="exec") return "root@"+(a[a.length-1]||"container")+":/# (учебная имитация — интерактивная оболочка внутри контейнера)";
+  if(sub==="logs") return "[app] сервер запущен на порту 3000\n[app] всё работает штатно (учебная имитация)";
+  if(sub==="build") return "Sending build context...\nStep 1/5 : FROM ubuntu:22.04\nSuccessfully built "+shortId().slice(0,12);
+  return err("docker: '"+sub+"' is not a docker command.");
+};
+
+/* ===== ДОПОЛНИТЕЛЬНЫЕ ПАКЕТНЫЕ МЕНЕДЖЕРЫ ===== */
+CMD["apt-get"]=function(a){ return CMD.apt(a); };
+CMD["apt-cache"]=function(a){ return a[0]==="search" ? (a[1]||"pkg")+" - учебное описание пакета" : "использование: apt-cache search <пакет>"; };
+CMD.dpkg=function(a){
+  if(a[0]==="-l") return "ii  bash           5.2.15   основная оболочка\nii  coreutils      9.4      базовые утилиты\nii  curl           8.5.0    HTTP-клиент";
+  if(a[0]==="-i") return "Selecting previously unselected package "+(a[1]||"pkg")+".\n(учебная имитация установки .deb)";
+  return "использование: dpkg -l   |   dpkg -i <файл.deb>";
+};
+CMD.rpm=function(a){ return a[0]==="-qa" ? "bash-5.2.15\ncoreutils-9.4\ncurl-8.5.0" : "использование: rpm -qa   (список установленных пакетов)"; };
+
+/* ===== ЕЩЁ COREUTILS (настоящая логика) ===== */
+CMD.seq=function(a){
+  var nums=a.map(Number), start=1, step=1, end;
+  if(nums.length===1) end=nums[0];
+  else if(nums.length===2){ start=nums[0]; end=nums[1]; }
+  else if(nums.length===3){ start=nums[0]; step=nums[1]; end=nums[2]; }
+  else return err("seq: укажи число(а). Пример: seq 5   |   seq 2 10   |   seq 1 2 10");
+  if(isNaN(start)||isNaN(end)||isNaN(step)) return err("seq: некорректный аргумент");
+  var res=[];
+  if(step>0) for(var i=start;i<=end;i+=step) res.push(i);
+  else if(step<0) for(var j=start;j>=end;j+=step) res.push(j);
+  return res.join("\n");
+};
+CMD.yes=function(a){
+  var s=a.join(" ")||"y", lines=[];
+  for(var i=0;i<12;i++) lines.push(s);
+  return lines.join("\n")+"\n... (в настоящем терминале печатает бесконечно; здесь остановлено — Ctrl+C)";
+};
+CMD.cal=function(){
+  var d=new Date(), y=d.getFullYear(), m=d.getMonth();
+  var first=new Date(y,m,1), daysInMonth=new Date(y,m+1,0).getDate();
+  var startDow=(first.getDay()+6)%7;
+  var names=["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+  var title=names[m]+" "+y, pad=Math.max(0,Math.floor((20-title.length)/2));
+  var lines=[" ".repeat(pad)+title,"Пн Вт Ср Чт Пт Сб Вс"], row=" ".repeat(startDow*3);
+  for(var day=1; day<=daysInMonth; day++){
+    row+=String(day).padStart(2," ")+" ";
+    if((startDow+day)%7===0){ lines.push(row.replace(/\s+$/,"")); row=""; }
+  }
+  if(row.trim()) lines.push(row.replace(/\s+$/,""));
+  return lines.join("\n");
+};
+function safeCalc(expr){
+  if(!expr||!/^[\d\s+\-*/().]+$/.test(expr)) return null;
+  try{ return Function('"use strict";return ('+expr+')')(); }catch(e){ return null; }
+}
+CMD.bc=function(a,stdin){ var r=safeCalc(a.join(" ")||stdin||""); return r===null?err("bc: синтаксическая ошибка"):String(r); };
+CMD.expr=function(a){ var r=safeCalc(a.join(" ")); return r===null?err("expr: синтаксическая ошибка"):String(r); };
+CMD.printf=function(a){
+  var fmt=(a[0]||"").replace(/^["']|["']$/g,""); var args=a.slice(1), i=0;
+  return fmt.replace(/%[sd%]/g,function(m){ if(m==="%%") return "%"; return args[i++]!==undefined?args[i-1]:""; }).replace(/\\n/g,"\n").replace(/\\t/g,"\t");
+};
+CMD.basename=function(a){
+  var p=(a[0]||"").replace(/\/+$/,""); var b=p.split("/").pop();
+  if(a[1]) b=b.replace(new RegExp(a[1].replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"$"),"");
+  return b;
+};
+CMD.dirname=function(a){ var p=(a[0]||".").replace(/\/+$/,""); var parts=p.split("/"); parts.pop(); return parts.join("/")||(p.charAt(0)==="/"?"/":"."); };
+CMD.realpath=function(a){ return pathStr(resolve(a[0]||"")); };
+CMD.readlink=function(a){
+  var n=nodeAt(resolve(a[0])); if(!n) return err("readlink: "+a[0]+": Нет такого файла");
+  return (n.type==="file"&&/^symlink ->/.test(n.content)) ? n.content.replace("symlink -> ","") : pathStr(resolve(a[0]));
+};
+CMD.rev=function(a,stdin){ var text=stdin!=null?stdin:(function(){var n=nodeAt(resolve(a[0])); return n?n.content:"";})(); return text.replace(/\n$/,"").split("\n").map(function(l){return l.split("").reverse().join("");}).join("\n"); };
+CMD.tac=function(a,stdin){ var text=stdin!=null?stdin:(function(){var n=nodeAt(resolve(a[0])); return n?n.content:"";})(); return text.replace(/\n$/,"").split("\n").reverse().join("\n"); };
+CMD.nl=function(a,stdin){ var text=stdin!=null?stdin:(function(){var n=nodeAt(resolve(a[0])); return n?n.content:"";})(); return text.replace(/\n$/,"").split("\n").map(function(l,i){return String(i+1).padStart(6)+"\t"+l;}).join("\n"); };
+CMD.fold=function(a,stdin){
+  var w=8, m=a.join(" ").match(/-w\s*(\d+)/); if(m) w=+m[1];
+  var text=stdin!=null?stdin:(function(){var n=nodeAt(resolve(a[a.length-1])); return n?n.content:"";})();
+  var out2=[]; text.split("\n").forEach(function(line){ for(var i=0;i<line.length;i+=w) out2.push(line.slice(i,i+w)); });
+  return out2.join("\n");
+};
+CMD.tee=function(a,stdin){
+  var text=stdin||"";
+  a.filter(function(x){return x[0]!=="-";}).forEach(function(t){
+    var path=resolve(t), pn=parentOf(path), existing=nodeAt(path);
+    if(pn.parent){ if(existing&&existing.type==="file") existing.content=text; else pn.parent.children[pn.name]=file(text); }
+  });
+  return text;
+};
+CMD.mktemp=function(){ var name="tmp."+Math.random().toString(36).slice(2,10); var pn=parentOf(resolve("/tmp/"+name)); if(pn.parent) pn.parent.children[pn.name]=file(""); return "/tmp/"+name; };
+CMD.truncate=function(a){
+  var sizeArg=(a.join(" ").match(/-s\s*(\d+)/)||[])[1]; var t=a[a.length-1];
+  var n=nodeAt(resolve(t)); if(!n) return err("truncate: "+t+": Нет такого файла");
+  n.content=(n.content||"").slice(0, sizeArg?+sizeArg:0); return "";
+};
+function hexDump(text){
+  var bytes=[]; for(var i=0;i<text.length;i++) bytes.push(text.charCodeAt(i)&0xff);
+  var lines=[];
+  for(var o=0;o<bytes.length;o+=16){
+    var chunk=bytes.slice(o,o+16);
+    var hex=chunk.map(function(b){return b.toString(16).padStart(2,"0");}).join(" ");
+    var ascii=chunk.map(function(b){return (b>=32&&b<127)?String.fromCharCode(b):".";}).join("");
+    lines.push(o.toString(16).padStart(8,"0")+"  "+hex.padEnd(47)+"  "+ascii);
+  }
+  return lines.join("\n")||"(пусто)";
+}
+CMD.xxd=function(a){ var n=nodeAt(resolve(a[0])); if(!n) return err("xxd: "+a[0]+": Нет такого файла"); return hexDump(n.content); };
+CMD.hexdump=CMD.xxd;
+CMD.od=function(a){ var n=nodeAt(resolve(a[a.length-1])); if(!n) return err("od: нет такого файла"); return hexDump(n.content); };
+CMD.nproc=function(){ return "8"; };
+CMD.arch=function(){ return "x86_64"; };
+
+/* ===== СИСТЕМА+ ===== */
+CMD.hostnamectl=function(){ return "Static hostname: "+HOST+"\nIcon name: computer-laptop\nOperating System: UGuide Linux 1.0\nKernel: Linux 6.9.0-uguide\nArchitecture: x86-64"; };
+CMD.timedatectl=function(){ return "Local time: "+new Date().toString()+"\nUniversal time: "+new Date().toUTCString()+"\nTime zone: Europe/Moscow\nNTP service: active"; };
+CMD.localectl=function(){ return "System Locale: LANG="+ENV.LANG+"\nVC Keymap: us\nX11 Layout: us,ru"; };
+CMD.vmstat=function(){ return "procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----\n r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id\n 1  0      0 4093220 210120 1743352    0    0     2     8   45   90  3  1 96"; };
+CMD.iostat=function(){ return "Device            r/s     w/s     rkB/s     wkB/s\nsda              0.42    1.15     12.30     58.20"; };
+CMD.mpstat=function(){ return "CPU    %usr   %sys  %idle\nall    3.10   1.20  95.70"; };
+CMD.sensors=function(){ return "coretemp-isa-0000\nPackage id 0:  +42.0°C\nCore 0:        +40.0°C\nCore 1:        +41.0°C"; };
+
+/* ===== ПРОЦЕССЫ+ ===== */
+CMD.pgrep=function(a){ var q=a[a.length-1]; return PROC_LIST.filter(function(p){return p.cmd.indexOf(q)>-1;}).map(function(p){return p.pid;}).join("\n"); };
+CMD.pkill=function(a){ var q=a[a.length-1]; var before=PROC_LIST.length; PROC_LIST=PROC_LIST.filter(function(p){return p.cmd.indexOf(q)===-1;}); return before!==PROC_LIST.length?"":err("pkill: процесс не найден"); };
+CMD.pstree=function(){ return "systemd─┬─bash───node\n        ├─bash───firefox\n        └─sshd"; };
+CMD.fuser=function(a){ return (a[0]||"")+":  1024  2048"; };
+CMD.strace=function(a){ return "execve(\""+(a[0]||"/bin/ls")+"\", ...) = 0\nbrk(NULL) = 0x55f2\nopenat(AT_FDCWD, ...) = 3\n... (учебная имитация трассировки системных вызовов)"; };
+CMD.ltrace=CMD.strace;
+
+/* ===== СЕТЬ+ ===== */
+CMD.route=function(){ return "Destination   Gateway       Genmask         Iface\ndefault       192.168.1.1   0.0.0.0         eth0\n192.168.1.0   0.0.0.0       255.255.255.0   eth0"; };
+CMD.arp=function(){ return "Address          HWtype  HWaddress           Iface\n192.168.1.1      ether   aa:bb:cc:dd:ee:ff   eth0"; };
+CMD.host=function(a){ return (a[0]||"linux.org")+" has address 93.184.216.34"; };
+CMD.whois=function(a){ return "Domain Name: "+(a[0]||"linux.org").toUpperCase()+"\nRegistrar: (учебная заглушка)\nCreation Date: 1996-01-01"; };
+CMD.nc=function(a){ return "nc: подключение к "+(a[0]||"host")+":"+(a[1]||"80")+" ... (учебная имитация netcat)"; };
+CMD.netcat=CMD.nc;
+CMD.telnet=function(a){
+  if(a[0] && a[0].indexOf("towel")>-1) return "Trying...\nConnected.\n\nЛегендарная пасхалка: telnet towel.blue/starwarstel показывает Star Wars ASCII-мультфильм целиком!\n(в этом браузерном терминале — просто напоминание, что такое чудо существует)";
+  return "telnet: подключение к "+(a[0]||"host")+" ... Connection refused (учебная имитация — в браузере реальных сетевых подключений нет)";
+};
+
+/* ===== МЕМЫ И ПАСХАЛКИ ===== */
+CMD.sl=function(){
+  return {html:
+    "      ====        ________                ___________ <br>"+
+    "  _D _|  |_______/        \\__I_I_____===__|_________| <br>"+
+    "   |(_)---  |   H\\________/ |   |        =|___ ___|      _________________ <br>"+
+    "   /     |  |   H  |  |     |   |         ||_| |_||     _|                \\_____A <br>"+
+    "  |      |  |   H  |__--------------------| [___] |   =|                        | <br>"+
+    "  | ________|___H__/__|_____/[][]~\\_______|       |   -|                        | <br>"+
+    "  |/ |   |-----------I_____I [][] []  D   |=======|____|________________________|_ <br>"+
+    '<span class="err">упс, ты хотел `ls`? паровозик уехал.</span>'};
+};
+var FORTUNES=[
+  "«Talk is cheap. Show me the code.» — Линус Торвальдс",
+  "«Unix is simple. It just takes a genius to understand its simplicity.» — Деннис Ритчи",
+  "Всё в Linux — файл. Даже почти всё остальное тоже.",
+  "Настоящие профи не читают документацию. Но иногда стоит.",
+  "В начале был терминал, и терминал был чёрным, и был на нём зелёный текст.",
+  "Компилируется — значит почти наверняка работает.",
+  "«640K ought to be enough for anybody» — миф, приписываемый Биллу Гейтсу."
+];
+CMD.fortune=function(){ return FORTUNES[Math.floor(Math.random()*FORTUNES.length)]; };
+CMD.figlet=function(a){
+  var text=(a.join(" ")||"hi").toUpperCase().slice(0,14);
+  return {html:'<span style="font-size:1.5em;letter-spacing:.2em">'+esc(text)+'</span><br>(учебная имитация figlet — крупный текст вместо настоящего ASCII-шрифта)'};
+};
+CMD.toilet=CMD.figlet;
+CMD.banner=CMD.figlet;
+CMD.nyancat=function(){
+  return {html:
+    "+      o     +              o   <br>"+
+    "    +             o     +       <br>"+
+    "o          +  __     +          <br>"+
+    "     +      ⩊(=^-ω-^=)⊃━☆ﾟ.*  +  <br>"+
+    "  +    。       +       。   +   <br>"+
+    "     (учебная имитация nyancat)"};
+};
+CMD.parrot=function(){ return "(o&gt;  <span class=\"ok\">party parrot online</span> (учебная имитация ASCII-попугая)"; };
+CMD.leet=function(a){
+  var map={a:"4",e:"3",i:"1",o:"0",s:"5",t:"7",A:"4",E:"3",I:"1",O:"0",S:"5",T:"7"};
+  return a.join(" ").split("").map(function(c){ return map[c]!==undefined?map[c]:c; }).join("");
+};
+CMD.xkcd=function(){ return "«Стандарты»: 14 конкурирующих стандартов — «нужен один универсальный, покрывающий все случаи»... итог: 15 конкурирующих стандартов. (вольный пересказ xkcd #927)"; };
+CMD["42"]=function(){ return "Ответ на главный вопрос жизни, вселенной и всего такого."; };
+CMD.make=function(a){ return a.join(" ")==="me a sandwich" ? err("Что? Сделай сам.") : err("make: не найден Makefile"); };
+CMD[":(){"]=function(){
+  return {out:"Хорошая попытка :) Это классическая fork-бомба bash.\nВ этом браузерном терминале все процессы не настоящие, поэтому ничего не сломается.\nНо в реальном Linux это выражение бесконечно клонирует само себя и вешает систему — никогда не запускай его без причины!", cls:"ok"};
+};
+
 CMD.help=function(a){
   var cat=a[0];
   var CATS={
     nav:"НАВИГАЦИЯ: pwd ls cd tree find ll la",
     files:"ФАЙЛЫ: cat touch mkdir rmdir rm cp mv ln echo head tail wc stat file diff sort uniq cut tr xargs less more",
+    text:"ТЕКСТ+: seq yes cal bc expr printf basename dirname realpath readlink rev tac nl fold tee mktemp truncate xxd hexdump od nproc arch",
     edit:"РЕДАКТОРЫ: nano vim vi",
     shell:"ОБОЛОЧКА: history alias unalias export env printenv source type apropos which",
-    sys:"СИСТЕМА: whoami id uname hostname date uptime free df du lscpu lsblk lsusb lspci dmesg",
-    proc:"ПРОЦЕССЫ: ps top htop kill killall jobs bg fg nice time watch lsof",
+    sys:"СИСТЕМА: whoami id uname hostname date uptime free df du lscpu lsblk lsusb lspci dmesg hostnamectl timedatectl vmstat iostat mpstat sensors",
+    proc:"ПРОЦЕССЫ: ps top htop kill killall jobs bg fg nice time watch lsof pgrep pkill pstree fuser strace",
     perm:"ПРАВА И ПОЛЬЗОВАТЕЛИ: chmod chown umask sudo su useradd passwd groups w who last visudo",
-    pkg:"ПАКЕТЫ: apt pacman dnf zypper yay snap flatpak",
+    pkg:"ПАКЕТЫ: apt apt-get dpkg pacman dnf zypper yay snap flatpak rpm",
     arc:"АРХИВЫ: tar zip unzip gzip gunzip",
     hash:"ХЕШИ: sha256sum md5sum base64",
-    net:"СЕТЬ: ping curl wget ifconfig ip netstat nslookup dig traceroute ssh scp ssh-keygen",
+    net:"СЕТЬ: ping curl wget ifconfig ip netstat nslookup dig traceroute ssh scp ssh-keygen route arp host whois nc telnet",
     systemd:"SYSTEMD: systemctl journalctl crontab",
-    fun:"ВЕСЕЛЬЕ: neofetch cowsay matrix play tip",
+    git:"GIT: git init status add commit log branch checkout diff push pull clone remote stash merge",
+    docker:"DOCKER: docker ps images pull run stop rm exec logs build",
+    fun:"ВЕСЕЛЬЕ: neofetch cowsay matrix play tip sl fortune figlet nyancat leet xkcd 42",
     site:"САЙТ: mission distros faq exit clear"
   };
   if(cat && CATS[cat]) return CATS[cat];
@@ -971,6 +1241,12 @@ function normalize(r){
 }
 
 function run(raw, fromSudo){
+  if(raw.replace(/\s+/g,"")===":(){:|:&};:"){
+    var fb=normalize(CMD[":(){"]());
+    if(fromSudo) return fb.out||"";
+    print(fb.out, fb.cls);
+    return "";
+  }
   var redirect=null, redirFile=null;
   var rm=raw.match(/(.*?)\s(>>|>)\s*(\S+)\s*$/);
   var work=raw;
