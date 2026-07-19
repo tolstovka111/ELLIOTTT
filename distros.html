@@ -218,7 +218,7 @@ var D=[
   {name:"elementary OS", mono:"el", color:"#64baff", base:"Ubuntu", pm:"apt", diff:2, ram:800,
    tag:"Эстетика в стиле macOS. Для тех, кто ценит порядок.",
    pros:["очень красивый (Pantheon)","минимализм и цельность"],
-   cons:["мало предустановленного софта"], install:"sudo apt install <пакет>"},
+   cons:["мало предустановленного софта"], install:"sudo apt install <пакет>", img:"assets/img/distros/elementary.png", iconOnly:true, badgeBg:"#ffffff"},
 
   {name:"Pop!_OS", mono:"Pop", color:"#48b9c7", base:"Ubuntu", pm:"apt", diff:2, ram:1100,
    tag:"Выбор разработчиков и геймеров. Тайлинг и драйверы NVIDIA из коробки.",
@@ -233,7 +233,7 @@ var D=[
   {name:"openSUSE", mono:"oS", color:"#73ba25", base:"независимый", pm:"zypper", diff:3, ram:900,
    tag:"Немецкая инженерия. YaST — центр управления всем.",
    pros:["мощный конфигуратор YaST","snapshots (откат) через Btrfs"],
-   cons:["меньше гайдов на русском"], install:"sudo zypper install <пакет>"},
+   cons:["меньше гайдов на русском"], install:"sudo zypper install <пакет>", img:"assets/img/distros/opensuse.png"},
 
   {name:"Manjaro", mono:"Ma", color:"#35bf5c", base:"Arch", pm:"pacman", diff:3, ram:900,
    tag:"Мощь Arch без боли установки. Rolling-release для смелых.",
@@ -246,9 +246,9 @@ var D=[
    cons:["старый софт в stable","мастер сам донастраивает"], install:"sudo apt install <пакет>", img:"assets/img/debian-swirl.jpg"},
 
   {name:"Arch Linux", mono:"Ar", color:"#1793d1", base:"независимый", pm:"pacman", diff:5, ram:350,
-   tag:"Собери систему сам, с нуля. «I use Arch btw». Wiki — легенда.",
+   tag:"Собери систему сам, с нуля. «I use Arch btw».",
    pros:["полный контроль","самый свежий софт","лучшая вики в мире"],
-   cons:["ставится вручную","легко сломать новичку"], install:"sudo pacman -S <пакет>", img:"assets/img/distros/archlinux.png", iconOnly:true},
+   cons:["ставится вручную","легко сломать новичку"], install:"sudo pacman -S <пакет>", img:"assets/img/distros/archlinux.png"},
 
   {name:"Gentoo", mono:"Ge", color:"#a4b3cf", base:"независимый", pm:"portage", diff:5, ram:300,
    tag:"Компилируешь ВЕСЬ софт под своё железо. Хардкор ради скорости.",
@@ -258,7 +258,7 @@ var D=[
   {name:"Kali Linux", mono:"Ka", color:"#367bf0", base:"Debian", pm:"apt", diff:4, ram:1000,
    tag:"Арсенал пентестера: 600+ инструментов безопасности из коробки.",
    pros:["всё для этичного хакинга","готов к аудиту сетей"],
-   cons:["не для повседневки","требует знаний"], install:"sudo apt install <пакет>"}
+   cons:["не для повседневки","требует знаний"], install:"sudo apt install <пакет>", img:"assets/img/distros/kali.png", iconOnly:true, badgeBg:"#000000"}
 ];
 
 var grid=document.getElementById("dgrid");
@@ -281,9 +281,10 @@ function render(){
   arr.forEach(function(d,idx){
     var el=document.createElement("article");
     el.className="distro reveal d"+((idx%6)+1);
+    var bg = d.badgeBg || d.color;
     var badge = d.img
       ? (d.iconOnly
-          ? '<div class="badge" style="background:'+d.color+';padding:9px"><img src="'+d.img+'" alt="'+d.name+'" style="object-fit:contain"></div>'
+          ? '<div class="badge" style="background:'+bg+';padding:9px"><img src="'+d.img+'" alt="'+d.name+'" style="object-fit:contain"></div>'
           : '<div class="badge" style="padding:0"><img src="'+d.img+'" alt="'+d.name+'"></div>')
       : '<div class="badge" style="background:'+d.color+'">'+d.mono+'</div>';
     var diffLabel=["","очень просто","просто","средне","сложно","хардкор"][d.diff];
