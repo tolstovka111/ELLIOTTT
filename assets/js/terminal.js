@@ -416,8 +416,8 @@ function openEditor(filename, mode){
       '<div class="editor-title">'+(mode==="vim"?"vim":"GNU nano 7.2")+" — "+esc(filename)+'</div>'+
       '<textarea class="editor-area" spellcheck="false" autocomplete="off"></textarea>'+
       (mode==="vim"
-        ? '<div class="editor-vimbar"><span class="mode">-- INSERT --</span><input class="editor-cmdline" placeholder=":wq сохранить и выйти  •  :q! выйти без сохранения  •  :w сохранить"></div>'
-        : '<div class="editor-hint"><span>^O</span>Записать<span>^X</span>Выход<span>Esc</span>Отмена</div>')+
+        ? '<div class="editor-vimbar"><span class="mode">-- INSERT --</span><input class="editor-cmdline" placeholder="Enter или :wq — сохранить и выйти  •  :q! — без сохранения"></div>'
+        : '<div class="editor-hint"><span>Enter</span>Сохранить и выйти<span>Shift+Enter</span>Новая строка<span>Esc</span>Отмена</div>')+
     "</div>";
   document.body.appendChild(overlay);
   var ta=overlay.querySelector(".editor-area");
@@ -440,17 +440,22 @@ function openEditor(filename, mode){
   }
   if(mode==="nano"){
     ta.addEventListener("keydown",function(e){
-      if(e.ctrlKey && (e.key==="o"||e.key==="O")){ e.preventDefault(); save(); print("[ Записано "+ta.value.split("\n").length+" строк ]","ok"); }
+      if(e.key==="Enter" && !e.shiftKey && !e.ctrlKey){ e.preventDefault(); save(); close("«"+filename+"» сохранён."); }
+      else if(e.ctrlKey && (e.key==="o"||e.key==="O")){ e.preventDefault(); save(); print("[ Записано "+ta.value.split("\n").length+" строк ]","ok"); }
       else if(e.ctrlKey && (e.key==="x"||e.key==="X")){ e.preventDefault(); save(); close("«"+filename+"» сохранён."); }
       else if(e.key==="Escape"){ close(); }
     });
   }else{
     var cmdline=overlay.querySelector(".editor-cmdline");
-    ta.addEventListener("keydown",function(e){ if(e.key==="Escape") cmdline.focus(); });
+    ta.addEventListener("keydown",function(e){
+      if(e.key==="Enter" && !e.shiftKey && !e.ctrlKey){ e.preventDefault(); save(); close("«"+filename+"» записан, vim закрыт."); }
+      else if(e.key==="Escape"){ cmdline.focus(); }
+    });
     cmdline.addEventListener("keydown",function(e){
       if(e.key==="Enter"){
         var v=cmdline.value.trim().replace(/^:/,"");
-        if(v==="wq"||v==="x"){ save(); close("«"+filename+"» записан, vim закрыт."); }
+        if(v===""){ save(); close("«"+filename+"» записан, vim закрыт."); }
+        else if(v==="wq"||v==="x"){ save(); close("«"+filename+"» записан, vim закрыт."); }
         else if(v==="q"||v==="q!"){ close(); }
         else if(v==="w"){ save(); cmdline.value=""; print("«"+filename+"» записан.","ok"); }
         else{ print("E492: не редакторская команда: "+v,"err"); cmdline.value=""; }
@@ -567,18 +572,38 @@ CMD.top=function(){
 };
 CMD.htop=function(){ return "htop — как top, но красивее (цветные полоски, мышь).\n\n"+CMD.top(); };
 CMD.kill=function(a){
-  var pid=+a[a.length-1];
+  var pidStr=a[a.length-1], pid=+pidStr;
+  if(pid===1){
+    print("kill: (1) - Операция не разрешена... хотя нет, разрешена.","err");
+    setTimeout(function(){ DOJO.terminal.destroy(false); }, 300);
+    return null;
+  }
   var idx=PROC_LIST.findIndex(function(p){return p.pid===pid;});
-  if(idx===-1) return err("kill: ("+(a[a.length-1]||"")+"): Нет такого процесса");
-  var name=PROC_LIST[idx].cmd;
+  if(idx===-1) return err("kill: ("+(pidStr||"")+"): Нет такого процесса");
+  var proc=PROC_LIST[idx];
   PROC_LIST.splice(idx,1);
-  return "процесс "+pid+" ("+name+") завершён.";
+  if(proc.cmd==="systemd" || !PROC_LIST.length){
+    print("процесс "+pid+" ("+proc.cmd+") завершён.","ok");
+    setTimeout(function(){ DOJO.terminal.destroy(false); }, 300);
+    return null;
+  }
+  return "процесс "+pid+" ("+proc.cmd+") завершён.";
 };
 CMD.killall=function(a){
   var name=a[a.length-1];
+  if(name==="init"||name==="systemd"){
+    print("killall: "+name+": все процессы этого имени уничтожены.","err");
+    setTimeout(function(){ DOJO.terminal.destroy(false); }, 300);
+    return null;
+  }
   var before=PROC_LIST.length;
   PROC_LIST=PROC_LIST.filter(function(p){return p.cmd!==name;});
   var killed=before-PROC_LIST.length;
+  if(killed && !PROC_LIST.length){
+    print("завершено процессов: "+killed+" ("+name+")","ok");
+    setTimeout(function(){ DOJO.terminal.destroy(false); }, 300);
+    return null;
+  }
   return killed? "завершено процессов: "+killed+" ("+name+")" : "killall: "+name+": процесс не найден";
 };
 CMD.jobs=function(){ return "[1]+  Running    node server.js &"; };
