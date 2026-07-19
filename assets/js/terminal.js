@@ -934,7 +934,8 @@ CMD.cowsay=function(a){
 };
 CMD.clear=function(){ out.innerHTML=""; return null; };
 CMD.clr=CMD.clear;
-CMD.matrix=function(){ if(DOJO.terminal&&DOJO.terminal.matrix) DOJO.terminal.matrix(); return {out:"Входим в матрицу... (клик по экрану, чтобы выйти)",cls:"ok"}; };
+CMD.cmatrix=function(){ if(DOJO.terminal&&DOJO.terminal.matrix) DOJO.terminal.matrix(); return {out:"Входим в матрицу... (клик по экрану, чтобы выйти)",cls:"ok"}; };
+CMD.matrix=CMD.cmatrix;
 CMD.play=function(a){
   if(!DOJO.player) return err("плеер не готов");
   if(a[0]==="next"){ DOJO.player.next(); return "▶ следующий трек"; }
@@ -1175,16 +1176,6 @@ CMD.sl=function(){
     "  |/ |   |-----------I_____I [][] []  D   |=======|____|________________________|_ <br>"+
     '<span class="err">упс, ты хотел `ls`? паровозик уехал.</span>'};
 };
-var FORTUNES=[
-  "«Talk is cheap. Show me the code.» — Линус Торвальдс",
-  "«Unix is simple. It just takes a genius to understand its simplicity.» — Деннис Ритчи",
-  "Всё в Linux — файл. Даже почти всё остальное тоже.",
-  "Настоящие профи не читают документацию. Но иногда стоит.",
-  "В начале был терминал, и терминал был чёрным, и был на нём зелёный текст.",
-  "Компилируется — значит почти наверняка работает.",
-  "«640K ought to be enough for anybody» — миф, приписываемый Биллу Гейтсу."
-];
-CMD.fortune=function(){ return FORTUNES[Math.floor(Math.random()*FORTUNES.length)]; };
 CMD.figlet=function(a){
   var text=(a.join(" ")||"hi").toUpperCase().slice(0,14);
   return {html:'<span style="font-size:1.5em;letter-spacing:.2em">'+esc(text)+'</span><br>(учебная имитация figlet — крупный текст вместо настоящего ASCII-шрифта)'};
@@ -1230,7 +1221,7 @@ CMD.help=function(a){
     systemd:"SYSTEMD: systemctl journalctl crontab",
     git:"GIT: git init status add commit log branch checkout diff push pull clone remote stash merge",
     docker:"DOCKER: docker ps images pull run stop rm exec logs build",
-    fun:"ВЕСЕЛЬЕ: neofetch cowsay matrix play tip sl fortune figlet nyancat leet xkcd 42  ·  ☠ `sudo rm -rf /`",
+    fun:"ВЕСЕЛЬЕ: neofetch cowsay cmatrix play tip sl figlet nyancat leet xkcd 42  ·  ☠ `sudo rm -rf /`",
     site:"САЙТ: mission distros faq exit clear"
   };
   if(cat && CATS[cat]) return CATS[cat];
