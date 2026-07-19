@@ -47,6 +47,30 @@ function beep(opts){
   }catch(e){}
 }
 
+// short white-noise burst (for glitch / static / crash)
+function noise(dur, vol, lowpass){
+  if(muted) return;
+  var c = ensureCtx();
+  if(!c) return;
+  try{
+    var frames = Math.floor(c.sampleRate * dur);
+    var buf = c.createBuffer(1, frames, c.sampleRate);
+    var data = buf.getChannelData(0);
+    for(var i=0;i<frames;i++) data[i] = Math.random()*2 - 1;
+    var src = c.createBufferSource(); src.buffer = buf;
+    var g = c.createGain();
+    g.gain.setValueAtTime(vol || 0.08, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
+    var node = src;
+    if(lowpass){
+      var f = c.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = lowpass;
+      src.connect(f); node = f;
+    }
+    node.connect(g); g.connect(c.destination);
+    src.start(c.currentTime); src.stop(c.currentTime + dur + 0.02);
+  }catch(e){}
+}
+
 var lastTick = 0;
 DOJO.sfx = {
   init: function(){ ensureCtx(); },
@@ -86,6 +110,26 @@ DOJO.sfx = {
   },
   close: function(){
     beep({freq:700, dur:0.06, type:"triangle", vol:0.04, slideTo:250});
+  },
+  // ---- dramatic self-destruct sounds ----
+  glitch: function(){
+    noise(0.08 + Math.random()*0.06, 0.07);
+    beep({freq: 90 + Math.random()*120, dur:0.06, type:"sawtooth", vol:0.05, slideTo:40});
+  },
+  alarm: function(){
+    beep({freq:880, dur:0.28, type:"sawtooth", vol:0.05, slideTo:220});
+    setTimeout(function(){ beep({freq:660, dur:0.28, type:"sawtooth", vol:0.05, slideTo:180}); }, 150);
+  },
+  crash: function(){
+    noise(0.5, 0.11, 900);
+    beep({freq:70, dur:0.6, type:"square", vol:0.07, slideTo:28});
+  },
+  powerdown: function(){
+    beep({freq:760, dur:0.55, type:"triangle", vol:0.06, slideTo:34});
+    noise(0.2, 0.03, 500);
+  },
+  bootbeep: function(){
+    beep({freq:1046, dur:0.12, type:"square", vol:0.05});
   }
 };
 })();

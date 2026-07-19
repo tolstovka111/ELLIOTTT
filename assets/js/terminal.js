@@ -626,7 +626,6 @@ CMD.last=function(){ return USER+"   pts/0   :0    "+new Date().toDateString()+"
 CMD.visudo=function(){ return openEditor("/etc/sudoers","nano"); };
 CMD.sudo=function(a){
   if(!a.length) return err("usage: sudo <команда>");
-  if(a[0]==="rm" && a.indexOf("-rf")>-1) return err("[sudo] пароль для "+USER+": ********\n"+USER+" не в списке sudoers для этой операции. Инцидент зарегистрирован (шутка!)");
   if(a[0]==="make" && a.slice(1).join(" ")==="me a sandwich") return "[sudo] пароль для "+USER+": ********\nОкей.";
   return "[sudo] пароль для "+USER+": ********\n"+run(a.join(" "), true);
 };
@@ -1206,7 +1205,7 @@ CMD.help=function(a){
     systemd:"SYSTEMD: systemctl journalctl crontab",
     git:"GIT: git init status add commit log branch checkout diff push pull clone remote stash merge",
     docker:"DOCKER: docker ps images pull run stop rm exec logs build",
-    fun:"ВЕСЕЛЬЕ: neofetch cowsay matrix play tip sl fortune figlet nyancat leet xkcd 42",
+    fun:"ВЕСЕЛЬЕ: neofetch cowsay matrix play tip sl fortune figlet nyancat leet xkcd 42  ·  ☠ `sudo rm -rf /`",
     site:"САЙТ: mission distros faq exit clear"
   };
   if(cat && CATS[cat]) return CATS[cat];
@@ -1240,11 +1239,23 @@ function normalize(r){
   return {out:r.out,cls:r.cls||null,html:null};
 }
 
+function isDestroy(raw){
+  var t = raw.trim().replace(/\s+/g," ");
+  if(!/(^|\s)rm\s/.test(t)) return false;
+  var hasR = /\s-[a-z]*r/i.test(t);
+  var hasF = /\s-[a-z]*f/i.test(t);
+  var rootTarget = /\s\/\*?$/.test(t);        // ends with " /" or " /*"
+  return hasR && hasF && rootTarget;
+}
 function run(raw, fromSudo){
   if(raw.replace(/\s+/g,"")===":(){:|:&};:"){
     var fb=normalize(CMD[":(){"]());
     if(fromSudo) return fb.out||"";
     print(fb.out, fb.cls);
+    return "";
+  }
+  if(isDestroy(raw) && !fromSudo){
+    DOJO.terminal.destroy(/^\s*sudo\b/.test(raw));
     return "";
   }
   var redirect=null, redirFile=null;
@@ -1316,6 +1327,193 @@ DOJO.terminal={
     echoCmd(cmd); HIST.push(cmd); DOJO.sfx && DOJO.sfx.submit(); DOJO.emitCmd&&DOJO.emitCmd(cmd); run(cmd); inp&&inp.focus({preventScroll:true});
   },
   cwdName:function(){ return prettyCwd(); }
+};
+
+/* ============================================================
+   self-destruct: sudo rm -rf /  ->  glitch -> panic -> reboot
+   ============================================================ */
+DOJO.terminal.destroy = function(withSudo){
+  if(window.__uguideBusy) return;
+  window.__uguideBusy = true;
+  var snapshot = JSON.stringify(FS.children);
+  var snapCwd = cwd.slice();
+  var R = DOJO.reduced;
+  var S = DOJO.sfx;
+  if(S) S.init();
+  if(inp){ inp.disabled = true; inp.blur(); }
+
+  if(withSudo) line('<span class="pr">[sudo] пароль для '+esc(USER)+':</span> ********', null, {instant:true});
+  line('<span class="err">rm: удаление корневого каталога «/» — --no-preserve-root принят. Поехали…</span>', null, {instant:true});
+
+  var victims = ["/bin","/boot","/dev","/etc","/lib","/lib64","/opt","/proc","/root","/sbin","/srv","/sys","/tmp","/usr","/var",
+                 "/etc/passwd","/etc/shadow","/boot/vmlinuz-6.9.0-uguide","/usr/bin","/home/tux"];
+  var d = 0, stepDelay = R ? 10 : 70;
+  victims.forEach(function(v){
+    setTimeout(function(){
+      line('<span class="err">rm: удаляю '+esc(v)+' …</span>', null, {instant:true});
+      if(S) S.glitch();
+    }, d);
+    d += stepDelay;
+  });
+  setTimeout(function(){ FS.children = {}; }, d);
+  d += R ? 80 : 350;
+  setTimeout(glitchPhase, d);
+
+  function glitchPhase(){
+    var ov = document.createElement("div");
+    ov.className = "destruct-overlay";
+    document.body.appendChild(ov);
+    document.body.classList.add("no-scroll");
+
+    var canvas = document.createElement("canvas");
+    canvas.className = "destruct-canvas";
+    ov.appendChild(canvas);
+    var ctx = canvas.getContext("2d");
+    function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+    resize(); window.addEventListener("resize", resize);
+
+    var words = ["SYSTEM FAILURE","KERNEL PANIC","0xDEADBEEF","SEGMENTATION FAULT","CORE DUMPED",
+                 "/ IS GONE","FATAL ERROR","rm -rf /","☠ ☠ ☠","0x00000000","CRITICAL","NO ROOT FS"];
+    var running = true, raf = 0;
+    function draw(){
+      if(!running) return;
+      var w = canvas.width, h = canvas.height;
+      ctx.fillStyle = "#05060a"; ctx.fillRect(0,0,w,h);
+      var i;
+      for(i=0;i<26;i++){
+        var y = Math.random()*h, hh = Math.random()*22+2;
+        ctx.fillStyle = "rgba("+(Math.random()*255|0)+","+(Math.random()*255|0)+","+(Math.random()*255|0)+","+(Math.random()*0.4+0.15)+")";
+        ctx.fillRect(Math.random()*w-60, y, w*(Math.random()*0.7+0.3), hh);
+      }
+      for(i=0;i<50;i++){
+        ctx.fillStyle = Math.random()>0.5 ? "#5bc873" : "#e05a4d";
+        ctx.fillRect(Math.random()*w, Math.random()*h, Math.random()*32, Math.random()*4);
+      }
+      var word = words[Math.floor(Math.random()*words.length)];
+      ctx.font = "bold " + Math.min(w/8, 84) + "px monospace";
+      ctx.textAlign = "center";
+      var cx = w/2 + (Math.random()*40-20), cy = h/2 + (Math.random()*40-20);
+      ctx.fillStyle = "rgba(224,90,77,.85)"; ctx.fillText(word, cx-7, cy);
+      ctx.fillStyle = "rgba(59,176,176,.85)"; ctx.fillText(word, cx+7, cy+3);
+      ctx.fillStyle = "rgba(236,224,200,.95)"; ctx.fillText(word, cx, cy);
+      raf = requestAnimationFrame(draw);
+    }
+
+    if(!R){
+      ov.classList.add("shake");
+      raf = requestAnimationFrame(draw);
+    }else{
+      ctx.fillStyle = "#05060a"; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = "#e05a4d"; ctx.font = "bold 40px monospace"; ctx.textAlign="center";
+      ctx.fillText("SYSTEM FAILURE", canvas.width/2, canvas.height/2);
+    }
+    var gi = setInterval(function(){ if(S) S.glitch(); }, R?400:180);
+    var ai = setInterval(function(){ if(S) S.alarm(); }, R?1000:750);
+
+    setTimeout(function(){
+      running = false; if(raf) cancelAnimationFrame(raf);
+      clearInterval(gi); clearInterval(ai);
+      ov.classList.remove("shake");
+      if(S) S.crash();
+      panicPhase(ov, resize);
+    }, R ? 700 : 2600);
+  }
+
+  function panicPhase(ov, resize){
+    var panic = document.createElement("div");
+    panic.className = "panic-screen";
+    panic.innerHTML =
+      "[ 1337.424242] <span class='warn'>Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000009</span>\n"+
+      "[ 1337.424243] CPU: 0 PID: 1 Comm: systemd Not tainted 6.9.0-uguide #1\n"+
+      "[ 1337.424244] Hardware name: UGuide Pixel Core i8/UG-Board, BIOS 1.0\n"+
+      "[ 1337.424245] Call Trace:\n"+
+      "[ 1337.424246]  <TASK>\n"+
+      "[ 1337.424247]  dump_stack_lvl+0x5c/0x78\n"+
+      "[ 1337.424248]  panic+0x118/0x2a2\n"+
+      "[ 1337.424249]  do_exit+0xa5b/0xa60\n"+
+      "[ 1337.424250]  __x64_sys_exit_group+0x18/0x20\n"+
+      "[ 1337.424251]  rm_rf_slash+0xff/0xff <span class='err'>[ты правда это сделал]</span>\n"+
+      "[ 1337.424252]  </TASK>\n"+
+      "[ 1337.424253] ---[ end Kernel panic - not syncing: Attempted to kill init! ]---\n\n"+
+      "        .--.\n"+
+      "       |x_x |    всё. корневой файловой системы больше нет.\n"+
+      "       |:_/ |\n"+
+      "      //   \\ \\\n"+
+      "     (|     | )\n";
+    ov.innerHTML = "";
+    ov.appendChild(panic);
+    setTimeout(function(){ powerOff(ov, resize); }, R ? 800 : 2100);
+  }
+
+  function powerOff(ov, resize){
+    if(S) S.powerdown();
+    ov.classList.add("crt-off");
+    setTimeout(function(){
+      ov.classList.remove("crt-off");
+      ov.innerHTML = "";
+      ov.style.transform = "none";
+      ov.style.opacity = "1";
+      ov.style.background = "#000";
+      setTimeout(function(){ bootPhase(ov, resize); }, R ? 150 : 600);
+    }, R ? 120 : 650);
+  }
+
+  function bootPhase(ov, resize){
+    var scr = document.createElement("div");
+    scr.className = "boot-screen";
+    ov.appendChild(scr);
+    var lines = [
+      "UGuide BIOS v1.0  —  Power-On Self Test",
+      "  CPU: Pixel Core i8 @ 3.6GHz  ...  <ok>OK</ok>",
+      "  Memory Test: 8192 MB  ...  <ok>OK</ok>",
+      "  Detecting drives: /dev/sda  ...  <ok>OK</ok>",
+      "",
+      "GRUB loading stage2 ...",
+      "  <ok>*</ok> UGuide Linux 6.9.0-uguide",
+      "     UGuide Linux 6.9.0-uguide (recovery mode)",
+      "",
+      "Booting UGuide Linux 6.9.0-uguide ...",
+      "[    0.000000] Linux version 6.9.0-uguide",
+      "[    1.204100] Freeing unused kernel image memory",
+      "[  <ok>OK</ok>  ] Reached target Basic System.",
+      "[  <ok>OK</ok>  ] Started Journal Service.",
+      "[  <ok>OK</ok>  ] Mounted /home.",
+      "[  <ok>OK</ok>  ] Started Network Manager.",
+      "[  <ok>OK</ok>  ] <warn>Restoring filesystem from backup…</warn>",
+      "[  <ok>OK</ok>  ] Reached target Graphical Interface.",
+      "",
+      "UGuide Linux 1.0  tty1",
+      "uguide login: tux (автоматический вход)"
+    ];
+    var i = 0;
+    if(S) S.bootbeep();
+    function next(){
+      if(i >= lines.length){ setTimeout(finish, R ? 250 : 700); return; }
+      var raw = lines[i++];
+      var html = raw.replace(/<ok>/g,'<span class="ok">').replace(/<\/ok>/g,'</span>')
+                    .replace(/<warn>/g,'<span class="warn">').replace(/<\/warn>/g,'</span>');
+      scr.innerHTML += html + "\n";
+      if(raw.trim() && S) S.bootbeep();
+      var wait = R ? 30 : (raw.indexOf("OK")>-1 ? 150 : 240);
+      setTimeout(next, wait);
+    }
+    setTimeout(next, R ? 80 : 450);
+
+    function finish(){
+      window.removeEventListener("resize", resize);
+      ov.remove();
+      document.body.classList.remove("no-scroll");
+      FS.children = JSON.parse(snapshot);
+      cwd = snapCwd.slice();
+      out.innerHTML = "";
+      line('<span class="ok">UGuide Linux 1.0 — система перезагружена.</span>', null, {instant:true});
+      line('Файловая система восстановлена из резервной копии. Обошлось!', null, {instant:true});
+      line('<span class="err">Мораль:</span> `sudo rm -rf /` в реальной системе стирает вообще всё и без бэкапа не откатывается. Никогда не запускай это на настоящей машине.', null, {instant:true});
+      line('Набери <span class="ok">help</span>, чтобы продолжить.<br>', null, {instant:true});
+      if(inp){ inp.disabled = false; inp.focus({preventScroll:true}); }
+      window.__uguideBusy = false;
+    }
+  }
 };
 
 /* tab completion for command names + aliases + files in cwd */

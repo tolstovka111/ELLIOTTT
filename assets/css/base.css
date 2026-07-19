@@ -195,6 +195,34 @@ section{padding:var(--sp-8) 0}
 .mute-btn[aria-pressed="true"]{color:var(--red);border-color:var(--red)}
 .mute-btn svg{width:14px;height:14px;fill:currentColor;flex:none}
 
+/* ---------- self-destruct sequence ---------- */
+.no-scroll{overflow:hidden!important}
+.destruct-overlay{position:fixed;inset:0;z-index:9999;background:#05060a;overflow:hidden;font-family:var(--f-console)}
+.destruct-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.destruct-overlay.shake{animation:dst-shake .16s steps(2) infinite}
+@keyframes dst-shake{
+  0%{transform:translate(0,0)}25%{transform:translate(-7px,4px)}
+  50%{transform:translate(6px,-6px)}75%{transform:translate(-4px,-3px)}100%{transform:translate(5px,4px)}
+}
+.destruct-overlay.crt-off{animation:dst-crtoff .55s cubic-bezier(.6,0,.9,.3) forwards}
+@keyframes dst-crtoff{
+  0%{transform:scale(1,1);filter:brightness(1)}
+  55%{transform:scale(1.06,.012);filter:brightness(3)}
+  75%{transform:scale(.2,.006);filter:brightness(6)}
+  100%{transform:scale(0,0);filter:brightness(10);opacity:0}
+}
+.panic-screen{position:absolute;inset:0;background:#0a0e14;color:#e6ddca;font-family:var(--f-console);font-size:clamp(11px,1.4vw,15px);padding:24px;white-space:pre-wrap;overflow:hidden;line-height:1.4}
+.panic-screen .warn{color:var(--amber)}
+.panic-screen .err{color:var(--red)}
+.boot-screen{position:absolute;inset:0;background:#000;color:#c7d0d9;font-family:var(--f-console);font-size:clamp(12px,1.5vw,16px);padding:24px;white-space:pre-wrap;overflow:hidden;line-height:1.5}
+.boot-screen .ok{color:var(--green)}
+.boot-screen .warn{color:var(--amber)}
+.boot-screen .cur{color:var(--green);animation:cur 1s steps(1) infinite}
+@media (prefers-reduced-motion:reduce){
+  .destruct-overlay.shake{animation:none}
+  .destruct-overlay.crt-off{animation:none;opacity:0}
+}
+
 /* ---------- nano / vim editor overlay ---------- */
 .editor-overlay{
   position:fixed;inset:0;z-index:300;background:rgba(4,5,7,.85);
