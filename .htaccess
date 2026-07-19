@@ -1,0 +1,35 @@
+# LINUX UGUIDE — static hosting compatibility
+# Fixes: 403 on media files caused by inherited hotlink/leech-protection
+# rules on some shared hosting panels, and makes sure MIME types are
+# correct so <audio>/<img> tags always get a sane Content-Type.
+
+<IfModule mod_mime.c>
+  AddType audio/mpeg .mp3
+  AddType image/jpeg .jpg .jpeg
+  AddType image/png .png
+  AddType font/ttf .ttf
+  AddType text/css .css
+  AddType application/javascript .js
+  AddType text/html .html
+</IfModule>
+
+# Explicitly grant access to every static asset type this site uses.
+# Placed last so it wins over broader inherited deny/hotlink rules
+# (only takes effect where the host's AllowOverride permits it).
+<IfModule mod_authz_core.c>
+  <FilesMatch "\.(mp3|jpg|jpeg|png|ttf|css|js|html|svg|ico)$">
+    Require all granted
+  </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+  <FilesMatch "\.(mp3|jpg|jpeg|png|ttf|css|js|html|svg|ico)$">
+    Order allow,deny
+    Allow from all
+  </FilesMatch>
+</IfModule>
+
+# Allow byte-range requests (needed for audio seeking) — on by default in
+# Apache, but some hosts disable it globally; this re-enables it locally.
+<IfModule mod_headers.c>
+  Header set Accept-Ranges bytes
+</IfModule>
