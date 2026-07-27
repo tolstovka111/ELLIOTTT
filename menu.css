@@ -1,0 +1,100 @@
+/* ============================================================
+   Expanding hover menu (по референсу): пилюля сверху,
+   иконки расширяются при наведении, выезжает подпись.
+   3 кнопки: IMG Editor / Audio Mixer / My Design
+   ============================================================ */
+
+.xmenu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px;
+  border-radius: 999px;
+  background: linear-gradient(120deg, rgba(24, 26, 33, .78), rgba(10, 11, 14, .82));
+  border: 1px solid rgba(255, 255, 255, .10);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .09),
+    0 10px 34px rgba(0, 0, 0, .55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.xmenu__item {
+  --c: #fff;
+  --halo: rgba(255, 255, 255, .25);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  overflow: hidden;
+  border-radius: 999px;
+  padding: 0 10px;
+  color: var(--c);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    width .45s cubic-bezier(.22, 1, .36, 1),
+    background .3s ease,
+    box-shadow .3s ease;
+}
+
+.xmenu__icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.xmenu__label {
+  opacity: 0;
+  max-width: 0;
+  transform: translateX(-8px);
+  font-family: 'Handjet', 'Arial Narrow', sans-serif;
+  font-weight: 600;
+  font-size: 1.18rem;
+  letter-spacing: .04em;
+  transition:
+    opacity .25s ease,
+    max-width .45s ease,
+    transform .35s ease;
+}
+
+.xmenu__item:hover,
+.xmenu__item:focus-visible {
+  width: 164px;
+  background: rgba(255, 255, 255, .12);
+  box-shadow: 0 0 28px var(--halo);
+  outline: none;
+}
+
+.xmenu__item:hover .xmenu__label,
+.xmenu__item:focus-visible .xmenu__label {
+  opacity: 1;
+  max-width: 110px;
+  transform: translateX(0);
+}
+
+/* текущая страница — подсвечена постоянно */
+.xmenu__item.is-active {
+  background: rgba(255, 255, 255, .09);
+  box-shadow: 0 0 22px var(--halo), inset 0 0 0 1px var(--halo);
+}
+
+/* фирменные цвета разделов */
+.xmenu__item--img    { --c: #ffc400; --halo: rgba(255, 196, 0, .38); }
+.xmenu__item--audio  { --c: #c084fc; --halo: rgba(168, 85, 247, .42); }
+.xmenu__item--design { --c: #6ee7b7; --halo: rgba(52, 211, 153, .42); }
+
+/* на узких экранах пилюля встаёт в поток и ужимается */
+@media (max-width: 720px) {
+  .xmenu {
+    gap: 6px;
+    padding: 5px;
+  }
+  .xmenu__item { width: 38px; height: 38px; padding: 0 7px; }
+  .xmenu__item:hover, .xmenu__item:focus-visible { width: 128px; }
+  .xmenu__label { font-size: 1rem; }
+}

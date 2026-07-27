@@ -1,0 +1,323 @@
+/* ============================================================
+   Elliot Design — «разбитое стекло» (по мотивам референса)
+   Монохром: тёмный графит, белый текст, тонкие швы
+   ============================================================ */
+
+:root {
+  --bg: #020604;
+  --pane-a: #0f1f15;
+  --pane-b: #081209;
+  --ink: #ddeee3;
+  --ink-dim: #7fa28d;
+  --seam: rgba(255, 255, 255, .05);
+  --font-pixel: 'Press Start 2P', 'Courier New', monospace;
+  --font-clean: 'Inter', system-ui, 'Segoe UI', Roboto, Helvetica, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; overflow-x: clip; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-clean);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+::selection { background: #6ee7b7; color: #04150c; }
+
+/* ---------- шапка ---------- */
+.site-header {
+  position: fixed;
+  min-height: 62px;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 28px;
+  background: rgba(3, 8, 5, .55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(110, 231, 183, .12);
+}
+
+.logo {
+  text-decoration: none;
+  color: var(--ink);
+  font-family: var(--font-pixel);
+  font-size: .8rem;
+  letter-spacing: .02em;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .8);
+}
+
+.logo em { color: #9a9aa4; font-style: normal; }
+
+.site-nav { display: flex; gap: 8px; }
+
+.site-nav a {
+  color: var(--ink-dim);
+  text-decoration: none;
+  font-family: 'Handjet', 'Arial Narrow', sans-serif;
+  font-weight: 600;
+  font-size: 1.15rem;
+  letter-spacing: .05em;
+  padding: 8px 18px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  transition: all .25s;
+}
+
+.nav-img { color: #ffc400; border-color: rgba(255, 196, 0, .3); }
+.nav-img:hover { color: #08050c; background: #ffc400; }
+
+.nav-audio { color: #c084fc; border-color: rgba(168, 85, 247, .35); }
+.nav-audio:hover { color: #08050c; background: #a855f7; }
+
+.nav-current { color: #fff; border-color: rgba(255, 255, 255, .3); }
+.nav-current:hover { color: #000; background: #fff; }
+
+/* ---------- сцена ---------- */
+.glass-stage {
+  position: relative;
+  height: 100vh;
+  min-height: 560px;
+  overflow: hidden;
+  background: var(--bg);
+  perspective: 1400px;
+  cursor: crosshair;
+}
+
+/* общая 3D-поверхность: наклонена в перспективе, как в референсе */
+.glass-surface {
+  position: absolute;
+  inset: -4%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* осколок — отдельная 3D-плита на своей глубине */
+.pane {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+  transform-style: preserve-3d;
+}
+
+/* «печёная» тень: тёмная копия полигона позади плиты — дёшево и объёмно */
+.pane__shadow {
+  position: absolute;
+  inset: 0;
+  clip-path: var(--clip-outer);
+  background: rgba(0, 0, 0, .5);
+  transform: translate3d(22px, 30px, -40px);
+  pointer-events: none;
+}
+
+/* фаска: внешний полигон — светящийся торец стекла */
+.pane__clip {
+  position: absolute;
+  inset: 0;
+  clip-path: var(--clip-outer);
+  background: linear-gradient(140deg, rgba(160, 255, 205, .32), rgba(160, 255, 205, .05) 38%, rgba(0, 0, 0, .6) 92%);
+}
+
+.pane__inner {
+  position: absolute;
+  inset: 0;
+  clip-path: var(--clip-inner);
+  background:
+    linear-gradient(var(--tint-angle, 155deg), var(--pane-a) 0%, var(--pane-b) 55%, #0b1810 100%);
+  box-shadow: inset 0 0 120px rgba(0, 0, 0, .55);
+}
+
+/* солнечный блик: тёплая полоса света периодически проходит по стеклу */
+.pane__inner::before {
+  content: '';
+  position: absolute;
+  inset: -25%;
+  background: linear-gradient(115deg,
+    transparent 40%,
+    rgba(220, 255, 235, .04) 45%,
+    rgba(235, 255, 244, .36) 50%,
+    rgba(150, 240, 195, .16) 53%,
+    transparent 60%);
+  transform: translateX(-130%) skewX(-8deg);
+  animation: sun-glint 8s ease-in-out infinite;
+  animation-delay: var(--glint-delay, 0s);
+  pointer-events: none;
+}
+
+@keyframes sun-glint {
+  0%, 52% { transform: translateX(-130%) skewX(-8deg); }
+  74%     { transform: translateX(130%) skewX(-8deg); }
+  100%    { transform: translateX(130%) skewX(-8deg); }
+}
+
+/* блик, следующий за курсором */
+.pane__inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(720px at var(--mx, 50%) var(--my, 35%), rgba(205, 255, 228, .10), transparent 62%);
+  pointer-events: none;
+}
+
+/* контент дублируется в каждом осколке и ломается на швах */
+.content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.content__block {
+  padding: 0 6vw;
+  max-width: 720px;
+}
+
+.content__overline {
+  font-size: .72rem;
+  letter-spacing: .34em;
+  color: var(--ink-dim);
+  margin-bottom: 26px;
+}
+
+.content__title {
+  font-weight: 600;
+  font-size: clamp(3rem, 8.5vw, 7.2rem);
+  line-height: 1.02;
+  letter-spacing: -.02em;
+  color: #eafcf1;
+  margin-bottom: 30px;
+}
+
+.content__sub {
+  font-size: .95rem;
+  line-height: 1.75;
+  color: var(--ink-dim);
+  margin-bottom: 34px;
+}
+
+.content__actions { display: flex; gap: 14px; visibility: hidden; }
+
+.glass-btn {
+  display: inline-block;
+  font-size: .82rem;
+  font-weight: 500;
+  letter-spacing: .02em;
+  padding: 11px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  color: var(--ink);
+}
+
+.glass-btn--solid { background: #b8f5d4; color: #04150c; border-color: transparent; }
+
+/* реальные кликабельные кнопки поверх сцены (контент в осколках не ловит клики) */
+.stage-actions {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  gap: 14px;
+}
+
+.stage-actions a {
+  text-decoration: none;
+  font-family: var(--font-clean);
+  font-size: .82rem;
+  font-weight: 500;
+  padding: 11px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(160, 255, 205, .25);
+  color: var(--ink);
+  background: rgba(5, 14, 9, .35);
+  transition: all .25s;
+}
+
+.stage-actions a:first-child { background: #b8f5d4; color: #04150c; border-color: transparent; }
+
+.stage-actions a:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(110, 231, 183, .25); }
+
+/* ---------- подвал ---------- */
+.site-footer {
+  position: relative;
+  text-align: center;
+  padding: 90px 24px 60px;
+  border-top: 1px solid rgba(110, 231, 183, .12);
+}
+
+.tg-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 30px;
+  text-decoration: none;
+}
+
+.footer__title {
+  font-family: var(--font-pixel);
+  font-size: clamp(1.2rem, 3.2vw, 2.2rem);
+  color: #eafcf1;
+  text-shadow:
+    0 1px 0 #3d6b52, 0 2px 0 #315743, 0 3px 0 #254334,
+    0 4px 0 #193025, 0 10px 22px rgba(0, 0, 0, .8);
+  transition: color .25s, text-shadow .25s;
+}
+
+.tg-plane {
+  color: #fff;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, .7));
+  animation: plane-idle 4.5s ease-in-out infinite;
+  transition: filter .3s;
+}
+
+@keyframes plane-idle {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-10px) rotate(-5deg); }
+}
+
+.tg-link:hover .tg-plane {
+  animation: plane-fly .9s ease-in-out infinite;
+  filter: drop-shadow(0 0 18px rgba(150, 245, 200, .85));
+}
+
+@keyframes plane-fly {
+  0%, 100% { transform: translate(0, 0) rotate(-12deg) scale(1.07); }
+  50%      { transform: translate(-4px, -13px) rotate(-17deg) scale(1.09); }
+}
+
+.tg-link:hover .footer__title {
+  color: #fff;
+  text-shadow:
+    2px 0 0 rgba(120, 255, 190, .6),
+    -2px 0 0 rgba(70, 200, 255, .5),
+    0 10px 22px rgba(0, 0, 0, .8);
+}
+
+.footer__note {
+  margin-top: 40px;
+  color: var(--ink-dim);
+  font-family: 'Handjet', 'Arial Narrow', sans-serif;
+  font-size: 1.2rem;
+}
+
+/* ---------- адаптив и доступность ---------- */
+@media (max-width: 700px) {
+  .site-nav a { padding: 7px 10px; font-size: .95rem; }
+  .content__block { padding: 0 8vw; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+
+/* лайт-режим: без блеска и теней, если устройству тяжело */
+.glass-lite .pane__shadow,
+.glass-lite .pane__inner::before,
+.glass-lite .pane__inner::after { display: none; }
