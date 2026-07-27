@@ -11,8 +11,10 @@
 
 (function liquidGoldBackground() {
   const canvas = document.getElementById('bg-canvas');
-  const gl = canvas.getContext('webgl', { antialias: false, alpha: false });
-  if (!gl) return; // остаётся CSS-фолбэк
+  if (!canvas) return;
+  const gl = canvas.getContext('webgl', { antialias: false, alpha: false, depth: false, stencil: false })
+    || canvas.getContext('experimental-webgl', { antialias: false, alpha: false });
+  if (!gl) { document.body.classList.add('no-webgl'); return; } // остаётся CSS-фолбэк
 
   const VERT = `
     attribute vec2 a_pos;
@@ -108,12 +110,17 @@
 
   const vs = compile(gl.VERTEX_SHADER, VERT);
   const fs = compile(gl.FRAGMENT_SHADER, FRAG);
-  if (!vs || !fs) return;
+  if (!vs || !fs) { document.body.classList.add('no-webgl'); return; }
 
   const prog = gl.createProgram();
   gl.attachShader(prog, vs);
   gl.attachShader(prog, fs);
   gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    console.error(gl.getProgramInfoLog(prog));
+    document.body.classList.add('no-webgl');
+    return; // остаётся CSS-фолбэк вместо чёрного экрана
+  }
   gl.useProgram(prog);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
@@ -125,26 +132,55 @@
   const uRes = gl.getUniformLocation(prog, 'u_res');
   const uTime = gl.getUniformLocation(prog, 'u_time');
 
-  // рендерим фон в пониженном разрешении — быстрее и «маслянистее»
-  const SCALE = 0.5;
+  /* Рендерим фон в пониженном разрешении — быстрее и «маслянистее».
+     Шейдер тяжёлый (пять fbm по пять октав на пиксель), поэтому на больших
+     окнах дополнительно ограничиваем число пикселей — иначе на слабых
+     видеокартах страница проседает по FPS ещё до открытия редактора. */
+  const MAX_PIXELS = 640 * 360;
+  let raf = 0;
+
   function resize() {
-    canvas.width = Math.max(1, innerWidth * SCALE);
-    canvas.height = Math.max(1, innerHeight * SCALE);
+    const scale = Math.min(0.5, Math.sqrt(MAX_PIXELS / Math.max(1, innerWidth * innerHeight)));
+    canvas.width = Math.max(1, Math.round(innerWidth * scale));
+    canvas.height = Math.max(1, Math.round(innerHeight * scale));
     gl.viewport(0, 0, canvas.width, canvas.height);
   }
-  addEventListener('resize', resize);
+
+  // resize стреляет пачками — пересобираем буфер не чаще одного кадра
+  let resizeQueued = false;
+  addEventListener('resize', () => {
+    if (resizeQueued) return;
+    resizeQueued = true;
+    requestAnimationFrame(() => { resizeQueued = false; resize(); });
+  }, { passive: true });
   resize();
 
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const start = performance.now();
 
   function frame(now) {
+    raf = 0;
     gl.uniform2f(uRes, canvas.width, canvas.height);
     gl.uniform1f(uTime, (now - start) / 1000);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    if (!reduceMotion) requestAnimationFrame(frame);
+    if (!reduceMotion && !document.hidden) raf = requestAnimationFrame(frame);
   }
-  requestAnimationFrame(frame);
+  function play() { if (!raf) raf = requestAnimationFrame(frame); }
+  play();
+
+  // вкладка в фоне — не жжём GPU впустую
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) play(); });
+
+  /* при потере контекста (спящий режим, сброс драйвера) фон навсегда
+     оставался чёрным. Перезагружать страницу нельзя — улетит загруженное
+     фото и настройки, поэтому просто отдаём фон CSS-градиенту. */
+  canvas.addEventListener('webglcontextlost', e => {
+    e.preventDefault();
+    cancelAnimationFrame(raf);
+    raf = 0;
+    canvas.hidden = true;
+    document.body.classList.add('no-webgl');
+  });
 })();
 
 /* ================= 2. РЕДАКТОР ЭФФЕКТОВ ================= */
@@ -163,11 +199,16 @@ let previewSource = null; // уменьшенная копия для живог
 let fileName = 'photo';
 let renderQueued = false;
 
+/* Ограничения, за которыми браузер начинает падать или зависать.
+   Canvas в Safari/iOS не может быть больше ~16.7 млн пикселей: без этой
+   проверки экспорт молча отдавал пустой файл. */
+const MAX_FILE_BYTES = 40 * 1024 * 1024;
+const MAX_EXPORT_PIXELS = 16_000_000;
+
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('file-input');
 const dzIdle = document.getElementById('dz-idle');
 const previewCanvas = document.getElementById('preview-canvas');
-const previewCtx = previewCanvas.getContext('2d');
 const imgInfo = document.getElementById('img-info');
 const btnExport = document.getElementById('btn-export');
 const btnNew = document.getElementById('btn-new');
@@ -176,9 +217,18 @@ const btnReset = document.getElementById('btn-reset');
 /* ---------- загрузка ---------- */
 
 dropzone.addEventListener('click', () => { if (!sourceImage) fileInput.click(); });
+
+// зона загрузки — это <div>, так что клавиатуре нужно помочь руками
+dropzone.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  if (!sourceImage) fileInput.click();
+});
+
 btnNew.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', () => {
   if (fileInput.files[0]) loadFile(fileInput.files[0]);
+  fileInput.value = ''; // иначе тот же файл повторно не выберется
 });
 
 ['dragenter', 'dragover'].forEach(ev =>
@@ -187,15 +237,37 @@ fileInput.addEventListener('change', () => {
   dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('is-over'); }));
 dropzone.addEventListener('drop', e => {
   const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('image/')) loadFile(file);
+  if (!file) return;
+  // раньше не-картинка просто игнорировалась молча — теперь объясняем
+  if (!file.type.startsWith('image/')) {
+    imgInfo.textContent = 'это не изображение';
+    return;
+  }
+  loadFile(file);
 });
 
 function loadFile(file) {
+  if (!file.type.startsWith('image/')) {
+    imgInfo.textContent = 'это не изображение';
+    return;
+  }
+  if (file.size > MAX_FILE_BYTES) {
+    imgInfo.textContent = `слишком большой файл (>${Math.round(MAX_FILE_BYTES / 1024 / 1024)} МБ)`;
+    return;
+  }
+
   fileName = (file.name || 'photo').replace(/\.[^.]+$/, '');
+  imgInfo.textContent = 'открываю…';
+
   const url = URL.createObjectURL(file);
   const img = new Image();
+
   img.onload = () => {
     URL.revokeObjectURL(url);
+    if (!img.width || !img.height) {
+      imgInfo.textContent = 'не удалось открыть файл';
+      return;
+    }
     sourceImage = img;
 
     // уменьшенная копия для быстрого живого превью
@@ -208,12 +280,21 @@ function loadFile(file) {
     dzIdle.hidden = true;
     previewCanvas.hidden = false;
     dropzone.classList.add('has-image');
+    dropzone.setAttribute('aria-label', `Фото загружено: ${file.name}`);
     btnExport.disabled = false;
     btnNew.hidden = false;
-    imgInfo.textContent = `${file.name} — ${img.width}×${img.height}`;
+
+    const huge = img.width * img.height > MAX_EXPORT_PIXELS;
+    imgInfo.textContent = `${file.name} — ${img.width}×${img.height}` +
+      (huge ? ' · экспорт будет уменьшен' : '');
     scheduleRender();
   };
-  img.onerror = () => { imgInfo.textContent = 'не удалось открыть файл'; };
+
+  img.onerror = () => {
+    URL.revokeObjectURL(url); // без этого blob висел в памяти до перезагрузки
+    imgInfo.textContent = 'не удалось открыть файл';
+  };
+
   img.src = url;
 }
 
@@ -282,6 +363,24 @@ function mulberry32(seed) {
   };
 }
 
+/* Пул временных холстов. Раньше каждый проход конвейера создавал по
+   3-4 новых canvas полного размера — на живом превью это давало десятки
+   мегабайт мусора в секунду и рывки от сборщика. */
+const scratch = new Map();
+function getScratch(name, w, h) {
+  let c = scratch.get(name);
+  if (!c) { c = document.createElement('canvas'); scratch.set(name, c); }
+  if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+  else c.getContext('2d').clearRect(0, 0, w, h);
+  return c;
+}
+
+/* После экспорта холсты остаются в размере оригинала (до 64 МБ каждый) —
+   сжимаем их до 1×1, чтобы не держать память между сохранениями. */
+function releaseScratch() {
+  scratch.forEach(c => { c.width = 1; c.height = 1; });
+}
+
 function renderPipeline(source, target) {
   const w = source.width, h = source.height;
   target.width = w;
@@ -293,8 +392,7 @@ function renderPipeline(source, target) {
     const factor = 1 + (state.pixelate / 100) * (Math.max(w, h) / 24);
     const pw = Math.max(1, Math.round(w / factor));
     const ph = Math.max(1, Math.round(h / factor));
-    const tiny = document.createElement('canvas');
-    tiny.width = pw; tiny.height = ph;
+    const tiny = getScratch('tiny', pw, ph);
     tiny.getContext('2d').drawImage(source, 0, 0, pw, ph);
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(tiny, 0, 0, w, h);
@@ -376,8 +474,7 @@ function renderPipeline(source, target) {
   /* -- RGB-сдвиг (хроматическая аберрация) -- */
   if (state.aberration > 0) {
     const shift = Math.max(1, Math.round((state.aberration / 100) * w * 0.02));
-    const snap = document.createElement('canvas');
-    snap.width = w; snap.height = h;
+    const snap = getScratch('snapAb', w, h);
     snap.getContext('2d').drawImage(target, 0, 0);
 
     ctx.globalCompositeOperation = 'multiply';
@@ -385,8 +482,8 @@ function renderPipeline(source, target) {
     ctx.fillStyle = 'rgb(0,255,255)';
     ctx.fillRect(0, 0, w, h);
     ctx.globalCompositeOperation = 'screen';
-    const red = channelOnly(snap, 'red');
-    const blue = channelOnly(snap, 'blue');
+    const red = channelOnly(snap, 'red', 'chRed');
+    const blue = channelOnly(snap, 'blue', 'chBlue');
     ctx.drawImage(red, shift, 0);
     ctx.drawImage(blue, -shift, 0);
     ctx.globalCompositeOperation = 'source-over';
@@ -395,8 +492,7 @@ function renderPipeline(source, target) {
   /* -- глитч: сдвиг горизонтальных полос (сид зависит от силы) -- */
   if (state.glitch > 0) {
     const rnd = mulberry32(1337 + state.glitch * 7);
-    const snap = document.createElement('canvas');
-    snap.width = w; snap.height = h;
+    const snap = getScratch('snapGl', w, h);
     snap.getContext('2d').drawImage(target, 0, 0);
 
     const slices = Math.round(3 + (state.glitch / 100) * 14);
@@ -438,10 +534,10 @@ function renderPipeline(source, target) {
 }
 
 // канвас, где оставлен только один цветовой канал
-function channelOnly(source, channel) {
-  const c = document.createElement('canvas');
-  c.width = source.width; c.height = source.height;
+function channelOnly(source, channel, slot) {
+  const c = getScratch(slot, source.width, source.height);
   const cc = c.getContext('2d');
+  cc.globalCompositeOperation = 'source-over';
   cc.drawImage(source, 0, 0);
   cc.globalCompositeOperation = 'multiply';
   cc.fillStyle = channel === 'red' ? 'rgb(255,0,0)' : 'rgb(0,0,255)';
@@ -534,6 +630,18 @@ const FORMATS = {
 
 const formatSelect = document.getElementById('format-select');
 
+/* Источник для экспорта: обычно оригинал, но если он больше лимита
+   холста, отдаём уменьшенную копию — иначе браузер молча возвращает
+   пустой файл (Safari) или падает по памяти. */
+function exportSource() {
+  const w = sourceImage.width, h = sourceImage.height;
+  if (w * h <= MAX_EXPORT_PIXELS) return sourceImage;
+  const k = Math.sqrt(MAX_EXPORT_PIXELS / (w * h));
+  const c = getScratch('exportFit', Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k)));
+  c.getContext('2d').drawImage(sourceImage, 0, 0, c.width, c.height);
+  return c;
+}
+
 btnExport.addEventListener('click', () => {
   if (!sourceImage) return;
   const original = btnExport.textContent;
@@ -542,34 +650,57 @@ btnExport.addEventListener('click', () => {
 
   const fmt = FORMATS[formatSelect.value] || FORMATS.png;
 
+  // кнопку возвращаем только когда файл действительно готов,
+  // а не сразу после запуска асинхронного toBlob
+  const done = (message) => {
+    btnExport.textContent = original;
+    btnExport.disabled = false;
+    if (message) imgInfo.textContent = message;
+    releaseScratch();
+  };
+
   // даём кадру отрисовать надпись, затем считаем полный размер
   setTimeout(() => {
+    let full;
     try {
-      const full = document.createElement('canvas');
-      renderPipeline(sourceImage, full);
-      full.toBlob(blob => {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `${fileName}-elliot.${fmt.ext}`;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-
-        // звук успешного экспорта (прикреплённый пользователем)
-        try {
-          exportSound.currentTime = 0;
-          exportSound.volume = 0.8;
-          exportSound.play().catch(() => {});
-        } catch { /* автоплей может быть запрещён — не критично */ }
-
-        const flash = document.createElement('div');
-        flash.className = 'flash';
-        document.body.appendChild(flash);
-        flash.addEventListener('animationend', () => flash.remove());
-      }, fmt.mime, fmt.quality);
-    } finally {
-      btnExport.textContent = original;
-      btnExport.disabled = false;
+      full = getScratch('export', 1, 1);
+      renderPipeline(exportSource(), full);
+    } catch (err) {
+      console.error(err);
+      done('не хватило памяти для экспорта');
+      return;
     }
+
+    full.toBlob(blob => {
+      // toBlob отдаёт null, если формат не поддерживается (WEBP в старых Safari)
+      if (!blob) {
+        done(`браузер не умеет сохранять ${fmt.ext.toUpperCase()} — попробуй PNG`);
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${fileName}-elliot.${fmt.ext}`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+      // звук успешного экспорта (прикреплённый пользователем)
+      try {
+        exportSound.currentTime = 0;
+        exportSound.volume = 0.8;
+        exportSound.play().catch(() => {});
+      } catch { /* автоплей может быть запрещён — не критично */ }
+
+      const flash = document.createElement('div');
+      flash.className = 'flash';
+      document.body.appendChild(flash);
+      flash.addEventListener('animationend', () => flash.remove());
+      // подстраховка: если анимации отключены, элемент иначе висел бы вечно
+      setTimeout(() => flash.remove(), 1500);
+
+      done();
+    }, fmt.mime, fmt.quality);
   }, 30);
 });
 
@@ -679,11 +810,14 @@ btnExport.addEventListener('click', () => {
   if (!card || matchMedia('(pointer: coarse)').matches) return;
 
   card.addEventListener('mousemove', e => {
+    // пока панель выезжает, её двигает transform из .reveal — инлайновый
+    // наклон в этот момент отменил бы анимацию появления
+    if (card.classList.contains('reveal') && !card.classList.contains('is-visible')) return;
     const rect = card.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
     card.style.transform = `perspective(1100px) rotateY(${x * 4}deg) rotateX(${-y * 4}deg)`;
-  });
+  }, { passive: true });
   card.addEventListener('mouseleave', () => { card.style.transform = ''; });
 })();
 

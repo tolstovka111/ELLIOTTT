@@ -3,8 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Elliot</title>
+  <title>Elliot Editor — фото-редактор эффектов в браузере</title>
   <meta name="description" content="Elliot Editor — онлайн фото-редактор: пикселизация, глитч, шум, яркость, контраст и другие эффекты. Экспорт в один клик.">
+  <!-- всё считается локально: сети не нужны вообще, и CSP это гарантирует -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#070604">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:title" content="Elliot Editor — фото-редактор эффектов в браузере">
+  <meta property="og:description" content="Пикселизация, глитч, шум, RGB-сдвиг, сканлайны и ещё восемь эффектов. Всё локально, без загрузки файлов на сервер.">
   <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="menu.css">
@@ -93,10 +102,11 @@
       <section class="panel panel--preview tilt-card">
         <div class="panel__head">
           <h2>ХОЛСТ</h2>
-          <span class="panel__hint" id="img-info">файл не загружен</span>
+          <span class="panel__hint" id="img-info" role="status" aria-live="polite">файл не загружен</span>
         </div>
 
-        <div class="dropzone" id="dropzone">
+        <div class="dropzone" id="dropzone" role="button" tabindex="0"
+             aria-label="Загрузить фото: перетащи файл сюда или нажми, чтобы выбрать">
           <input type="file" id="file-input" accept="image/*" hidden>
           <div class="dropzone__idle" id="dz-idle">
             <div class="dropzone__icon" aria-hidden="true">
@@ -116,7 +126,7 @@
           <button class="btn btn--ghost" id="btn-new" hidden>↺ Другое фото</button>
           <div class="export-group">
             <label class="format-label" for="format-select">Формат</label>
-            <select id="format-select" aria-label="Формат экспорта">
+            <select id="format-select">
               <option value="png" selected>PNG</option>
               <option value="jpeg">JPEG</option>
               <option value="webp">WEBP</option>
@@ -137,62 +147,62 @@
 
           <div class="ctrl" data-fx="pixelate">
             <div class="ctrl__label"><span class="ctrl__icon">▦</span> Пикселизация <output>0</output></div>
-            <input type="range" min="0" max="100" value="0" step="1" data-key="pixelate">
+            <input type="range" min="0" max="100" value="0" step="1" data-key="pixelate" aria-label="Пикселизация">
           </div>
 
           <div class="ctrl" data-fx="brightness">
             <div class="ctrl__label"><span class="ctrl__icon">☀</span> Яркость <output>0</output></div>
-            <input type="range" min="-100" max="100" value="0" step="1" data-key="brightness">
+            <input type="range" min="-100" max="100" value="0" step="1" data-key="brightness" aria-label="Яркость">
           </div>
 
           <div class="ctrl" data-fx="contrast">
             <div class="ctrl__label"><span class="ctrl__icon">◐</span> Контраст <output>0</output></div>
-            <input type="range" min="-100" max="100" value="0" step="1" data-key="contrast">
+            <input type="range" min="-100" max="100" value="0" step="1" data-key="contrast" aria-label="Контраст">
           </div>
 
           <div class="ctrl" data-fx="saturation">
             <div class="ctrl__label"><span class="ctrl__icon">❖</span> Насыщенность <output>0</output></div>
-            <input type="range" min="-100" max="100" value="0" step="1" data-key="saturation">
+            <input type="range" min="-100" max="100" value="0" step="1" data-key="saturation" aria-label="Насыщенность">
           </div>
 
           <div class="ctrl" data-fx="glitch">
             <div class="ctrl__label"><span class="ctrl__icon">⚡</span> Глитч <output>0</output></div>
-            <input type="range" min="0" max="100" value="0" step="1" data-key="glitch">
+            <input type="range" min="0" max="100" value="0" step="1" data-key="glitch" aria-label="Глитч">
           </div>
 
           <div class="ctrl" data-fx="noise">
             <div class="ctrl__label"><span class="ctrl__icon">▒</span> Шум <output>0</output></div>
-            <input type="range" min="0" max="100" value="0" step="1" data-key="noise">
+            <input type="range" min="0" max="100" value="0" step="1" data-key="noise" aria-label="Шум">
           </div>
 
           <div class="ctrl" data-fx="aberration">
             <div class="ctrl__label"><span class="ctrl__icon">◈</span> RGB-сдвиг <output>0</output></div>
-            <input type="range" min="0" max="100" value="0" step="1" data-key="aberration">
+            <input type="range" min="0" max="100" value="0" step="1" data-key="aberration" aria-label="RGB-сдвиг">
           </div>
 
           <div class="ctrl" data-fx="scanlines">
             <div class="ctrl__label"><span class="ctrl__icon">☰</span> Сканлайны (VHS) <output>0</output></div>
-            <input type="range" min="0" max="100" value="0" step="1" data-key="scanlines">
+            <input type="range" min="0" max="100" value="0" step="1" data-key="scanlines" aria-label="Сканлайны (VHS)">
           </div>
 
           <div class="ctrl" data-fx="vignette">
             <div class="ctrl__label"><span class="ctrl__icon">◎</span> Виньетка <output>0</output></div>
-            <input type="range" min="0" max="100" value="0" step="1" data-key="vignette">
+            <input type="range" min="0" max="100" value="0" step="1" data-key="vignette" aria-label="Виньетка">
           </div>
 
           <div class="ctrl" data-fx="gold">
             <div class="ctrl__label"><span class="ctrl__icon">✦</span> Золотой тон <output>0</output></div>
-            <input type="range" min="0" max="100" value="0" step="1" data-key="gold">
+            <input type="range" min="0" max="100" value="0" step="1" data-key="gold" aria-label="Золотой тон">
           </div>
 
           <div class="ctrl" data-fx="grayscale">
             <div class="ctrl__label"><span class="ctrl__icon">◑</span> Чёрно-белое <output>0</output></div>
-            <input type="range" min="0" max="100" value="0" step="1" data-key="grayscale">
+            <input type="range" min="0" max="100" value="0" step="1" data-key="grayscale" aria-label="Чёрно-белое">
           </div>
 
           <div class="ctrl" data-fx="invert">
             <div class="ctrl__label"><span class="ctrl__icon">◒</span> Инверсия <output>0</output></div>
-            <input type="range" min="0" max="100" value="0" step="1" data-key="invert">
+            <input type="range" min="0" max="100" value="0" step="1" data-key="invert" aria-label="Инверсия">
           </div>
 
         </div>

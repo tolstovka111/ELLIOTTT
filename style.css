@@ -30,6 +30,10 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* [hidden] обязан побеждать display из наших правил (.btn, canvas и т.п.),
+   иначе «↺ Другое фото» и холст видны ещё до загрузки фото */
+[hidden] { display: none !important; }
+
 html { scroll-behavior: smooth; overflow-x: clip; }
 
 body {
@@ -42,6 +46,26 @@ body {
 }
 
 ::selection { background: var(--yellow); color: var(--black); }
+
+/* видимая рамка фокуса — до этого клавиатурная навигация была вслепую */
+:focus-visible {
+  outline: 2px solid var(--yellow-hot);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* доступно скринридеру, невидимо на экране */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
 
 /* ---------- фон: жидкое золото ---------- */
 #bg-canvas {
@@ -58,13 +82,27 @@ body {
     var(--black);
 }
 
+/* WebGL недоступен или контекст потерян — холст прячется, градиентный
+   фолбэк переезжает на body, чтобы страница не осталась плоско-чёрной */
+.no-webgl body, body.no-webgl {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 30%, rgba(255, 160, 0, .22), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 80% 70%, rgba(255, 196, 0, .16), transparent 60%),
+    var(--black);
+  background-attachment: fixed;
+}
+
 .bg-vignette {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 120% 100% at 50% 50%, transparent 40%, rgba(0,0,0,.55) 100%);
+    /* мягкая «подложка» слева, где лежит текст героя — без неё
+       светлые прожилки шейдера съедают подзаголовок */
+    linear-gradient(100deg, rgba(0,0,0,.62) 0%, rgba(0,0,0,.34) 34%, transparent 62%),
+    linear-gradient(to bottom, rgba(0,0,0,.45) 0%, transparent 22%, transparent 74%, rgba(0,0,0,.5) 100%),
+    radial-gradient(ellipse 120% 100% at 50% 50%, transparent 38%, rgba(0,0,0,.62) 100%);
 }
 
 /* ---------- кубы / общие 3D-грани ---------- */
@@ -164,7 +202,19 @@ body {
   gap: 40px;
 }
 
-.hero__left { text-align: left; }
+.hero__left { text-align: left; position: relative; }
+
+/* локальный «дым» строго под текстом: заголовок и подзаголовок читаются
+   на любом кадре шейдера, а фон при этом остаётся виден */
+.hero__left::before {
+  content: '';
+  position: absolute;
+  inset: -8% -14% -12% -10%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 78% 72% at 32% 50%, rgba(4, 3, 2, .82), rgba(4, 3, 2, .45) 55%, transparent 78%);
+  filter: blur(6px);
+}
 
 .hero__right {
   display: flex;
@@ -207,8 +257,9 @@ body {
 
 .hero__sub {
   margin: 30px 0 0;
-  color: var(--grey);
-  text-shadow: 0 2px 14px rgba(0, 0, 0, .9), 0 0 4px rgba(0, 0, 0, .8);
+  /* было var(--grey) — на светлых прожилках фона контраста не хватало */
+  color: #cfc6ae;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, .95), 0 0 6px rgba(0, 0, 0, .9), 0 0 2px rgba(0, 0, 0, .8);
   font-family: var(--font-retro);
   font-size: clamp(1.35rem, 2.6vw, 1.8rem);
   line-height: 1.55;
@@ -724,11 +775,21 @@ input[type="range"]::-moz-range-thumb {
 }
 
 @media (max-width: 520px) {
-  .site-header { padding: 12px 16px; }
-  .site-nav { display: none; }
+  .site-header { padding: 12px 14px; gap: 10px; }
+  /* логотип ужимается первым, меню-пилюля остаётся целой */
+  .logo { font-size: .62rem; gap: 9px; min-width: 0; }
+  .logo__cube { --cs: 17px; }
   .editor { padding: 56px 14px; }
-  .panel { padding: 18px; }
+  /* отступ должен перекрывать угловые срезы мозаики (до 2 клеток по 14px
+     ниже верхнего ряда), иначе контент вылезает за пиксельную форму */
+  .panel { padding: 32px 30px 30px; }
   .panel__actions { justify-content: center; }
+  .hero__left::before { inset: -6% -8%; }
+}
+
+/* совсем узкие экраны: подпись логотипа прячем, оставляем куб + меню */
+@media (max-width: 380px) {
+  .logo__text { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

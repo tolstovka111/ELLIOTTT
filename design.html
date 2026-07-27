@@ -3,8 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Elliot</title>
+  <title>Elliot Design — интерактивное 3D-стекло</title>
   <meta name="description" content="Elliot Design — интерактивный эффект разбитого стекла: осколки следуют за курсором.">
+  <!-- всё считается локально: сети не нужны вообще, и CSP это гарантирует -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#020604">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:title" content="Elliot Design — интерактивное 3D-стекло">
+  <meta property="og:description" content="Скруглённые стеклянные плиты висят на разной глубине, следуют за курсором и ломают надпись на швах. Чистые CSS 3D и JS.">
   <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="design.css">
   <link rel="stylesheet" href="menu.css">
@@ -41,12 +50,17 @@
 
   <!-- ======== СЦЕНА: РАЗБИТОЕ СТЕКЛО ======== -->
   <section class="glass-stage" id="stage" aria-label="Elliot Design — интерактивное разбитое стекло">
+    <!-- Единственный настоящий заголовок страницы. Копии внутри осколков
+         декоративные: их шесть, поэтому там обычный <p>, иначе на странице
+         оказалось бы шесть <h1> — плохо и для поиска, и для скринридеров. -->
+    <h1 class="visually-hidden">Elliot Design</h1>
+
     <!-- осколки строит design.js: каждый — полигон с полной копией контента -->
     <template id="pane-content">
       <div class="content">
         <div class="content__block">
           <p class="content__overline">ELLIOT · REAL-TIME DESIGN STUDIO</p>
-          <h1 class="content__title">Elliot<br>Design.</h1>
+          <p class="content__title">Elliot<br>Design.</p>
           <p class="content__sub">Тёмно-зелёное 3D-стекло: скруглённые плиты висят в глубине,<br>следуют за курсором и ловят свет. Чистые CSS 3D и JS.</p>
           <div class="content__actions">
             <span class="glass-btn glass-btn--solid">IMG Editor</span>

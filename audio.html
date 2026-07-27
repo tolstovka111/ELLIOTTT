@@ -3,8 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Elliot</title>
+  <title>Elliot Audio Mixer — обработка звука в браузере</title>
   <meta name="description" content="Audio Mixer — обработка звука в браузере: скорость, тон, реверб, 8-бит, дисторшн. Прослушай и скачай в WAV или MP3.">
+  <!-- всё считается локально: сети не нужны вообще, и CSP это гарантирует -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#08050c">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:title" content="Elliot Audio Mixer — обработка звука в браузере">
+  <meta property="og:description" content="Скорость, тон, реверб, 8-бит, дисторшн, эхо, тремоло. Экспорт в WAV или MP3 с тегами и обложкой — без загрузки файлов на сервер.">
   <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="audio.css">
   <link rel="stylesheet" href="menu.css">
@@ -93,10 +102,11 @@
       <section class="panel panel--preview tilt-card">
         <div class="panel__head">
           <h2>ТРЕК</h2>
-          <span class="panel__hint" id="track-info">файл не загружен</span>
+          <span class="panel__hint" id="track-info" role="status" aria-live="polite">файл не загружен</span>
         </div>
 
-        <div class="dropzone" id="dropzone">
+        <div class="dropzone" id="dropzone" role="button" tabindex="0"
+             aria-label="Загрузить аудио или видео: перетащи файл сюда или нажми, чтобы выбрать">
           <input type="file" id="file-input" accept="audio/*,video/*" hidden>
           <div class="dropzone__idle" id="dz-idle">
             <div class="dropzone__icon" aria-hidden="true">
@@ -109,20 +119,23 @@
             <p><b>Перетащи аудио или видео сюда</b><br>или нажми, чтобы выбрать файл</p>
             <span class="dropzone__formats">MP3 · WAV · OGG · MP4 · WEBM</span>
           </div>
-          <div class="wave-wrap" id="wave-wrap" hidden>
-            <canvas id="wave" width="280" height="44"></canvas>
+          <!-- размер холста выставляет audio.js под реальную ширину и DPR -->
+          <div class="wave-wrap" id="wave-wrap" role="slider" tabindex="0"
+               aria-label="Позиция воспроизведения — кликни или тяни стрелками"
+               aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
+            <canvas id="wave"></canvas>
           </div>
         </div>
 
         <div class="transport">
-          <button class="btn btn--process" id="btn-process" disabled>ОБРАБОТАТЬ</button>
-          <button class="btn btn--play" id="btn-play" disabled><span class="t-ico t-ico--play" aria-hidden="true"></span><span id="play-label">СЛУШАТЬ</span></button>
-          <span class="track-hint" id="proc-hint"></span>
+          <button class="btn btn--process" id="btn-process" type="button" disabled>ОБРАБОТАТЬ</button>
+          <button class="btn btn--play" id="btn-play" type="button" disabled><span class="t-ico t-ico--play" aria-hidden="true"></span><span id="play-label">СЛУШАТЬ</span></button>
+          <span class="track-hint" id="proc-hint" role="status" aria-live="polite"></span>
         </div>
 
         <div class="meta">
-          <input id="meta-artist" type="text" placeholder="Исполнитель" maxlength="80" autocomplete="off">
-          <input id="meta-title" type="text" placeholder="Название трека" maxlength="80" autocomplete="off">
+          <input id="meta-artist" type="text" placeholder="Исполнитель" aria-label="Исполнитель" maxlength="80" autocomplete="off">
+          <input id="meta-title" type="text" placeholder="Название трека" aria-label="Название трека" maxlength="80" autocomplete="off">
           <div class="meta__cover">
             <input type="file" id="cover-input" accept="image/*" hidden>
             <button class="btn btn--ghost" id="btn-cover" type="button">＋ Обложка</button>
@@ -154,42 +167,42 @@
 
           <div class="ctrl">
             <div class="ctrl__label"><span class="ctrl__icon">▸</span> Скорость, % <output>100</output></div>
-            <input type="range" min="25" max="200" value="100" step="1" data-key="speed">
+            <input type="range" min="25" max="200" value="100" step="1" data-key="speed" aria-label="Скорость, %">
           </div>
 
           <div class="ctrl">
             <div class="ctrl__label"><span class="ctrl__icon">♪</span> Тон, полутона <output>0</output></div>
-            <input type="range" min="-12" max="12" value="0" step="1" data-key="pitch">
+            <input type="range" min="-12" max="12" value="0" step="1" data-key="pitch" aria-label="Тон, полутона">
           </div>
 
           <div class="ctrl">
             <div class="ctrl__label"><span class="ctrl__icon">◎</span> Реверб <output>0</output></div>
-            <input type="range" min="0" max="100" value="0" step="1" data-key="reverb">
+            <input type="range" min="0" max="100" value="0" step="1" data-key="reverb" aria-label="Реверб">
           </div>
 
           <div class="ctrl">
             <div class="ctrl__label"><span class="ctrl__icon">▦</span> 8-бит (пиксель-звук) <output>0</output></div>
-            <input type="range" min="0" max="100" value="0" step="1" data-key="crush">
+            <input type="range" min="0" max="100" value="0" step="1" data-key="crush" aria-label="8-бит (пиксель-звук)">
           </div>
 
           <div class="ctrl">
             <div class="ctrl__label"><span class="ctrl__icon">⚡</span> Дисторшн <output>0</output></div>
-            <input type="range" min="0" max="100" value="0" step="1" data-key="distortion">
+            <input type="range" min="0" max="100" value="0" step="1" data-key="distortion" aria-label="Дисторшн">
           </div>
 
           <div class="ctrl">
             <div class="ctrl__label"><span class="ctrl__icon">≋</span> Эхо <output>0</output></div>
-            <input type="range" min="0" max="100" value="0" step="1" data-key="echo">
+            <input type="range" min="0" max="100" value="0" step="1" data-key="echo" aria-label="Эхо">
           </div>
 
           <div class="ctrl">
             <div class="ctrl__label"><span class="ctrl__icon">≈</span> Под водой <output>0</output></div>
-            <input type="range" min="0" max="100" value="0" step="1" data-key="underwater">
+            <input type="range" min="0" max="100" value="0" step="1" data-key="underwater" aria-label="Под водой">
           </div>
 
           <div class="ctrl">
             <div class="ctrl__label"><span class="ctrl__icon">∿</span> Тремоло <output>0</output></div>
-            <input type="range" min="0" max="100" value="0" step="1" data-key="tremolo">
+            <input type="range" min="0" max="100" value="0" step="1" data-key="tremolo" aria-label="Тремоло">
           </div>
 
         </div>

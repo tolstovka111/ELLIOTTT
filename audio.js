@@ -12,8 +12,10 @@
 
 (function liquidAmethystBackground() {
   const canvas = document.getElementById('bg-canvas');
-  const gl = canvas.getContext('webgl', { antialias: false, alpha: false });
-  if (!gl) return;
+  if (!canvas) return;
+  const gl = canvas.getContext('webgl', { antialias: false, alpha: false, depth: false, stencil: false })
+    || canvas.getContext('experimental-webgl', { antialias: false, alpha: false });
+  if (!gl) { document.body.classList.add('no-webgl'); return; } // остаётся CSS-фолбэк
 
   const VERT = `
     attribute vec2 a_pos;
@@ -101,12 +103,17 @@
 
   const vs = compile(gl.VERTEX_SHADER, VERT);
   const fs = compile(gl.FRAGMENT_SHADER, FRAG);
-  if (!vs || !fs) return;
+  if (!vs || !fs) { document.body.classList.add('no-webgl'); return; }
 
   const prog = gl.createProgram();
   gl.attachShader(prog, vs);
   gl.attachShader(prog, fs);
   gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    console.error(gl.getProgramInfoLog(prog));
+    document.body.classList.add('no-webgl');
+    return; // остаётся CSS-фолбэк вместо чёрного экрана
+  }
   gl.useProgram(prog);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
@@ -118,25 +125,54 @@
   const uRes = gl.getUniformLocation(prog, 'u_res');
   const uTime = gl.getUniformLocation(prog, 'u_time');
 
-  const SCALE = 0.5;
+  /* Шейдер тяжёлый (пять fbm по пять октав на пиксель), поэтому кроме
+     половинного масштаба ограничиваем и абсолютное число пикселей —
+     иначе на больших экранах со слабой видеокартой всё проседает. */
+  const MAX_PIXELS = 640 * 360;
+  let raf = 0;
+
   function resize() {
-    canvas.width = Math.max(1, innerWidth * SCALE);
-    canvas.height = Math.max(1, innerHeight * SCALE);
+    const scale = Math.min(0.5, Math.sqrt(MAX_PIXELS / Math.max(1, innerWidth * innerHeight)));
+    canvas.width = Math.max(1, Math.round(innerWidth * scale));
+    canvas.height = Math.max(1, Math.round(innerHeight * scale));
     gl.viewport(0, 0, canvas.width, canvas.height);
   }
-  addEventListener('resize', resize);
+
+  // resize стреляет пачками — пересобираем буфер не чаще одного кадра
+  let resizeQueued = false;
+  addEventListener('resize', () => {
+    if (resizeQueued) return;
+    resizeQueued = true;
+    requestAnimationFrame(() => { resizeQueued = false; resize(); });
+  }, { passive: true });
   resize();
 
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const start = performance.now();
 
   function frame(now) {
+    raf = 0;
     gl.uniform2f(uRes, canvas.width, canvas.height);
     gl.uniform1f(uTime, (now - start) / 1000);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    if (!reduceMotion) requestAnimationFrame(frame);
+    if (!reduceMotion && !document.hidden) raf = requestAnimationFrame(frame);
   }
-  requestAnimationFrame(frame);
+  function play() { if (!raf) raf = requestAnimationFrame(frame); }
+  play();
+
+  // вкладка в фоне — не жжём GPU впустую
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) play(); });
+
+  /* при потере контекста (спящий режим, сброс драйвера) фон навсегда
+     оставался чёрным. Перезагружать страницу нельзя — улетит загруженный
+     трек, поэтому просто отдаём фон CSS-градиенту. */
+  canvas.addEventListener('webglcontextlost', e => {
+    e.preventDefault();
+    cancelAnimationFrame(raf);
+    raf = 0;
+    canvas.hidden = true;
+    document.body.classList.add('no-webgl');
+  });
 })();
 
 /* ================= 2. ПИКСЕЛЬНЫЕ ПАНЕЛИ ================= */
@@ -274,14 +310,29 @@ const coverPreview = document.getElementById('cover-preview');
 
 let coverBytes = null; // Uint8Array картинки для ID3 APIC
 let coverMime = '';
+let coverUrl = '';     // текущий objectURL превью — его надо освобождать
+
+const MAX_COVER_BYTES = 8 * 1024 * 1024;
 
 btnCover.addEventListener('click', () => coverInput.click());
 coverInput.addEventListener('change', async () => {
   const f = coverInput.files[0];
+  coverInput.value = '';
   if (!f) return;
+  if (!f.type.startsWith('image/')) {
+    procHint.textContent = 'обложка должна быть картинкой';
+    return;
+  }
+  // обложка целиком уезжает в ID3-тег, так что великанов не берём
+  if (f.size > MAX_COVER_BYTES) {
+    procHint.textContent = `обложка тяжелее ${MAX_COVER_BYTES / 1024 / 1024} МБ`;
+    return;
+  }
   coverBytes = new Uint8Array(await f.arrayBuffer());
   coverMime = f.type || 'image/jpeg';
-  coverPreview.src = URL.createObjectURL(f);
+  if (coverUrl) URL.revokeObjectURL(coverUrl); // иначе прошлые обложки текли
+  coverUrl = URL.createObjectURL(f);
+  coverPreview.src = coverUrl;
   coverPreview.hidden = false;
   btnCover.textContent = '↺ Обложка';
 });
@@ -294,9 +345,19 @@ if (typeof lamejs === 'undefined') {
 /* ---------- загрузка файла ---------- */
 
 dropzone.addEventListener('click', () => { if (!originalBuffer) fileInput.click(); });
+
+// зона загрузки — это <div>, так что клавиатуре нужно помочь руками
+dropzone.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  if (e.target.closest('.wave-wrap')) return; // там свои клавиши
+  e.preventDefault();
+  if (!originalBuffer) fileInput.click();
+});
+
 btnNew.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', () => {
   if (fileInput.files[0]) loadFile(fileInput.files[0]);
+  fileInput.value = ''; // иначе тот же файл повторно не выберется
 });
 
 ['dragenter', 'dragover'].forEach(ev =>
@@ -308,25 +369,48 @@ dropzone.addEventListener('drop', e => {
   if (file) loadFile(file);
 });
 
+/* Обработка идёт по сэмплам в оперативной памяти: реверб и эхо держат
+   ещё несколько копий дорожки. Без потолка длинный концертник просто
+   вешал вкладку, поэтому предупреждаем заранее. */
+const MAX_FILE_BYTES = 150 * 1024 * 1024;
+const MAX_DURATION_SEC = 15 * 60;
+
 async function loadFile(file) {
+  if (file.size > MAX_FILE_BYTES) {
+    trackInfo.textContent = `слишком большой файл (>${Math.round(MAX_FILE_BYTES / 1024 / 1024)} МБ)`;
+    return;
+  }
+
   fileName = (file.name || 'track').replace(/\.[^.]+$/, '');
   trackInfo.textContent = 'декодирую…';
+
+  let decoded;
   try {
     const data = await file.arrayBuffer();
     // decodeAudioData вытаскивает аудиодорожку и из видеофайлов
-    originalBuffer = await getAudioCtx().decodeAudioData(data);
+    decoded = await getAudioCtx().decodeAudioData(data);
   } catch {
     trackInfo.textContent = 'не удалось декодировать файл';
     return;
   }
+
+  if (decoded.duration > MAX_DURATION_SEC) {
+    trackInfo.textContent = `трек длиннее ${MAX_DURATION_SEC / 60} минут — браузер не потянет`;
+    return;
+  }
+
   stopPlayback();
   playOffset = 0;
+  // старые буферы отпускаем до того, как возьмём память под новый
+  originalBuffer = null;
   processedBuffer = null;
+  originalBuffer = decoded;
   stale = true;
 
   dzIdle.hidden = true;
   waveWrap.hidden = false;
   dropzone.classList.add('has-image');
+  dropzone.setAttribute('aria-label', `Трек загружен: ${file.name}`);
   btnNew.hidden = false;
   btnProcess.disabled = false;
   btnPlay.disabled = false;
@@ -572,11 +656,17 @@ btnProcess.addEventListener('click', () => {
       stale = false;
       drawWave(processedBuffer, true);
       trackInfo.textContent = trackInfo.textContent.replace(/ · обработано.*$/, '') + ` · обработано ${processedBuffer.duration.toFixed(1)}с`;
+    } catch (err) {
+      // раньше ошибка молча уходила в консоль, и кнопка просто «не работала»
+      console.error(err);
+      processedBuffer = null;
+      procHint.textContent = 'не хватило памяти — попробуй трек покороче или меньше эффектов';
+      return;
     } finally {
       btnProcess.textContent = 'ОБРАБОТАТЬ';
       btnProcess.disabled = false;
-      updateStaleUI();
     }
+    updateStaleUI();
   }, 30);
 });
 
@@ -600,7 +690,15 @@ function startPlayback(offset) {
   playingSource = ctx.createBufferSource();
   playingSource.buffer = buf;
   playingSource.connect(ctx.destination);
-  playingSource.onended = () => { playOffset = 0; stopPlayback(); };
+  /* Трек доиграл до конца — встаём на начало.
+     Раньше здесь было `playOffset = 0; stopPlayback();`, но stopPlayback
+     пересчитывал позицию из ещё живого playingSource и возвращал playOffset
+     на конец трека — после чего кнопка «СЛУШАТЬ» больше ничего не играла. */
+  playingSource.onended = () => {
+    playingSource = null;
+    playOffset = 0;
+    stopPlayback();
+  };
   playStartCtx = ctx.currentTime;
   playingSource.start(0, playOffset);
   setPlayUI(true);
@@ -617,12 +715,11 @@ btnPlay.addEventListener('click', () => {
   startPlayback(playOffset);
 });
 
-// клик по волне = перемотка (и во время игры, и на паузе)
-waveWrap.addEventListener('click', e => {
+// перемотка на позицию 0..1 (и во время игры, и на паузе)
+function seekTo(frac) {
   const buf = currentBuf();
   if (!buf) return;
-  const r = waveWrap.getBoundingClientRect();
-  const frac = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+  frac = Math.max(0, Math.min(1, frac));
   const wasPlaying = !!playingSource;
   if (wasPlaying) {
     playingSource.onended = null;
@@ -632,6 +729,25 @@ waveWrap.addEventListener('click', e => {
   playOffset = frac * buf.duration;
   drawWave(buf, !!processedBuffer, frac);
   if (wasPlaying) startPlayback(playOffset);
+}
+
+waveWrap.addEventListener('click', e => {
+  const r = waveWrap.getBoundingClientRect();
+  seekTo((e.clientX - r.left) / r.width);
+});
+
+// та же перемотка с клавиатуры — волна объявлена как role="slider"
+waveWrap.addEventListener('keydown', e => {
+  const buf = currentBuf();
+  if (!buf) return;
+  const cur = playbackPos() / buf.duration;
+  const stepFrac = 5 / buf.duration; // ±5 секунд
+  if (e.key === 'ArrowRight' || e.key === 'ArrowUp') seekTo(cur + stepFrac);
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') seekTo(cur - stepFrac);
+  else if (e.key === 'Home') seekTo(0);
+  else if (e.key === 'End') seekTo(1);
+  else return;
+  e.preventDefault();
 });
 
 function setPlayUI(playing) {
@@ -655,31 +771,65 @@ function stopPlayback() {
 
 /* ---------- волна ---------- */
 
+/* Холст раньше жил с фиксированными 280×44 из разметки и растягивался
+   CSS до ~700×220 — волна выглядела мыльной лесенкой. Теперь размер
+   буфера равен реальному размеру элемента с поправкой на DPR. */
+let lastWave = null; // что нарисовано сейчас — нужно для перерисовки при resize
+
+function fitWave() {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = Math.max(1, Math.round(waveCanvas.clientWidth * dpr));
+  const h = Math.max(1, Math.round(waveCanvas.clientHeight * dpr));
+  if (waveCanvas.width === w && waveCanvas.height === h) return false;
+  waveCanvas.width = w;
+  waveCanvas.height = h;
+  return true;
+}
+
+new ResizeObserver(() => {
+  if (fitWave() && lastWave) drawWave(lastWave.buffer, lastWave.processed, lastWave.progress);
+}).observe(waveCanvas);
+
 function drawWave(buffer, processed, progress = 0) {
+  lastWave = { buffer, processed, progress };
+  if (waveWrap.hidden) return; // размеров ещё нет — нарисуем, когда покажем
+  fitWave();
+
   const W = waveCanvas.width, H = waveCanvas.height;
   const ctx2d = waveCanvas.getContext('2d');
   ctx2d.clearRect(0, 0, W, H);
+
   const data = buffer.getChannelData(0);
   const perBar = Math.max(1, Math.floor(data.length / W));
+  // шаг выборки внутри столбца: на коротких треках берём каждый сэмпл,
+  // на длинных — прореживаем, иначе отрисовка съедает кадр
+  const step = Math.max(1, Math.floor(perBar / 24));
   const playX = Math.round(progress * W);
+  const half = H / 2;
+
   for (let x = 0; x < W; x++) {
     let peak = 0;
     const s = x * perBar;
-    for (let i = s; i < s + perBar; i += 32) {
-      const v = Math.abs(data[i] || 0);
+    const end = Math.min(s + perBar, data.length);
+    for (let i = s; i < end; i += step) {
+      const v = data[i] < 0 ? -data[i] : data[i];
       if (v > peak) peak = v;
     }
-    const h = Math.max(1, Math.round(peak * (H / 2 - 1)));
+    const h = Math.max(1, Math.round(peak * (half - 1)));
     const played = x < playX;
     ctx2d.fillStyle = processed
       ? (played ? '#f3e8ff' : (x % 2 ? '#c084fc' : '#a855f7'))
       : (played ? '#b9a8d6' : (x % 2 ? '#5b4a75' : '#4a3b61'));
-    ctx2d.fillRect(x, H / 2 - h, 1, h * 2);
+    ctx2d.fillRect(x, half - h, 1, h * 2);
   }
+
   if (progress > 0 && progress < 1) {
     ctx2d.fillStyle = '#ffffff';
-    ctx2d.fillRect(playX, 0, 1, H);
+    ctx2d.fillRect(playX, 0, Math.max(1, Math.round(H / 110)), H);
   }
+
+  // экранному диктору сообщаем позицию
+  waveWrap.setAttribute('aria-valuenow', String(Math.round(progress * 100)));
 }
 
 /* ---------- экспорт: WAV / MP3 ---------- */
@@ -703,10 +853,13 @@ function bufferToInt16(buffer) {
 function buildId3(title, artist) {
   const frames = [];
 
+  /* UTF-16LE. Идём по code unit'ам, а не по code point'ам: раньше цикл
+     for..of выдавал символы вне BMP (эмодзи) одним числом >0xFFFF и писал
+     из него только два младших байта — тег ломался. */
   const utf16 = s => {
     const out = [1, 0xFF, 0xFE]; // encoding=UTF-16 + BOM
-    for (const ch of s) {
-      const c = ch.codePointAt(0);
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
       out.push(c & 0xFF, (c >> 8) & 0xFF);
     }
     out.push(0, 0);
@@ -843,14 +996,21 @@ btnExport.addEventListener('click', () => {
 
       const artist = metaArtist.value.trim();
       const title = metaTitle.value.trim();
-      const base = (artist || title)
-        ? [artist, title].filter(Boolean).join(' - ').replace(/[\\/:*?"<>|]/g, '')
-        : `${fileName}-elliot`;
+      /* Из полей строится имя файла, поэтому вычищаем не только запрещённые
+         в Windows символы, но и точки/пробелы по краям и управляющие коды —
+         иначе получались имена вроде «..wav», которые система не принимает. */
+      const safe = s => s.replace(/[\\/:*?"<>|]/g, '')
+        .replace(/[\u0000-\u001f\u007f]/g, '')
+        .replace(/^[.\s]+|[.\s]+$/g, '')
+        .slice(0, 100);
+      const base = safe([artist, title].filter(Boolean).join(' - ')) || `${fileName}-elliot`;
+
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
+      a.href = url;
       a.download = `${base}.${ext}`;
       a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
 
       try {
         exportSound.currentTime = 0;
@@ -862,6 +1022,12 @@ btnExport.addEventListener('click', () => {
       flash.className = 'flash';
       document.body.appendChild(flash);
       flash.addEventListener('animationend', () => flash.remove());
+      // подстраховка: если анимации отключены, элемент иначе висел бы вечно
+      setTimeout(() => flash.remove(), 1500);
+    } catch (err) {
+      // раньше ошибка молча уходила в консоль, и кнопка просто «не работала»
+      console.error(err);
+      procHint.textContent = 'не хватило памяти для экспорта — попробуй трек покороче';
     } finally {
       btnExport.textContent = original;
       btnExport.disabled = false;
@@ -944,11 +1110,14 @@ document.addEventListener('input', e => {
   if (!card || matchMedia('(pointer: coarse)').matches) return;
 
   card.addEventListener('mousemove', e => {
+    // пока панель выезжает, её двигает transform из .reveal — инлайновый
+    // наклон в этот момент отменил бы анимацию появления
+    if (card.classList.contains('reveal') && !card.classList.contains('is-visible')) return;
     const rect = card.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
     card.style.transform = `perspective(1100px) rotateY(${x * 4}deg) rotateX(${-y * 4}deg)`;
-  });
+  }, { passive: true });
   card.addEventListener('mouseleave', () => { card.style.transform = ''; });
 })();
 
