@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/lib.php';
+
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');
 
@@ -12,52 +14,26 @@ function fail(int $status, string $message): void
     exit;
 }
 
-$dataDir = __DIR__ . '/data';
+$dir = data_dir();
 
-if (!is_dir($dataDir)) {
-    if (!@mkdir($dataDir, 0770, true) && !is_dir($dataDir)) {
-        fail(500, 'storage unavailable');
-    }
-    @file_put_contents($dataDir . '/.htaccess', "Require all denied\nDeny from all\n");
-    @file_put_contents($dataDir . '/index.html', '');
+if ($dir === '') {
+    fail(500, 'storage unavailable');
 }
 
-$saltFile = $dataDir . '/salt';
-
-if (!is_file($saltFile)) {
-    if (@file_put_contents($saltFile, bin2hex(random_bytes(32)), LOCK_EX) === false) {
-        fail(500, 'storage unavailable');
-    }
-    @chmod($saltFile, 0640);
-}
-
-$salt = trim((string) @file_get_contents($saltFile));
+$salt = install_salt();
 
 if ($salt === '') {
     fail(500, 'storage unavailable');
 }
 
-$clientIp = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
-
-if (getenv('VIEWS_TRUST_PROXY') === '1') {
-    $forwarded = (string) ($_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
-
-    if ($forwarded !== '') {
-        $first = trim(explode(',', $forwarded)[0]);
-
-        if (filter_var($first, FILTER_VALIDATE_IP) !== false) {
-            $clientIp = $first;
-        }
-    }
-}
+$clientIp = client_ip();
 
 if ($clientIp === '') {
     fail(400, 'no client address');
 }
 
 $fingerprint = hash('sha256', $salt . '|' . $clientIp);
-$storeFile = $dataDir . '/views.json';
-$handle = @fopen($storeFile, 'c+');
+$handle = @fopen($dir . '/views.json', 'c+');
 
 if ($handle === false) {
     fail(500, 'storage unavailable');

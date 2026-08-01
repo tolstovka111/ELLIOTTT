@@ -1,1 +1,4 @@
 api/data/
+api/config.php
+assets/blog/*
+!assets/blog/.gitkeep

@@ -190,6 +190,150 @@ a:hover {
 	display: none;
 }
 
+.blognav {
+	cursor: default;
+}
+
+.blognav #blog-prev,
+.blognav #blog-next {
+	cursor: pointer;
+	padding: 0 4px;
+}
+
+.blognav #blog-prev:hover,
+.blognav #blog-next:hover {
+	color: #f00000;
+}
+
+.post {
+	padding: 12px;
+}
+
+.post-images {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 10px;
+	margin-bottom: 8px;
+}
+
+.post-image {
+	position: relative;
+	display: block;
+	line-height: 0;
+	border: 1px solid #d9bfb7;
+	background-color: #f0e0d6;
+}
+
+.post-image img {
+	display: block;
+	max-width: 230px;
+	max-height: 230px;
+	width: auto;
+	height: auto;
+}
+
+.post-image .click {
+	position: absolute;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(0, 0, 0, 0.35);
+	color: #ffffff;
+	font-family: Tahoma, Verdana, Arial, sans-serif;
+	font-size: 11pt;
+	font-weight: bold;
+	line-height: 1;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.post-image.linked:hover .click {
+	background-color: rgba(0, 0, 0, 0.15);
+}
+
+.post-text {
+	margin: 0 0 6px;
+	line-height: 1.45;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
+.post .date {
+	font-size: 9pt;
+	color: #a06a5a;
+}
+
+.adminform label {
+	display: block;
+	margin-bottom: 10px;
+}
+
+.adminform input,
+.adminform textarea {
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	margin-top: 3px;
+	border: 1px solid #d9bfb7;
+	background-color: #ffffff;
+	color: #800000;
+	font-family: inherit;
+	font-size: 10pt;
+	padding: 4px 5px;
+}
+
+.adminform button,
+.adminpost button {
+	border: 1px solid #d9bfb7;
+	background-color: #f0e0d6;
+	color: #800000;
+	font-family: inherit;
+	font-size: 10pt;
+	font-weight: bold;
+	padding: 4px 14px;
+	cursor: pointer;
+}
+
+.adminform button:hover,
+.adminpost button:hover {
+	background-color: #ffffff;
+}
+
+.uploadrow {
+	border-bottom: 1px solid #f0e0d6;
+	margin-bottom: 10px;
+}
+
+.adminpost-images {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 6px;
+}
+
+.adminpost-images img {
+	display: block;
+	max-width: 120px;
+	max-height: 120px;
+	border: 1px solid #d9bfb7;
+}
+
+.adminpost form {
+	margin-top: 6px;
+}
+
+.notice {
+	color: #206020;
+}
+
+.error div {
+	color: #c00000;
+}
+
 .box-body.stats {
 	text-align: center;
 }
