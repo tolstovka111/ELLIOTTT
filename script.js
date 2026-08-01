@@ -1,29 +1,6 @@
 (function () {
 	"use strict";
 
-	var root = document.documentElement;
-	var themeToggle = document.getElementById("theme-toggle");
-
-	function paintToggle() {
-		if (themeToggle) {
-			themeToggle.textContent = root.classList.contains("dark") ? "light" : "dark";
-		}
-	}
-
-	paintToggle();
-
-	if (themeToggle) {
-		themeToggle.addEventListener("click", function () {
-			var dark = root.classList.toggle("dark");
-			paintToggle();
-			try {
-				localStorage.setItem("theme", dark ? "dark" : "light");
-			} catch (e) {
-				paintToggle();
-			}
-		});
-	}
-
 	var intro = document.getElementById("intro");
 	var introClose = document.getElementById("intro-close");
 
