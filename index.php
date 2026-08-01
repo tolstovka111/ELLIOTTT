@@ -24,7 +24,7 @@ if ($authed) {
 <title>4real</title>
 <meta name="description" content="4real is a link-in-bio info-hub with every official profile in one place.">
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=3">
+<link rel="stylesheet" href="/style.css?v=4">
 </head>
 <body>
 
@@ -121,6 +121,7 @@ if ($authed) {
 		<div class="box-title">Stats</div>
 		<div class="box-body stats">
 			<span class="stat"><strong>Total Views:</strong> <span id="views-total">&hellip;</span></span>
+			<span class="stat"><strong>Current Online:</strong> <span id="online-total">&hellip;</span></span>
 		</div>
 	</div>
 
@@ -142,6 +143,6 @@ if ($authed) {
 
 </div>
 
-<script src="/script.js?v=3"></script>
+<script src="/script.js?v=4"></script>
 </body>
 </html>

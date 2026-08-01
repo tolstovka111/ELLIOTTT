@@ -630,24 +630,8 @@ a:hover {
 	padding: 10px 12px;
 }
 
-.say-avatar {
-	flex: 0 0 auto;
-	cursor: pointer;
-}
-
-.say-avatar input,
 .say-clip input {
 	display: none;
-}
-
-.say-avatar img {
-	display: block;
-	width: 44px;
-	height: 44px;
-	object-fit: cover;
-	border: 1px solid #bb8866;
-	border-radius: 6px;
-	background-color: #f0e0d6;
 }
 
 .say-fields {
@@ -783,39 +767,34 @@ a:hover {
 	padding: 10px 12px;
 	border-top: 1px solid rgba(187, 136, 102, 0.45);
 	border-bottom: 1px solid rgba(187, 136, 102, 0.45);
+	overflow: hidden;
 }
 
-.msg-main {
-	display: flex;
-	align-items: flex-start;
-	gap: 10px;
-}
-
-.msg-avatar {
-	flex: 0 0 auto;
-}
-
-.msg-avatar img {
-	display: block;
-	width: 40px;
-	height: 40px;
-	object-fit: cover;
-	border: 1px solid #bb8866;
-	border-radius: 6px;
-	background-color: #f0e0d6;
-	text-align: center;
-	line-height: 40px;
-	font-weight: bold;
-	color: #bb8866;
-}
-
-.msg-body {
-	flex: 1 1 auto;
-	min-width: 0;
+.msg-head {
+	line-height: 1.5;
+	word-wrap: break-word;
 }
 
 .msg-name {
+	color: #117743;
 	font-weight: bold;
+}
+
+.msg-no {
+	color: #800000;
+}
+
+.msg-date {
+	color: #555555;
+}
+
+.msg-file {
+	margin-top: 2px;
+	font-size: 9pt;
+}
+
+.msg-file a {
+	color: #0000ee;
 }
 
 .msg-admin {
@@ -824,19 +803,14 @@ a:hover {
 }
 
 .msg-text {
-	margin-top: 2px;
+	margin-top: 4px;
 	line-height: 1.45;
 	white-space: pre-wrap;
 	word-wrap: break-word;
 }
 
-.msg-date {
-	margin-top: 4px;
-	font-size: 8.5pt;
-	color: #888888;
-}
-
 .msg-actions {
+	clear: both;
 	display: flex;
 	flex-direction: row;
 	flex-wrap: nowrap;
@@ -877,23 +851,22 @@ a:hover {
 }
 
 .msg-media {
-	flex: 0 1 auto;
-	min-width: 0;
+	float: left;
+	margin: 4px 12px 4px 0;
 }
 
-.msg-media img,
-.msg-media video {
+.msg-media img {
 	display: block;
 	max-width: 130px;
-	max-height: 110px;
+	max-height: 130px;
 	width: auto;
 	height: auto;
 	border: 1px solid #bb8866;
-	border-radius: 4px;
 	cursor: zoom-in;
 }
 
 .replyform {
+	clear: both;
 	display: none;
 	align-items: center;
 	gap: 6px;
@@ -940,6 +913,8 @@ a:hover {
 }
 
 .reply {
+	clear: both;
+	overflow: hidden;
 	margin-top: 8px;
 	padding: 6px 0 6px 12px;
 	border-left: 3px solid rgba(187, 136, 102, 0.45);
@@ -1111,25 +1086,13 @@ a:hover {
 }
 
 .comment {
+	overflow: hidden;
 	padding: 8px 0;
 	border-top: 1px solid rgba(187, 136, 102, 0.45);
 }
 
 .comment.folded {
 	display: none;
-}
-
-.comment-media {
-	margin-top: 4px;
-}
-
-.comment-media img {
-	display: block;
-	max-width: 130px;
-	max-height: 110px;
-	border: 1px solid #bb8866;
-	border-radius: 4px;
-	cursor: zoom-in;
 }
 
 .commentform {

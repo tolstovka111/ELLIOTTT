@@ -21,6 +21,7 @@ a public chat.
 | `style.css`, `script.js` | Theme and front-end logic |
 | `api/lib.php` | Storage, posts, chat, emoji and hashing helpers |
 | `api/views.php` | Unique-visitor counter endpoint |
+| `api/online.php` | Marks the visitor present and returns the current online count |
 | `assets/emoji/` | Emoji pack |
 | `assets/404/` | Pictures the 404 page picks from |
 | `assets/blog/`, `assets/chat/`, `assets/comments/` | Uploaded files |
@@ -121,32 +122,38 @@ Every post on `/thr/` has comments, folded behind a **Comments (N)** line.
   button reveals the rest, and **Hide comments** folds everything back.
 - A comment is a name (empty means `Anonymous`), text and one optional
   attachment — **PNG, JPG or GIF up to 3 MB**, no video. There is no cooldown.
+  The header carries the name and the local-time stamp, and an attachment gets
+  the same **File:** line as in the chat. Comments are not numbered.
 - **Answer** appears under other people's comments only; you cannot answer your
   own, which is checked by the same salted address hash as everywhere else.
 - Anyone can delete their own comment or answer, the admin can delete any.
 
 ## Chat
 
-`/c/` is open to everyone, no registration.
+`/c/` is open to everyone, no registration. Posts read like 4chan:
 
-- The compose row is avatar, name, text and a paperclip for one attachment —
-  PNG, WEBP, JPG, GIF or MP4 up to 3 MB. An empty name posts as `Anonymous`.
-- Messages are newest first. The attachment sits to the right of the text as a
-  thumbnail; clicking it opens the full size with a download button and a close
-  cross.
-- Dates read `just now`, `5 minutes ago`, `3 hours ago`, `1 day ago`,
-  `2 weeks ago`, `1 year ago`.
-- **Reply** under a message opens a small form — name and text only, no
-  attachments.
-- **One message per minute per address.** After sending, the Send button becomes
-  a countdown; the last five seconds shimmer through the rainbow and grow a
-  little. Replies obey the same limit but show no timer. The signed-in admin has
-  no cooldown at all.
+```
+Anonymous 08/01/26(Sat)23:36 No.12
+File: photo.jpg (162 KB, 954x954)
+```
+
+- The compose row is a name, the text and a paperclip for one picture —
+  **PNG, JPG, GIF or WEBP up to 3 MB**, no video. An empty name posts as
+  `Anonymous`. There are no avatars.
+- Every message and every reply gets its own **running number**, kept in the
+  store so numbers are never reused.
+- The timestamp is rendered in the **visitor's own time zone** — the server
+  sends the epoch seconds and the browser formats them, precise to the minute.
+- An attachment is announced by a **File:** line with the original name, size
+  and pixel dimensions; the thumbnail floats left of the text and opens full
+  size on click, with a download button.
+- **Reply** under a message opens a small form — name and text only.
+- **One message per minute per address**, replies included. After sending, Send
+  becomes a countdown whose last five seconds shimmer through the rainbow. The
+  signed-in admin has no cooldown.
 - Anyone can delete their own message or reply — ownership is checked by a salted
-  hash of the address, never the raw address. A signed-in admin can delete
-  anything, always posts as **nysha4real — Admin** with the tag shimmering
-  through the rainbow, always uses `assets/avatar-admin.png`, and can reply to
-  anyone. Visitors who upload no avatar get `assets/avatar-anon.jpg`.
+  hash of the address, never the raw address. The admin can delete anything and
+  always posts as **nysha4real — Admin**.
 - The page refreshes the list by itself every 9 seconds, unless a picture is open
   or a reply is being typed.
 - The newest 300 messages are kept; older ones drop off with their files.
@@ -158,6 +165,16 @@ on the page it turns into the picture. It works in blog posts and in chat.
 
 To add or remove emoji, drop PNG, GIF or WEBP files into `assets/emoji/` — the
 file name is the shortcode, so `konatacry.png` becomes `:konatacry:`.
+
+## Counters
+
+The Stats box shows two numbers.
+
+**Total Views** counts unique visitors, not page loads.
+
+**Current Online** counts the addresses seen in the last three minutes. Every
+page pings `api/online.php` on load and the front page repeats the ping once a
+minute, so a visitor sitting in the chat still counts.
 
 ## View counter
 

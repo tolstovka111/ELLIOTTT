@@ -11,12 +11,12 @@ if (isset($_COOKIE['realadmin'])) {
 $authed = !empty($_SESSION['admin']);
 $errors = [];
 
-function comment_upload(array &$errors): string
+function comment_upload(array &$errors): array
 {
     $error = (int) ($_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE);
 
     if ($error === UPLOAD_ERR_NO_FILE) {
-        return '';
+        return [];
     }
 
     $dir = comments_dir();
@@ -24,7 +24,7 @@ function comment_upload(array &$errors): string
     if ($dir === '') {
         $errors[] = 'Upload folder assets/comments is not writable.';
 
-        return '';
+        return [];
     }
 
     $tmp = (string) ($_FILES['file']['tmp_name'] ?? '');
@@ -32,13 +32,15 @@ function comment_upload(array &$errors): string
     if ($error !== UPLOAD_ERR_OK || !is_uploaded_file($tmp)) {
         $errors[] = 'The attachment failed to upload.';
 
-        return '';
+        return [];
     }
 
-    if ((int) ($_FILES['file']['size'] ?? 0) > CHAT_UPLOAD_BYTES) {
+    $size = (int) ($_FILES['file']['size'] ?? 0);
+
+    if ($size > CHAT_UPLOAD_BYTES) {
         $errors[] = 'The attachment is larger than 3 MB.';
 
-        return '';
+        return [];
     }
 
     $info = @getimagesize($tmp);
@@ -47,7 +49,7 @@ function comment_upload(array &$errors): string
     if ($info === false || !isset($allowed[$info[2]])) {
         $errors[] = 'The attachment must be PNG, JPG or GIF.';
 
-        return '';
+        return [];
     }
 
     $name = bin2hex(random_bytes(8)) . $allowed[$info[2]];
@@ -55,12 +57,51 @@ function comment_upload(array &$errors): string
     if (!move_uploaded_file($tmp, $dir . '/' . $name)) {
         $errors[] = 'Could not save the attachment.';
 
-        return '';
+        return [];
     }
 
     @chmod($dir . '/' . $name, 0644);
 
-    return $name;
+    return [
+        'file' => $name,
+        'fname' => clean_filename((string) ($_FILES['file']['name'] ?? '')),
+        'fsize' => $size,
+        'fw' => (int) $info[0],
+        'fh' => (int) $info[1],
+    ];
+}
+
+function comment_stamp(array $item): string
+{
+    return '<span class="msg-date" data-ts="' . (int) $item['created'] . '">'
+        . e(gmdate('m/d/y(D)H:i', (int) $item['created'])) . '</span>';
+}
+
+function comment_head(array $item): string
+{
+    $line = '<span class="msg-name">' . e((string) $item['name']) . '</span>';
+
+    if (!empty($item['admin'])) {
+        $line .= ' &mdash; <span class="msg-admin">Admin</span>';
+    }
+
+    return $line . ' ' . comment_stamp($item);
+}
+
+function comment_file_line(array $comment): string
+{
+    $file = (string) ($comment['file'] ?? '');
+
+    if ($file === '') {
+        return '';
+    }
+
+    $src = '/assets/comments/' . basename($file);
+    $meta = format_size((int) ($comment['fsize'] ?? 0)) . ', ' . (int) ($comment['fw'] ?? 0) . 'x' . (int) ($comment['fh'] ?? 0);
+
+    return '<div class="msg-file">File: <a href="' . e($src) . '" target="_blank" rel="noopener">'
+        . e((string) ($comment['fname'] ?? 'file')) . '</a> (' . e($meta) . ')</div>'
+        . '<div class="msg-media"><img src="' . e($src) . '" alt="" data-full="' . e($src) . '" data-kind="image"></div>';
 }
 
 function comment_drop_file(array $comment): void
@@ -90,9 +131,9 @@ if ($action === 'comment' || $action === 'answer') {
         $name = 'Anonymous';
     }
 
-    $file = $action === 'comment' ? comment_upload($errors) : '';
+    $upload = $action === 'comment' ? comment_upload($errors) : [];
 
-    if ($errors === [] && $text === '' && $file === '') {
+    if ($errors === [] && $text === '' && $upload === []) {
         $errors[] = 'Write something first.';
     }
 
@@ -107,16 +148,15 @@ if ($action === 'comment' || $action === 'answer') {
             }
 
             if ($action === 'comment') {
-                $store['posts'][$index]['comments'][] = [
+                $store['posts'][$index]['comments'][] = array_merge([
                     'id' => bin2hex(random_bytes(8)),
                     'created' => time(),
                     'name' => $name,
                     'text' => $text,
-                    'file' => $file,
                     'ip' => $me,
                     'admin' => $authed,
                     'answers' => [],
-                ];
+                ], $upload);
                 $done = true;
                 break;
             }
@@ -159,8 +199,8 @@ if ($action === 'comment' || $action === 'answer') {
         }
     }
 
-    if ($errors !== [] && $file !== '') {
-        comment_drop_file(['file' => $file]);
+    if ($errors !== [] && $upload !== []) {
+        comment_drop_file($upload);
     }
 }
 
@@ -228,7 +268,7 @@ $token = public_token();
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/thr/ - Blog - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=3">
+<link rel="stylesheet" href="/style.css?v=4">
 </head>
 <body>
 
@@ -298,15 +338,11 @@ $mine = hash_equals((string) ($comment['ip'] ?? ''), $me);
 $hidden = $total > COMMENTS_OPEN && $index < $total - COMMENTS_OPEN;
 ?>
 					<div class="comment<?= $hidden ? ' folded' : '' ?>">
-						<div class="msg-name"><?= e((string) $comment['name']) ?><?= !empty($comment['admin']) ? ' &mdash; <span class="msg-admin">Admin</span>' : '' ?></div>
+						<div class="msg-head"><?= comment_head($comment) ?></div>
+<?= comment_file_line($comment) ?>
 <?php if ((string) $comment['text'] !== ''): ?>
 						<div class="msg-text"><?= render_post_text((string) $comment['text']) ?></div>
 <?php endif; ?>
-<?php if ((string) ($comment['file'] ?? '') !== ''): ?>
-<?php $csrc = '/assets/comments/' . basename((string) $comment['file']); ?>
-						<div class="comment-media"><img src="<?= e($csrc) ?>" alt="" data-full="<?= e($csrc) ?>" data-kind="image"></div>
-<?php endif; ?>
-						<div class="msg-date"><?= e(chat_age($now - (int) $comment['created'])) ?></div>
 						<div class="msg-actions">
 <?php if ($authed || !$mine): ?>
 							<span class="msg-reply" data-target="<?= e((string) $comment['id']) ?>">Reply</span>
@@ -339,9 +375,8 @@ $hidden = $total > COMMENTS_OPEN && $index < $total - COMMENTS_OPEN;
 <?php foreach ((array) ($comment['answers'] ?? []) as $answer): ?>
 <?php $ownAnswer = hash_equals((string) ($answer['ip'] ?? ''), $me); ?>
 						<div class="reply">
-							<div class="msg-name"><?= e((string) $answer['name']) ?><?= !empty($answer['admin']) ? ' &mdash; <span class="msg-admin">Admin</span>' : '' ?></div>
+							<div class="msg-head"><?= comment_head($answer) ?></div>
 							<div class="msg-text"><?= render_post_text((string) $answer['text']) ?></div>
-							<div class="msg-date"><?= e(chat_age($now - (int) $answer['created'])) ?></div>
 <?php if ($authed || $ownAnswer): ?>
 							<form method="post" action="/thr/" class="msg-remove">
 								<input type="hidden" name="token" value="<?= e($token) ?>">
@@ -410,6 +445,6 @@ $hidden = $total > COMMENTS_OPEN && $index < $total - COMMENTS_OPEN;
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=3"></script>
+<script src="/script.js?v=4"></script>
 </body>
 </html>

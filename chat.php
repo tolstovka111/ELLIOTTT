@@ -12,32 +12,12 @@ $authed = !empty($_SESSION['admin']);
 $errors = [];
 $fragment = isset($_GET['list']);
 
-function chat_token(): string
+function chat_store_upload(array &$errors): array
 {
-    return hash_hmac('sha256', 'chat|' . gmdate('YmdH'), install_salt() . '|' . client_ip());
-}
-
-function chat_token_valid(string $sent): bool
-{
-    if ($sent === '') {
-        return false;
-    }
-
-    if (hash_equals(chat_token(), $sent)) {
-        return true;
-    }
-
-    $previous = hash_hmac('sha256', 'chat|' . gmdate('YmdH', time() - 3600), install_salt() . '|' . client_ip());
-
-    return hash_equals($previous, $sent);
-}
-
-function chat_store_upload(string $field, bool $allowVideo, array &$errors): string
-{
-    $error = (int) ($_FILES[$field]['error'] ?? UPLOAD_ERR_NO_FILE);
+    $error = (int) ($_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE);
 
     if ($error === UPLOAD_ERR_NO_FILE) {
-        return '';
+        return [];
     }
 
     $dir = chat_dir();
@@ -45,65 +25,56 @@ function chat_store_upload(string $field, bool $allowVideo, array &$errors): str
     if ($dir === '') {
         $errors[] = 'Upload folder assets/chat is not writable.';
 
-        return '';
+        return [];
     }
 
-    $tmp = (string) ($_FILES[$field]['tmp_name'] ?? '');
+    $tmp = (string) ($_FILES['file']['tmp_name'] ?? '');
 
     if ($error !== UPLOAD_ERR_OK || !is_uploaded_file($tmp)) {
         $errors[] = 'The attachment failed to upload.';
 
-        return '';
+        return [];
     }
 
-    if ((int) ($_FILES[$field]['size'] ?? 0) > CHAT_UPLOAD_BYTES) {
+    $size = (int) ($_FILES['file']['size'] ?? 0);
+
+    if ($size > CHAT_UPLOAD_BYTES) {
         $errors[] = 'The attachment is larger than 3 MB.';
 
-        return '';
+        return [];
     }
 
     $info = @getimagesize($tmp);
     $pictures = image_types();
 
-    if ($info !== false && isset($pictures[$info[2]])) {
-        $name = bin2hex(random_bytes(8)) . $pictures[$info[2]];
-    } elseif ($allowVideo) {
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = $finfo === false ? '' : strtolower((string) finfo_file($finfo, $tmp));
+    if ($info === false || !isset($pictures[$info[2]])) {
+        $errors[] = 'The attachment must be PNG, JPG, GIF or WEBP.';
 
-        if ($finfo !== false) {
-            finfo_close($finfo);
-        }
-
-        $movies = video_types();
-
-        if (!isset($movies[$mime])) {
-            $errors[] = 'The attachment must be PNG, WEBP, JPG, GIF or MP4.';
-
-            return '';
-        }
-
-        $name = bin2hex(random_bytes(8)) . $movies[$mime];
-    } else {
-        $errors[] = 'The avatar must be PNG, WEBP, JPG or GIF.';
-
-        return '';
+        return [];
     }
+
+    $name = bin2hex(random_bytes(8)) . $pictures[$info[2]];
 
     if (!move_uploaded_file($tmp, $dir . '/' . $name)) {
         $errors[] = 'Could not save the attachment.';
 
-        return '';
+        return [];
     }
 
     @chmod($dir . '/' . $name, 0644);
 
-    return $name;
+    return [
+        'file' => $name,
+        'fname' => clean_filename((string) ($_FILES['file']['name'] ?? '')),
+        'fsize' => $size,
+        'fw' => (int) $info[0],
+        'fh' => (int) $info[1],
+    ];
 }
 
 $action = $fragment ? '' : (string) ($_POST['action'] ?? '');
 
-if ($action !== '' && !chat_token_valid((string) ($_POST['token'] ?? ''))) {
+if ($action !== '' && !public_token_valid((string) ($_POST['token'] ?? ''))) {
     $errors[] = 'The page went stale. Reload and try again.';
     $action = '';
 }
@@ -114,62 +85,46 @@ if ($action === 'say' || $action === 'reply') {
     if ($left > 0) {
         $errors[] = 'One message per minute. Wait ' . $left . ' s.';
     } else {
-        $text = trim((string) ($_POST['text'] ?? ''));
-        $text = mb_substr($text, 0, MAX_CHAT_TEXT);
+        $text = mb_substr(trim((string) ($_POST['text'] ?? '')), 0, MAX_CHAT_TEXT);
         $name = $authed ? 'nysha4real' : clean_name((string) ($_POST['name'] ?? ''));
 
         if ($name === '') {
             $name = 'Anonymous';
         }
 
-        $avatar = '';
-        $file = '';
+        $upload = $action === 'say' ? chat_store_upload($errors) : [];
 
-        if ($action === 'say') {
-            $avatar = $authed ? '' : chat_store_upload('avatar', false, $errors);
-            $file = $errors === [] ? chat_store_upload('file', true, $errors) : '';
-        }
-
-        if ($errors === [] && $text === '' && $file === '') {
+        if ($errors === [] && $text === '' && $upload === []) {
             $errors[] = 'Write something first.';
         }
 
         if ($errors !== []) {
-            foreach ([$avatar, $file] as $leftover) {
-                if ($leftover !== '') {
-                    chat_drop_file(['file' => $leftover]);
-                }
+            if ($upload !== []) {
+                chat_drop_file($upload);
             }
         } else {
             $store = chat_read();
+            $store['seq'] = (int) ($store['seq'] ?? 0) + 1;
+
+            $entry = [
+                'id' => bin2hex(random_bytes(8)),
+                'no' => $store['seq'],
+                'created' => time(),
+                'name' => $name,
+                'text' => $text,
+                'ip' => visitor_hash(),
+                'admin' => $authed,
+            ];
 
             if ($action === 'say') {
-                array_unshift($store['messages'], [
-                    'id' => bin2hex(random_bytes(8)),
-                    'created' => time(),
-                    'name' => $name,
-                    'avatar' => $avatar,
-                    'text' => $text,
-                    'file' => $file,
-                    'ftype' => $file !== '' && strtolower((string) pathinfo($file, PATHINFO_EXTENSION)) === 'mp4' ? 'video' : 'image',
-                    'ip' => visitor_hash(),
-                    'admin' => $authed,
-                    'replies' => [],
-                ]);
+                array_unshift($store['messages'], array_merge($entry, $upload, ['replies' => []]));
             } else {
                 $target = (string) ($_POST['id'] ?? '');
                 $found = false;
 
                 foreach ($store['messages'] as $index => $message) {
                     if ((string) ($message['id'] ?? '') === $target) {
-                        $store['messages'][$index]['replies'][] = [
-                            'id' => bin2hex(random_bytes(8)),
-                            'created' => time(),
-                            'name' => $name,
-                            'text' => $text,
-                            'ip' => visitor_hash(),
-                            'admin' => $authed,
-                        ];
+                        $store['messages'][$index]['replies'][] = $entry;
                         $found = true;
                         break;
                     }
@@ -186,6 +141,7 @@ if ($action === 'say' || $action === 'reply') {
                 if (!$authed) {
                     chat_touch_cooldown();
                 }
+
                 header('Location: /c/');
                 exit;
             }
@@ -232,7 +188,8 @@ if ($action === 'remove') {
     }
 
     if ($errors === []) {
-        chat_write(['messages' => $kept]);
+        $store['messages'] = $kept;
+        chat_write($store);
         header('Location: /c/');
         exit;
     }
@@ -241,11 +198,27 @@ if ($action === 'remove') {
 $store = chat_read();
 $messages = $store['messages'];
 $me = visitor_hash();
-$now = time();
-$token = chat_token();
+$token = public_token();
 $cooldown = $authed ? 0 : chat_cooldown_left();
 
-function chat_media(array $message): string
+function stamp(array $item): string
+{
+    return '<span class="msg-date" data-ts="' . (int) $item['created'] . '">'
+        . e(gmdate('m/d/y(D)H:i', (int) $item['created'])) . '</span>';
+}
+
+function poster(array $item): string
+{
+    $line = '<span class="msg-name">' . e((string) $item['name']) . '</span>';
+
+    if (!empty($item['admin'])) {
+        $line .= ' &mdash; <span class="msg-admin">Admin</span>';
+    }
+
+    return $line . ' ' . stamp($item) . ' <span class="msg-no">No.' . (int) ($item['no'] ?? 0) . '</span>';
+}
+
+function chat_file_line(array $message): string
 {
     $file = (string) ($message['file'] ?? '');
 
@@ -254,12 +227,11 @@ function chat_media(array $message): string
     }
 
     $src = '/assets/chat/' . basename($file);
+    $meta = format_size((int) ($message['fsize'] ?? 0)) . ', ' . (int) ($message['fw'] ?? 0) . 'x' . (int) ($message['fh'] ?? 0);
 
-    if ((string) ($message['ftype'] ?? 'image') === 'video') {
-        return '<div class="msg-media"><video src="' . e($src) . '" preload="metadata" muted data-full="' . e($src) . '" data-kind="video"></video></div>';
-    }
-
-    return '<div class="msg-media"><img src="' . e($src) . '" alt="" data-full="' . e($src) . '" data-kind="image"></div>';
+    return '<div class="msg-file">File: <a href="' . e($src) . '" target="_blank" rel="noopener">'
+        . e((string) ($message['fname'] ?? 'file')) . '</a> (' . e($meta) . ')</div>'
+        . '<div class="msg-media"><img src="' . e($src) . '" alt="" data-full="' . e($src) . '" data-kind="image"></div>';
 }
 
 ob_start();
@@ -270,65 +242,52 @@ ob_start();
 <?php foreach ($messages as $message): ?>
 <?php $mine = hash_equals((string) ($message['ip'] ?? ''), $me); ?>
 		<div class="msg" id="m<?= e((string) $message['id']) ?>">
-			<div class="msg-main">
-				<div class="msg-avatar">
-<?php if (!empty($message['admin'])): ?>
-					<img src="/assets/avatar-admin.png" alt="">
-<?php elseif ((string) ($message['avatar'] ?? '') !== ''): ?>
-					<img src="/assets/chat/<?= e(basename((string) $message['avatar'])) ?>" alt="">
-<?php else: ?>
-					<img src="/assets/avatar-anon.jpg" alt="">
-<?php endif; ?>
-				</div>
-				<div class="msg-body">
-					<div class="msg-name"><?= e((string) $message['name']) ?><?= !empty($message['admin']) ? ' &mdash; <span class="msg-admin">Admin</span>' : '' ?></div>
+			<div class="msg-head"><?= poster($message) ?></div>
+<?= chat_file_line($message) ?>
 <?php if ((string) $message['text'] !== ''): ?>
-					<div class="msg-text"><?= render_post_text((string) $message['text']) ?></div>
+			<div class="msg-text"><?= render_post_text((string) $message['text']) ?></div>
 <?php endif; ?>
-					<div class="msg-date"><?= e(chat_age($now - (int) $message['created'])) ?></div>
-					<div class="msg-actions">
-						<span class="msg-reply" data-target="<?= e((string) $message['id']) ?>">Reply</span>
+			<div class="msg-actions">
+				<span class="msg-reply" data-target="<?= e((string) $message['id']) ?>">Reply</span>
 <?php if ($authed || $mine): ?>
-						<form method="post" action="/c/" class="msg-remove">
-							<input type="hidden" name="token" value="<?= e($token) ?>">
-							<input type="hidden" name="action" value="remove">
-							<input type="hidden" name="id" value="<?= e((string) $message['id']) ?>">
-							<button type="submit">Delete</button>
-						</form>
+				<form method="post" action="/c/" class="msg-remove">
+					<input type="hidden" name="token" value="<?= e($token) ?>">
+					<input type="hidden" name="action" value="remove">
+					<input type="hidden" name="id" value="<?= e((string) $message['id']) ?>">
+					<button type="submit">Delete</button>
+				</form>
 <?php endif; ?>
-					</div>
-					<form method="post" action="/c/" class="replyform" id="r<?= e((string) $message['id']) ?>">
-						<input type="hidden" name="token" value="<?= e($token) ?>">
-						<input type="hidden" name="action" value="reply">
-						<input type="hidden" name="id" value="<?= e((string) $message['id']) ?>">
+			</div>
+			<form method="post" action="/c/" class="replyform" id="r<?= e((string) $message['id']) ?>">
+				<input type="hidden" name="token" value="<?= e($token) ?>">
+				<input type="hidden" name="action" value="reply">
+				<input type="hidden" name="id" value="<?= e((string) $message['id']) ?>">
 <?php if ($authed): ?>
-						<span class="replyname">nysha4real &mdash; <span class="msg-admin">Admin</span></span>
+				<span class="replyname">nysha4real &mdash; <span class="msg-admin">Admin</span></span>
 <?php else: ?>
-						<input type="text" name="name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous">
+				<input type="text" name="name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous">
 <?php endif; ?>
-						<input type="text" name="text" maxlength="<?= MAX_CHAT_TEXT ?>" placeholder="Write a reply&hellip;" required>
-						<button type="submit">Reply</button>
-					</form>
+				<input type="text" name="text" maxlength="<?= MAX_CHAT_TEXT ?>" placeholder="Write a reply&hellip;" required>
+				<button type="submit">Reply</button>
+			</form>
 <?php foreach ((array) ($message['replies'] ?? []) as $reply): ?>
 <?php $ownReply = hash_equals((string) ($reply['ip'] ?? ''), $me); ?>
-					<div class="reply">
-						<div class="msg-name"><?= e((string) $reply['name']) ?><?= !empty($reply['admin']) ? ' &mdash; <span class="msg-admin">Admin</span>' : '' ?></div>
-						<div class="msg-text"><?= render_post_text((string) $reply['text']) ?></div>
-						<div class="msg-date"><?= e(chat_age($now - (int) $reply['created'])) ?></div>
+			<div class="reply">
+				<div class="msg-head"><?= poster($reply) ?></div>
+				<div class="msg-text"><?= render_post_text((string) $reply['text']) ?></div>
 <?php if ($authed || $ownReply): ?>
-						<form method="post" action="/c/" class="msg-remove">
-							<input type="hidden" name="token" value="<?= e($token) ?>">
-							<input type="hidden" name="action" value="remove">
-							<input type="hidden" name="id" value="<?= e((string) $message['id']) ?>">
-							<input type="hidden" name="reply" value="<?= e((string) $reply['id']) ?>">
-							<button type="submit">Delete</button>
-						</form>
-<?php endif; ?>
-					</div>
-<?php endforeach; ?>
+				<div class="msg-actions">
+					<form method="post" action="/c/" class="msg-remove">
+						<input type="hidden" name="token" value="<?= e($token) ?>">
+						<input type="hidden" name="action" value="remove">
+						<input type="hidden" name="id" value="<?= e((string) $message['id']) ?>">
+						<input type="hidden" name="reply" value="<?= e((string) $reply['id']) ?>">
+						<button type="submit">Delete</button>
+					</form>
 				</div>
-<?= chat_media($message) ?>
+<?php endif; ?>
 			</div>
+<?php endforeach; ?>
 		</div>
 <?php endforeach; ?>
 <?php
@@ -348,7 +307,7 @@ if ($fragment) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/c/ - Chat - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=3">
+<link rel="stylesheet" href="/style.css?v=4">
 </head>
 <body>
 
@@ -375,11 +334,6 @@ if ($fragment) {
 			<input type="hidden" name="token" value="<?= e($token) ?>">
 			<input type="hidden" name="action" value="say">
 
-			<label class="say-avatar" title="Pick an avatar">
-				<input type="file" name="avatar" accept="image/png,image/webp,image/jpeg,image/gif" id="avatar-input"<?= $authed ? ' disabled' : '' ?>>
-				<img src="<?= $authed ? '/assets/avatar-admin.png' : '/assets/avatar-anon.jpg' ?>" alt="Avatar" id="avatar-preview">
-			</label>
-
 			<div class="say-fields">
 <?php if ($authed): ?>
 				<div class="say-name-fixed">nysha4real &mdash; <span class="msg-admin">Admin</span></div>
@@ -389,10 +343,10 @@ if ($fragment) {
 				<div class="say-line">
 					<input type="text" name="text" class="say-text" maxlength="<?= MAX_CHAT_TEXT ?>" placeholder="Type text here" autocomplete="off">
 
-					<label class="say-clip" title="Attach PNG / WEBP / JPG / GIF / MP4, up to 3 MB">
-						<input type="file" name="file" accept="image/png,image/webp,image/jpeg,image/gif,video/mp4" id="clip-input">
+					<label class="say-clip" title="Attach PNG / JPG / GIF / WEBP, up to 3 MB">
+						<input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp">
 						<img class="clip-icon" src="/assets/clip.png" alt="Attach">
-						<span class="clip-name" id="clip-name"></span>
+						<span class="clip-name"></span>
 					</label>
 
 					<button type="submit" class="say-send" id="say-send">Send</button>
@@ -430,6 +384,6 @@ if ($fragment) {
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=3"></script>
+<script src="/script.js?v=4"></script>
 </body>
 </html>

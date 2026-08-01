@@ -129,19 +129,6 @@
 		});
 	}
 
-	var avatarInput = document.getElementById("avatar-input");
-	var avatarPreview = document.getElementById("avatar-preview");
-
-	if (avatarInput && avatarPreview) {
-		avatarInput.addEventListener("change", function () {
-			var file = avatarInput.files && avatarInput.files[0];
-
-			if (file) {
-				avatarPreview.src = URL.createObjectURL(file);
-			}
-		});
-	}
-
 	Array.prototype.forEach.call(document.querySelectorAll(".say-clip input[type=file]"), function (field) {
 		field.addEventListener("change", function () {
 			var label = field.parentNode.querySelector(".clip-name");
@@ -180,6 +167,31 @@
 			tick();
 		}
 	}
+
+	var weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+	function pad(value) {
+		return value < 10 ? "0" + value : String(value);
+	}
+
+	function localStamp(seconds) {
+		var when = new Date(seconds * 1000);
+
+		return pad(when.getMonth() + 1) + "/" + pad(when.getDate()) + "/" + pad(when.getFullYear() % 100)
+			+ "(" + weekdays[when.getDay()] + ")" + pad(when.getHours()) + ":" + pad(when.getMinutes());
+	}
+
+	function paintStamps(root) {
+		Array.prototype.forEach.call((root || document).querySelectorAll(".msg-date[data-ts]"), function (node) {
+			var seconds = parseInt(node.getAttribute("data-ts"), 10);
+
+			if (seconds) {
+				node.textContent = localStamp(seconds);
+			}
+		});
+	}
+
+	paintStamps(document);
 
 	var chatList = document.getElementById("chat-list");
 	var lightbox = document.getElementById("lightbox");
@@ -317,12 +329,39 @@
 				.then(function (html) {
 					if (html !== null && html !== chatList.innerHTML) {
 						chatList.innerHTML = html;
+						paintStamps(chatList);
 					}
 				})
 				.catch(function () {
 					return null;
 				});
 		}, 9000);
+	}
+
+	var onlineTotal = document.getElementById("online-total");
+
+	if (window.fetch) {
+		var pingOnline = function () {
+			fetch("/api/online.php", { credentials: "same-origin" })
+				.then(function (response) {
+					return response.ok ? response.json() : null;
+				})
+				.then(function (data) {
+					if (onlineTotal && data && typeof data.online === "number") {
+						onlineTotal.textContent = data.online.toLocaleString("en-US");
+					}
+				})
+				.catch(function () {
+					if (onlineTotal) {
+						onlineTotal.textContent = "—";
+					}
+				});
+		};
+
+		pingOnline();
+		window.setInterval(pingOnline, 60000);
+	} else if (onlineTotal) {
+		onlineTotal.textContent = "—";
 	}
 
 	var viewsTotal = document.getElementById("views-total");

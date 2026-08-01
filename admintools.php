@@ -32,7 +32,7 @@ $now = time();
 <meta name="robots" content="noindex, nofollow">
 <title>Admin Tools - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=3">
+<link rel="stylesheet" href="/style.css?v=4">
 </head>
 <body>
 
@@ -161,6 +161,6 @@ $now = time();
 
 </div>
 
-<script src="/script.js?v=3"></script>
+<script src="/script.js?v=4"></script>
 </body>
 </html>

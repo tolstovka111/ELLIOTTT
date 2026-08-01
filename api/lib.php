@@ -13,6 +13,7 @@ const CHAT_KEEP = 300;
 const FRONT_POSTS = 8;
 const PREVIEW_CHARS = 110;
 const COMMENTS_OPEN = 5;
+const ONLINE_WINDOW = 180;
 const MAX_NAME = 32;
 const MAX_CHAT_TEXT = 600;
 const LOGIN_MAX_ATTEMPTS = 5;
@@ -490,12 +491,11 @@ function chat_drop_file(array $message): void
         return;
     }
 
-    foreach ([(string) ($message['file'] ?? ''), (string) ($message['avatar'] ?? '')] as $name) {
-        $file = $name === '' ? '' : basename($name);
+    $name = (string) ($message['file'] ?? '');
+    $file = $name === '' ? '' : basename($name);
 
-        if ($file !== '' && is_file($dir . '/' . $file)) {
-            @unlink($dir . '/' . $file);
-        }
+    if ($file !== '' && is_file($dir . '/' . $file)) {
+        @unlink($dir . '/' . $file);
     }
 }
 
@@ -586,4 +586,71 @@ function clean_name(string $name): string
     $name = str_replace(["\0", "\r", "\n"], '', $name);
 
     return mb_substr($name, 0, MAX_NAME);
+}
+
+function format_size(int $bytes): string
+{
+    if ($bytes >= 1048576) {
+        return round($bytes / 1048576, 1) . ' MB';
+    }
+
+    if ($bytes >= 1024) {
+        return (int) round($bytes / 1024) . ' KB';
+    }
+
+    return $bytes . ' B';
+}
+
+function clean_filename(string $name): string
+{
+    $name = basename(str_replace('\\', '/', $name));
+    $name = preg_replace('/[^\w.\- ]+/u', '', $name) ?? '';
+    $name = trim($name);
+
+    return $name === '' ? 'file' : mb_substr($name, 0, 60);
+}
+
+function online_count(bool $touch): int
+{
+    $dir = data_dir();
+
+    if ($dir === '') {
+        return 0;
+    }
+
+    $handle = @fopen($dir . '/online.json', 'c+');
+
+    if ($handle === false) {
+        return 0;
+    }
+
+    if (!flock($handle, LOCK_EX)) {
+        fclose($handle);
+
+        return 0;
+    }
+
+    $raw = stream_get_contents($handle);
+    $seen = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+    $seen = is_array($seen) ? $seen : [];
+    $now = time();
+
+    foreach ($seen as $key => $stamp) {
+        if ($now - (int) $stamp > ONLINE_WINDOW) {
+            unset($seen[$key]);
+        }
+    }
+
+    if ($touch) {
+        $seen[visitor_hash()] = $now;
+    }
+
+    rewind($handle);
+    ftruncate($handle, 0);
+    fwrite($handle, (string) json_encode($seen));
+    fflush($handle);
+    flock($handle, LOCK_UN);
+    fclose($handle);
+
+    return count($seen);
 }
