@@ -125,6 +125,32 @@ if ($authed) {
 <?php endforeach; ?>
 				</div>
 <?php endif; ?>
+<?php if (isset($post['audio']) && is_array($post['audio'])): ?>
+<?php $audio = $post['audio']; ?>
+<?php $cover = (string) ($audio['cover'] ?? '') !== '' ? 'assets/blog/' . basename((string) $audio['cover']) : 'assets/track-cover.svg'; ?>
+				<div class="track">
+					<div class="track-art">
+						<img src="<?= e($cover) ?>" alt="">
+						<button type="button" class="track-play" aria-label="Play">&#9654;</button>
+					</div>
+					<div class="track-info">
+						<div class="track-title"><?= e((string) $audio['title']) ?></div>
+						<div class="track-author"><?= e((string) $audio['author']) ?></div>
+						<div class="track-controls">
+							<input type="range" class="track-seek" min="0" max="1000" value="0" step="1" aria-label="Seek">
+							<span class="track-time">0:00</span>
+							<div class="track-rates">
+								<span data-rate="0.5">0.5</span>
+								<span data-rate="0.8">0.8</span>
+								<span data-rate="1" class="on">1x</span>
+								<span data-rate="1.25">1.25x</span>
+								<span data-rate="2">2x</span>
+							</div>
+						</div>
+					</div>
+					<audio preload="metadata" src="assets/blog/<?= e(basename((string) $audio['file'])) ?>"></audio>
+				</div>
+<?php endif; ?>
 <?php if ((string) $post['text'] !== ''): ?>
 				<p class="post-text"><?= render_post_text((string) $post['text']) ?></p>
 <?php endif; ?>
@@ -163,6 +189,12 @@ if ($authed) {
 					<label>Link for image <?= $i + 1 ?> (optional)<input type="url" name="link[]" placeholder="https://"></label>
 				</div>
 <?php endfor; ?>
+				<div class="uploadrow">
+					<label>Audio (optional)<input type="file" name="audio" accept="audio/*"></label>
+					<label>Cover for the audio (optional)<input type="file" name="cover" accept="image/jpeg,image/png,image/gif,image/webp"></label>
+					<label>Track title (optional, taken from the file tags when empty)<input type="text" name="audio_title" maxlength="<?= MAX_META ?>"></label>
+					<label>Track author (optional, taken from the file tags when empty)<input type="text" name="audio_author" maxlength="<?= MAX_META ?>"></label>
+				</div>
 				<label>Text<textarea name="text" id="post-text" rows="4" maxlength="<?= MAX_TEXT ?>"></textarea></label>
 <?php if ($emoji !== []): ?>
 				<div class="emojibar" id="emojibar">
@@ -187,6 +219,9 @@ if ($authed) {
 				<img src="assets/blog/<?= e(basename((string) $image['file'])) ?>" alt="">
 <?php endforeach; ?>
 			</div>
+<?php endif; ?>
+<?php if (isset($post['audio']) && is_array($post['audio'])): ?>
+			<div class="adminpost-audio">&#9834; <?= e((string) $post['audio']['title']) ?> &mdash; <?= e((string) $post['audio']['author']) ?></div>
 <?php endif; ?>
 			<p><?= render_post_text((string) $post['text']) ?></p>
 			<div class="date"><?= e(relative_age($now - (int) $post['created'])) ?></div>

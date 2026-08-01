@@ -235,24 +235,21 @@ a:hover {
 
 .post-image .click {
 	position: absolute;
-	left: 0;
-	top: 0;
-	right: 0;
-	bottom: 0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	background-color: rgba(0, 0, 0, 0.35);
+	left: 6px;
+	bottom: 6px;
+	padding: 2px 8px;
+	border-radius: 4px;
+	background-color: rgba(0, 0, 0, 0.45);
 	color: #ffffff;
 	font-family: Tahoma, Verdana, Arial, sans-serif;
-	font-size: 11pt;
+	font-size: 9pt;
 	font-weight: bold;
-	line-height: 1;
+	line-height: 1.5;
 	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 .post-image.linked:hover .click {
-	background-color: rgba(0, 0, 0, 0.15);
+	background-color: rgba(0, 0, 0, 0.7);
 }
 
 .post-text {
@@ -272,6 +269,155 @@ a:hover {
 	height: 22px;
 	width: auto;
 	vertical-align: -5px;
+	border-radius: 5px;
+}
+
+.track {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 8px;
+	padding: 8px;
+	border: 1px solid #d9bfb7;
+	border-radius: 6px;
+	background-color: #f9f2ee;
+}
+
+.track-art {
+	position: relative;
+	flex: 0 0 auto;
+	width: 56px;
+	height: 56px;
+	border-radius: 6px;
+	overflow: hidden;
+	background-color: #f0e0d6;
+}
+
+.track-art img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	filter: brightness(0.68);
+}
+
+.track-play {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background-color: rgba(255, 255, 255, 0.85);
+	color: #800000;
+	font-size: 11pt;
+	line-height: 28px;
+	text-align: center;
+	cursor: pointer;
+}
+
+.track-play:hover {
+	background-color: #ffffff;
+}
+
+.track-info {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.track-title {
+	font-weight: bold;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.track-author {
+	font-size: 8.5pt;
+	color: #a06a5a;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.track-controls {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 5px;
+}
+
+.track-seek {
+	flex: 1 1 auto;
+	min-width: 60px;
+	height: 4px;
+	margin: 0;
+	appearance: none;
+	-webkit-appearance: none;
+	border-radius: 3px;
+	background-color: #e2cdc3;
+	cursor: pointer;
+}
+
+.track-seek::-webkit-slider-thumb {
+	appearance: none;
+	-webkit-appearance: none;
+	width: 11px;
+	height: 11px;
+	border: 0;
+	border-radius: 50%;
+	background-color: #800000;
+	cursor: pointer;
+}
+
+.track-seek::-moz-range-thumb {
+	width: 11px;
+	height: 11px;
+	border: 0;
+	border-radius: 50%;
+	background-color: #800000;
+	cursor: pointer;
+}
+
+.track-time {
+	flex: 0 0 auto;
+	font-size: 8.5pt;
+	color: #a06a5a;
+	font-variant-numeric: tabular-nums;
+}
+
+.track-rates {
+	flex: 0 0 auto;
+	display: flex;
+	gap: 3px;
+}
+
+.track-rates span {
+	padding: 1px 5px;
+	border: 1px solid #d9bfb7;
+	border-radius: 4px;
+	background-color: #ffffff;
+	font-size: 8pt;
+	cursor: pointer;
+	user-select: none;
+}
+
+.track-rates span:hover {
+	border-color: #800000;
+}
+
+.track-rates span.on {
+	background-color: #800000;
+	border-color: #800000;
+	color: #ffffff;
+}
+
+.adminpost-audio {
+	margin-bottom: 4px;
+	font-size: 9pt;
 }
 
 .emojibar {
@@ -289,6 +435,7 @@ a:hover {
 	width: auto;
 	cursor: pointer;
 	border: 1px solid transparent;
+	border-radius: 6px;
 	background-color: #ffffff;
 }
 

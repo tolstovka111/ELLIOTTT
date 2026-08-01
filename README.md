@@ -90,8 +90,9 @@ carries a CSRF token, and five wrong logins lock that address out for 15 minutes
 
 The Blog box sits between Boards and Stats on the front page.
 
-- A post is up to **3 images** plus text; each image can carry its own link.
-- An image with a link shows a **Click** overlay and opens the link in a new tab.
+- A post is up to **3 images**, one audio track and text, shown in that order.
+- An image with a link shows a semi-transparent **Click** badge in its bottom
+  left corner and opens the link in a new tab.
 - Posts **expire after 2 days**. Expiry is lazy: the next request after a post
   ages out drops it from `api/data/posts.json` and deletes its image files, so no
   cron job is needed.
@@ -105,6 +106,21 @@ The Blog box sits between Boards and Stats on the front page.
 Uploads are validated by content, not by file name: only JPG, PNG, GIF and WEBP
 pass, the limit is 5 MB per image, files are renamed to random hex, and
 `assets/blog/.htaccess` forbids executing anything in the upload folder.
+
+## Audio
+
+The audio field takes MP3, OGG, WAV, M4A or FLAC up to 20 MB. The player sits
+between the images and the text: cover art with the play button on top, the
+title, the author in a smaller font, a seek bar, the elapsed time and the speed
+buttons 0.5 / 0.8 / 1x / 1.25x / 2x on the right. Starting one track pauses any
+other on the page.
+
+Title and author come from the fields in the form. Leave them empty and the ID3
+tags of the uploaded file are used instead (`TIT2` and `TPE1`); with no tags
+either, the file name becomes the title and the author reads `Unknown artist`.
+
+The cover works the same way: upload one, or let the embedded `APIC` picture from
+the file be used. With neither, `assets/track-cover.svg` is shown.
 
 ## Emoji
 

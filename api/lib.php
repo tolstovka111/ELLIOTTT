@@ -6,6 +6,8 @@ const POST_TTL = 172800;
 const MAX_IMAGES = 3;
 const MAX_TEXT = 1000;
 const MAX_UPLOAD_BYTES = 5242880;
+const MAX_AUDIO_BYTES = 20971520;
+const MAX_META = 120;
 const LOGIN_MAX_ATTEMPTS = 5;
 const LOGIN_LOCK_SECONDS = 900;
 
@@ -131,21 +133,154 @@ function write_store(array $store): bool
     return @file_put_contents($path, (string) json_encode($store), LOCK_EX) !== false;
 }
 
-function drop_images(array $post): void
+function drop_files(array $post): void
 {
     $dir = uploads_dir();
 
-    if ($dir === '' || !isset($post['images']) || !is_array($post['images'])) {
+    if ($dir === '') {
         return;
     }
 
-    foreach ($post['images'] as $image) {
-        $file = isset($image['file']) ? basename((string) $image['file']) : '';
+    $names = [];
+
+    foreach ((array) ($post['images'] ?? []) as $image) {
+        $names[] = (string) ($image['file'] ?? '');
+    }
+
+    if (isset($post['audio']) && is_array($post['audio'])) {
+        $names[] = (string) ($post['audio']['file'] ?? '');
+        $names[] = (string) ($post['audio']['cover'] ?? '');
+    }
+
+    foreach ($names as $name) {
+        $file = $name === '' ? '' : basename($name);
 
         if ($file !== '' && is_file($dir . '/' . $file)) {
             @unlink($dir . '/' . $file);
         }
     }
+}
+
+function audio_types(): array
+{
+    return [
+        'audio/mpeg' => '.mp3',
+        'audio/mp3' => '.mp3',
+        'audio/ogg' => '.ogg',
+        'application/ogg' => '.ogg',
+        'audio/wav' => '.wav',
+        'audio/x-wav' => '.wav',
+        'audio/mp4' => '.m4a',
+        'audio/x-m4a' => '.m4a',
+        'audio/aac' => '.m4a',
+        'audio/flac' => '.flac',
+        'audio/x-flac' => '.flac',
+    ];
+}
+
+function syncsafe_int(string $bytes): int
+{
+    $value = 0;
+
+    for ($i = 0; $i < strlen($bytes); $i++) {
+        $value = ($value << 7) | (ord($bytes[$i]) & 0x7f);
+    }
+
+    return $value;
+}
+
+function id3_decode_text(int $encoding, string $raw): string
+{
+    $charsets = [0 => 'ISO-8859-1', 1 => 'UTF-16', 2 => 'UTF-16BE', 3 => 'UTF-8'];
+    $charset = $charsets[$encoding] ?? 'ISO-8859-1';
+    $text = (string) @mb_convert_encoding($raw, 'UTF-8', $charset);
+
+    return trim(str_replace("\0", '', $text));
+}
+
+function id3_read(string $path): array
+{
+    $handle = @fopen($path, 'rb');
+
+    if ($handle === false) {
+        return [];
+    }
+
+    $header = (string) fread($handle, 10);
+
+    if (strlen($header) < 10 || substr($header, 0, 3) !== 'ID3') {
+        fclose($handle);
+
+        return [];
+    }
+
+    $major = ord($header[3]);
+    $size = syncsafe_int(substr($header, 6, 4));
+
+    if ($major < 3 || $size <= 0 || $size > 4194304) {
+        fclose($handle);
+
+        return [];
+    }
+
+    $body = (string) fread($handle, $size);
+    fclose($handle);
+
+    $tags = [];
+    $offset = 0;
+    $length = strlen($body);
+
+    while ($offset + 10 <= $length) {
+        $id = substr($body, $offset, 4);
+
+        if (preg_match('/^[A-Z0-9]{4}$/', $id) !== 1) {
+            break;
+        }
+
+        $raw = substr($body, $offset + 4, 4);
+        $frameSize = $major >= 4 ? syncsafe_int($raw) : (int) unpack('N', $raw)[1];
+        $offset += 10;
+
+        if ($frameSize <= 0 || $offset + $frameSize > $length) {
+            break;
+        }
+
+        $frame = substr($body, $offset, $frameSize);
+        $offset += $frameSize;
+
+        if ($id === 'TIT2' || $id === 'TPE1') {
+            $key = $id === 'TIT2' ? 'title' : 'author';
+            $tags[$key] = id3_decode_text(ord($frame[0]), substr($frame, 1));
+            continue;
+        }
+
+        if ($id === 'APIC' && !isset($tags['cover'])) {
+            $encoding = ord($frame[0]);
+            $rest = substr($frame, 1);
+            $split = strpos($rest, "\0");
+
+            if ($split === false) {
+                continue;
+            }
+
+            $mime = strtolower(substr($rest, 0, $split));
+            $rest = substr($rest, $split + 2);
+
+            if ($encoding === 1 || $encoding === 2) {
+                $end = strpos($rest, "\0\0");
+                $rest = $end === false ? '' : substr($rest, $end + 2);
+            } else {
+                $end = strpos($rest, "\0");
+                $rest = $end === false ? '' : substr($rest, $end + 1);
+            }
+
+            if ($rest !== '') {
+                $tags['cover'] = ['mime' => $mime, 'data' => $rest];
+            }
+        }
+    }
+
+    return $tags;
 }
 
 function live_posts(): array
@@ -169,7 +304,7 @@ function live_posts(): array
 
     if ($expired !== []) {
         foreach ($expired as $post) {
-            drop_images($post);
+            drop_files($post);
         }
         write_store(['posts' => $kept]);
     }
@@ -179,38 +314,6 @@ function live_posts(): array
     });
 
     return $kept;
-}
-
-function public_posts(): array
-{
-    $now = time();
-    $out = [];
-
-    foreach (live_posts() as $post) {
-        $images = [];
-
-        foreach ((array) ($post['images'] ?? []) as $image) {
-            $file = isset($image['file']) ? basename((string) $image['file']) : '';
-
-            if ($file === '') {
-                continue;
-            }
-
-            $images[] = [
-                'src' => 'assets/blog/' . $file,
-                'link' => (string) ($image['link'] ?? ''),
-            ];
-        }
-
-        $out[] = [
-            'id' => (string) ($post['id'] ?? ''),
-            'text' => (string) ($post['text'] ?? ''),
-            'images' => $images,
-            'age' => max(0, $now - (int) $post['created']),
-        ];
-    }
-
-    return $out;
 }
 
 function relative_age(int $seconds): string

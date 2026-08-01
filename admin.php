@@ -293,8 +293,101 @@ if ($action === 'create' && $authed) {
         $images[] = ['file' => $name, 'link' => $link];
     }
 
-    if ($errors === [] && $text === '' && $images === []) {
-        $errors[] = 'Add some text or at least one image.';
+    $audio = null;
+    $audioError = (int) ($_FILES['audio']['error'] ?? UPLOAD_ERR_NO_FILE);
+
+    if ($errors === [] && $audioError !== UPLOAD_ERR_NO_FILE) {
+        $tmp = (string) ($_FILES['audio']['tmp_name'] ?? '');
+        $types = audio_types();
+        $mime = '';
+
+        if ($audioError !== UPLOAD_ERR_OK || !is_uploaded_file($tmp)) {
+            $errors[] = 'Audio failed to upload.';
+        } elseif ((int) ($_FILES['audio']['size'] ?? 0) > MAX_AUDIO_BYTES) {
+            $errors[] = 'Audio is larger than 20 MB.';
+        } else {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = $finfo === false ? '' : strtolower((string) finfo_file($finfo, $tmp));
+
+            if ($finfo !== false) {
+                finfo_close($finfo);
+            }
+
+            if (!isset($types[$mime])) {
+                $errors[] = 'Audio must be MP3, OGG, WAV, M4A or FLAC.';
+            }
+        }
+
+        if ($errors === []) {
+            $tags = id3_read($tmp);
+            $title = trim((string) ($_POST['audio_title'] ?? ''));
+            $author = trim((string) ($_POST['audio_author'] ?? ''));
+
+            if ($title === '') {
+                $title = (string) ($tags['title'] ?? '');
+            }
+
+            if ($title === '') {
+                $title = (string) pathinfo((string) ($_FILES['audio']['name'] ?? ''), PATHINFO_FILENAME);
+            }
+
+            if ($author === '') {
+                $author = (string) ($tags['author'] ?? '');
+            }
+
+            $title = mb_substr($title === '' ? 'Untitled' : $title, 0, MAX_META);
+            $author = mb_substr($author === '' ? 'Unknown artist' : $author, 0, MAX_META);
+            $name = bin2hex(random_bytes(8)) . $types[$mime];
+
+            if (!move_uploaded_file($tmp, $dir . '/' . $name)) {
+                $errors[] = 'Could not save the audio file.';
+            } else {
+                @chmod($dir . '/' . $name, 0644);
+                $saved[] = $dir . '/' . $name;
+                $cover = '';
+                $coverError = (int) ($_FILES['cover']['error'] ?? UPLOAD_ERR_NO_FILE);
+
+                if ($coverError === UPLOAD_ERR_OK && is_uploaded_file((string) $_FILES['cover']['tmp_name'])) {
+                    $coverTmp = (string) $_FILES['cover']['tmp_name'];
+                    $info = @getimagesize($coverTmp);
+
+                    if ($info !== false && isset($allowed[$info[2]]) && (int) $_FILES['cover']['size'] <= MAX_UPLOAD_BYTES) {
+                        $cover = bin2hex(random_bytes(8)) . $allowed[$info[2]];
+
+                        if (move_uploaded_file($coverTmp, $dir . '/' . $cover)) {
+                            @chmod($dir . '/' . $cover, 0644);
+                            $saved[] = $dir . '/' . $cover;
+                        } else {
+                            $cover = '';
+                        }
+                    } else {
+                        $errors[] = 'Cover must be a JPG, PNG, GIF or WEBP under 5 MB.';
+                    }
+                }
+
+                if ($errors === [] && $cover === '' && isset($tags['cover']['data'])) {
+                    $embedded = ['image/jpeg' => '.jpg', 'image/jpg' => '.jpg', 'image/png' => '.png', 'image/gif' => '.gif', 'image/webp' => '.webp'];
+                    $coverMime = (string) $tags['cover']['mime'];
+
+                    if (isset($embedded[$coverMime])) {
+                        $cover = bin2hex(random_bytes(8)) . $embedded[$coverMime];
+
+                        if (@file_put_contents($dir . '/' . $cover, (string) $tags['cover']['data']) !== false) {
+                            @chmod($dir . '/' . $cover, 0644);
+                            $saved[] = $dir . '/' . $cover;
+                        } else {
+                            $cover = '';
+                        }
+                    }
+                }
+
+                $audio = ['file' => $name, 'title' => $title, 'author' => $author, 'cover' => $cover];
+            }
+        }
+    }
+
+    if ($errors === [] && $text === '' && $images === [] && $audio === null) {
+        $errors[] = 'Add some text, an image or an audio file.';
     }
 
     if ($errors !== []) {
@@ -312,6 +405,7 @@ if ($action === 'create' && $authed) {
         'created' => time(),
         'text' => $text,
         'images' => $images,
+        'audio' => $audio,
     ]);
 
     if (!write_store(['posts' => $posts])) {
@@ -333,7 +427,7 @@ if ($action === 'delete' && $authed) {
 
     foreach (live_posts() as $post) {
         if ((string) ($post['id'] ?? '') === $id) {
-            drop_images($post);
+            drop_files($post);
             continue;
         }
 
