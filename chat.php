@@ -109,7 +109,7 @@ if ($action !== '' && !chat_token_valid((string) ($_POST['token'] ?? ''))) {
 }
 
 if ($action === 'say' || $action === 'reply') {
-    $left = chat_cooldown_left();
+    $left = $authed ? 0 : chat_cooldown_left();
 
     if ($left > 0) {
         $errors[] = 'One message per minute. Wait ' . $left . ' s.';
@@ -182,7 +182,10 @@ if ($action === 'say' || $action === 'reply') {
 
             if ($errors === []) {
                 chat_write($store);
-                chat_touch_cooldown();
+
+                if (!$authed) {
+                    chat_touch_cooldown();
+                }
                 header('Location: /c/');
                 exit;
             }
@@ -240,7 +243,7 @@ $messages = $store['messages'];
 $me = visitor_hash();
 $now = time();
 $token = chat_token();
-$cooldown = chat_cooldown_left();
+$cooldown = $authed ? 0 : chat_cooldown_left();
 
 function chat_media(array $message): string
 {
@@ -269,14 +272,16 @@ ob_start();
 		<div class="msg" id="m<?= e((string) $message['id']) ?>">
 			<div class="msg-main">
 				<div class="msg-avatar">
-<?php if ((string) ($message['avatar'] ?? '') !== ''): ?>
+<?php if (!empty($message['admin'])): ?>
+					<img src="/assets/avatar-admin.png" alt="">
+<?php elseif ((string) ($message['avatar'] ?? '') !== ''): ?>
 					<img src="/assets/chat/<?= e(basename((string) $message['avatar'])) ?>" alt="">
 <?php else: ?>
-					<span class="msg-avatar-blank">?</span>
+					<img src="/assets/avatar-anon.jpg" alt="">
 <?php endif; ?>
 				</div>
 				<div class="msg-body">
-					<div class="msg-name"><?= e((string) $message['name']) ?><?= !empty($message['admin']) ? ' <span class="msg-admin">Admin</span>' : '' ?></div>
+					<div class="msg-name"><?= e((string) $message['name']) ?><?= !empty($message['admin']) ? ' &mdash; <span class="msg-admin">Admin</span>' : '' ?></div>
 <?php if ((string) $message['text'] !== ''): ?>
 					<div class="msg-text"><?= render_post_text((string) $message['text']) ?></div>
 <?php endif; ?>
@@ -297,7 +302,7 @@ ob_start();
 						<input type="hidden" name="action" value="reply">
 						<input type="hidden" name="id" value="<?= e((string) $message['id']) ?>">
 <?php if ($authed): ?>
-						<span class="replyname">nysha4real <span class="msg-admin">Admin</span></span>
+						<span class="replyname">nysha4real &mdash; <span class="msg-admin">Admin</span></span>
 <?php else: ?>
 						<input type="text" name="name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous">
 <?php endif; ?>
@@ -307,7 +312,7 @@ ob_start();
 <?php foreach ((array) ($message['replies'] ?? []) as $reply): ?>
 <?php $ownReply = hash_equals((string) ($reply['ip'] ?? ''), $me); ?>
 					<div class="reply">
-						<div class="msg-name"><?= e((string) $reply['name']) ?><?= !empty($reply['admin']) ? ' <span class="msg-admin">Admin</span>' : '' ?></div>
+						<div class="msg-name"><?= e((string) $reply['name']) ?><?= !empty($reply['admin']) ? ' &mdash; <span class="msg-admin">Admin</span>' : '' ?></div>
 						<div class="msg-text"><?= render_post_text((string) $reply['text']) ?></div>
 						<div class="msg-date"><?= e(chat_age($now - (int) $reply['created'])) ?></div>
 <?php if ($authed || $ownReply): ?>
@@ -372,26 +377,28 @@ if ($fragment) {
 
 			<label class="say-avatar" title="Pick an avatar">
 				<input type="file" name="avatar" accept="image/png,image/webp,image/jpeg,image/gif" id="avatar-input"<?= $authed ? ' disabled' : '' ?>>
-				<img src="/assets/avatar-blank.svg" alt="Avatar" id="avatar-preview">
+				<img src="<?= $authed ? '/assets/avatar-admin.png' : '/assets/avatar-anon.jpg' ?>" alt="Avatar" id="avatar-preview">
 			</label>
 
 			<div class="say-fields">
 <?php if ($authed): ?>
-				<div class="say-name-fixed">nysha4real <span class="msg-admin">Admin</span></div>
+				<div class="say-name-fixed">nysha4real &mdash; <span class="msg-admin">Admin</span></div>
 <?php else: ?>
 				<input type="text" name="name" class="say-name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous" autocomplete="off">
 <?php endif; ?>
-				<input type="text" name="text" class="say-text" maxlength="<?= MAX_CHAT_TEXT ?>" placeholder="Type text here" autocomplete="off">
+				<div class="say-line">
+					<input type="text" name="text" class="say-text" maxlength="<?= MAX_CHAT_TEXT ?>" placeholder="Type text here" autocomplete="off">
+
+					<label class="say-clip" title="Attach PNG / WEBP / JPG / GIF / MP4, up to 3 MB">
+						<input type="file" name="file" accept="image/png,image/webp,image/jpeg,image/gif,video/mp4" id="clip-input">
+						<img class="clip-icon" src="/assets/clip.png" alt="Attach">
+						<span class="clip-name" id="clip-name"></span>
+					</label>
+
+					<button type="submit" class="say-send" id="say-send">Send</button>
+					<span class="say-timer" id="say-timer" hidden>60</span>
+				</div>
 			</div>
-
-			<label class="say-clip" title="Attach PNG / WEBP / JPG / GIF / MP4, up to 3 MB">
-				<input type="file" name="file" accept="image/png,image/webp,image/jpeg,image/gif,video/mp4" id="clip-input">
-				<span class="clip-icon">&#128206;</span>
-				<span class="clip-name" id="clip-name"></span>
-			</label>
-
-			<button type="submit" class="say-send" id="say-send">Send</button>
-			<span class="say-timer" id="say-timer" hidden>60</span>
 		</form>
 
 		<div class="rgbline"></div>
@@ -412,6 +419,8 @@ if ($fragment) {
 	</div>
 
 	<div class="copyright">Copyright &copy; 2025-2026 4real community support. All rights reserved</div>
+
+	<div class="madeby">created by tolstovka (@nysha4real in telegram)</div>
 
 </div>
 

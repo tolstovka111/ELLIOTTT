@@ -456,6 +456,8 @@ $suggestedKey = $config === null ? bin2hex(random_bytes(12)) : '';
 
 	<div class="copyright">Copyright &copy; 2025-2026 4real community support. All rights reserved</div>
 
+	<div class="madeby">created by tolstovka (@nysha4real in telegram)</div>
+
 </div>
 
 </body>

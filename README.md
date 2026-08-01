@@ -123,11 +123,13 @@ Posts are written in **Admin Tools** and shown in the Blog box on the front page
   attachments.
 - **One message per minute per address.** After sending, the Send button becomes
   a countdown; the last five seconds shimmer through the rainbow and grow a
-  little. Replies obey the same limit but show no timer.
+  little. Replies obey the same limit but show no timer. The signed-in admin has
+  no cooldown at all.
 - Anyone can delete their own message or reply — ownership is checked by a salted
   hash of the address, never the raw address. A signed-in admin can delete
-  anything, always posts as **nysha4real** with a dark red **Admin** tag, and can
-  reply to anyone.
+  anything, always posts as **nysha4real — Admin** with the tag shimmering
+  through the rainbow, always uses `assets/avatar-admin.png`, and can reply to
+  anyone. Visitors who upload no avatar get `assets/avatar-anon.jpg`.
 - The page refreshes the list by itself every 9 seconds, unless a picture is open
   or a reply is being typed.
 - The newest 300 messages are kept; older ones drop off with their files.

@@ -364,6 +364,13 @@ a:hover {
 	color: #800000;
 }
 
+.madeby {
+	text-align: center;
+	padding: 3px 0 0;
+	font-size: 7.5pt;
+	color: rgba(90, 80, 75, 0.55);
+}
+
 .nav {
 	padding: 0 0 8px;
 	font-size: 10pt;
@@ -640,6 +647,17 @@ a:hover {
 	gap: 4px;
 }
 
+.say-line {
+	display: flex;
+	align-items: stretch;
+	gap: 6px;
+}
+
+.say-line .say-text {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
 .say-name,
 .say-text {
 	width: 100%;
@@ -673,8 +691,10 @@ a:hover {
 }
 
 .clip-icon {
-	font-size: 13pt;
-	line-height: 1;
+	display: block;
+	width: 20px;
+	height: auto;
+	image-rendering: pixelated;
 }
 
 .clip-name {
@@ -687,6 +707,7 @@ a:hover {
 
 .say-send {
 	flex: 0 0 auto;
+	align-self: stretch;
 	border: 1px solid #bb8866;
 	background-color: #ffcc99;
 	color: #800000;
@@ -703,6 +724,10 @@ a:hover {
 
 .say-timer {
 	flex: 0 0 auto;
+	align-self: stretch;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	min-width: 56px;
 	text-align: center;
 	padding: 6px 10px;
@@ -711,6 +736,10 @@ a:hover {
 	color: #800000;
 	font-weight: bold;
 	font-size: 10pt;
+}
+
+.say-timer[hidden] {
+	display: none;
 }
 
 .say-timer.hot {
@@ -755,8 +784,7 @@ a:hover {
 	flex: 0 0 auto;
 }
 
-.msg-avatar img,
-.msg-avatar-blank {
+.msg-avatar img {
 	display: block;
 	width: 40px;
 	height: 40px;
@@ -780,8 +808,8 @@ a:hover {
 }
 
 .msg-admin {
-	color: #8b0000;
 	font-weight: bold;
+	animation: rgbtext 2.4s linear infinite;
 }
 
 .msg-text {
