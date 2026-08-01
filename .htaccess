@@ -2,6 +2,16 @@ DirectoryIndex index.php index.html
 
 ErrorDocument 404 /404.php
 
+<IfModule php_module>
+	php_value upload_max_filesize 20M
+	php_value post_max_size 30M
+</IfModule>
+
+<IfModule php7_module>
+	php_value upload_max_filesize 20M
+	php_value post_max_size 30M
+</IfModule>
+
 <IfModule mod_rewrite.c>
 	RewriteEngine On
 
