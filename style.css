@@ -342,7 +342,7 @@ a:hover {
 .pagelinks a,
 .pagelinks a:visited {
 	display: inline-block;
-	margin: 0 8px;
+	margin: 0 4px;
 	color: #0000ee;
 	text-decoration: underline;
 }
@@ -353,7 +353,7 @@ a:hover {
 
 .pagelinks .dot {
 	color: #000000;
-	font-size: 8pt;
+	font-size: 7pt;
 	vertical-align: 1px;
 }
 
@@ -367,8 +367,19 @@ a:hover {
 .madeby {
 	text-align: center;
 	padding: 3px 0 0;
-	font-size: 7.5pt;
-	color: rgba(90, 80, 75, 0.55);
+	font-size: 8pt;
+	color: rgba(80, 70, 65, 0.85);
+}
+
+.madeby a,
+.madeby a:visited {
+	color: rgba(60, 50, 45, 1);
+	font-weight: bold;
+	text-decoration: underline;
+}
+
+.madeby a:hover {
+	color: #800000;
 }
 
 .nav {
@@ -681,7 +692,7 @@ a:hover {
 	align-items: center;
 	gap: 4px;
 	cursor: pointer;
-	padding: 4px 6px;
+	padding: 4px 6px 4px 12px;
 	border: 1px solid #bb8866;
 	background-color: #ffe9d6;
 }
@@ -827,6 +838,8 @@ a:hover {
 
 .msg-actions {
 	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
 	align-items: center;
 	gap: 10px;
 	margin-top: 4px;
@@ -841,7 +854,10 @@ a:hover {
 }
 
 .msg-remove {
-	display: inline;
+	display: inline-flex;
+	align-items: center;
+	margin: 0;
+	padding: 0;
 }
 
 .msg-remove button {
@@ -999,7 +1015,7 @@ a:hover {
 	}
 
 	.pagelinks a {
-		margin: 0 5px;
+		margin: 0 3px;
 	}
 
 	.formrow {
@@ -1010,5 +1026,156 @@ a:hover {
 		flex: 1 1 auto;
 		width: 100%;
 		box-sizing: border-box;
+	}
+}
+
+.threads {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 14px 10px;
+	padding: 14px 12px;
+}
+
+.thread,
+.thread:visited {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	text-align: center;
+	color: #800000;
+	text-decoration: none;
+}
+
+.thread:hover {
+	color: #f00000;
+}
+
+.thread-thumb {
+	display: block;
+	line-height: 0;
+	border: 1px solid #bb8866;
+	background-color: #f0e0d6;
+}
+
+.thread-thumb img {
+	display: block;
+	width: 100%;
+	max-width: 165px;
+	height: 125px;
+	object-fit: cover;
+}
+
+.thread-text {
+	display: block;
+	font-size: 9pt;
+	line-height: 1.35;
+	word-wrap: break-word;
+	overflow-wrap: anywhere;
+}
+
+.thread-post {
+	border-bottom: 2px solid #bb8866;
+}
+
+.thread-post:last-child {
+	border-bottom: 0;
+}
+
+.comments {
+	padding: 0 12px 10px;
+}
+
+.comments-bar {
+	padding: 4px 0;
+}
+
+.comments-toggle,
+.comments-hide,
+.comments-all {
+	font-size: 9pt;
+	color: #0000ee;
+	text-decoration: underline;
+	cursor: pointer;
+	user-select: none;
+}
+
+.comments-toggle:hover,
+.comments-hide:hover,
+.comments-all:hover {
+	color: #f00000;
+}
+
+.comments-more {
+	padding: 4px 0 8px;
+}
+
+.comment {
+	padding: 8px 0;
+	border-top: 1px solid rgba(187, 136, 102, 0.45);
+}
+
+.comment.folded {
+	display: none;
+}
+
+.comment-media {
+	margin-top: 4px;
+}
+
+.comment-media img {
+	display: block;
+	max-width: 130px;
+	max-height: 110px;
+	border: 1px solid #bb8866;
+	border-radius: 4px;
+	cursor: zoom-in;
+}
+
+.commentform {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 0 4px;
+	border-top: 1px solid rgba(187, 136, 102, 0.45);
+}
+
+.commentform input[type="text"] {
+	border: 1px solid #bb8866;
+	background-color: #ffffff;
+	color: #800000;
+	font-family: inherit;
+	font-size: 9.5pt;
+	padding: 4px 6px;
+}
+
+.commentform input[name="name"] {
+	flex: 0 0 130px;
+}
+
+.commentform input[name="text"] {
+	flex: 1 1 220px;
+	min-width: 0;
+}
+
+.commentform button {
+	border: 1px solid #bb8866;
+	background-color: #ffcc99;
+	color: #800000;
+	font-family: inherit;
+	font-size: 9.5pt;
+	font-weight: bold;
+	padding: 4px 14px;
+	cursor: pointer;
+}
+
+.commentform button:hover {
+	background-color: #ffe9d6;
+}
+
+@media (max-width: 620px) {
+	.threads {
+		grid-template-columns: repeat(2, 1fr);
 	}
 }

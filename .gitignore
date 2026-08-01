@@ -4,3 +4,5 @@ assets/blog/*
 !assets/blog/.gitkeep
 assets/chat/*
 !assets/chat/.gitkeep
+assets/comments/*
+!assets/comments/.gitkeep

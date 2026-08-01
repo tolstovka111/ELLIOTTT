@@ -10,6 +10,9 @@ const MAX_VIDEO_BYTES = 15728640;
 const CHAT_UPLOAD_BYTES = 3145728;
 const CHAT_COOLDOWN = 60;
 const CHAT_KEEP = 300;
+const FRONT_POSTS = 8;
+const PREVIEW_CHARS = 110;
+const COMMENTS_OPEN = 5;
 const MAX_NAME = 32;
 const MAX_CHAT_TEXT = 600;
 const LOGIN_MAX_ATTEMPTS = 5;
@@ -201,37 +204,100 @@ function post_backgrounds(): array
     return ['default', 'dark', 'coffee', 'green'];
 }
 
-function live_posts(): array
+function all_posts(): array
 {
     $store = read_store();
-    $now = time();
-    $kept = [];
-    $expired = [];
+    $posts = [];
 
     foreach ($store['posts'] as $post) {
-        if (!is_array($post) || !isset($post['created'])) {
-            continue;
-        }
-
-        if ($now - (int) $post['created'] < POST_TTL) {
-            $kept[] = $post;
-        } else {
-            $expired[] = $post;
+        if (is_array($post) && isset($post['created'])) {
+            $posts[] = $post;
         }
     }
 
-    if ($expired !== []) {
-        foreach ($expired as $post) {
-            drop_files($post);
-        }
-        write_store(['posts' => $kept]);
-    }
-
-    usort($kept, static function (array $a, array $b): int {
+    usort($posts, static function (array $a, array $b): int {
         return (int) $b['created'] <=> (int) $a['created'];
     });
 
-    return $kept;
+    return $posts;
+}
+
+function live_posts(): array
+{
+    $now = time();
+    $fresh = [];
+
+    foreach (all_posts() as $post) {
+        if ($now - (int) $post['created'] < POST_TTL) {
+            $fresh[] = $post;
+        }
+    }
+
+    return array_slice($fresh, 0, FRONT_POSTS);
+}
+
+function post_thumb(array $post): string
+{
+    foreach ((array) ($post['images'] ?? []) as $media) {
+        if ((string) ($media['type'] ?? 'image') === 'image') {
+            return '/assets/blog/' . basename((string) $media['file']);
+        }
+    }
+
+    return '';
+}
+
+function shorten(string $text, int $limit): string
+{
+    $text = trim(preg_replace('/\s+/u', ' ', $text) ?? '');
+
+    if (mb_strlen($text) <= $limit) {
+        return $text;
+    }
+
+    return rtrim(mb_substr($text, 0, $limit)) . '...';
+}
+
+function comments_dir(): string
+{
+    $dir = project_root() . '/assets/comments';
+
+    if (!is_dir($dir)) {
+        if (!@mkdir($dir, 0775, true) && !is_dir($dir)) {
+            return '';
+        }
+    }
+
+    $guard = $dir . '/.htaccess';
+
+    if (!is_file($guard)) {
+        @file_put_contents(
+            $guard,
+            "<FilesMatch \"\\.(php|php[0-9]|phtml|phar|cgi|pl|py|sh)$\">\nRequire all denied\nDeny from all\n</FilesMatch>\n"
+        );
+    }
+
+    return is_writable($dir) ? $dir : '';
+}
+
+function public_token(): string
+{
+    return hash_hmac('sha256', 'public|' . gmdate('YmdH'), install_salt() . '|' . client_ip());
+}
+
+function public_token_valid(string $sent): bool
+{
+    if ($sent === '') {
+        return false;
+    }
+
+    if (hash_equals(public_token(), $sent)) {
+        return true;
+    }
+
+    $previous = hash_hmac('sha256', 'public|' . gmdate('YmdH', time() - 3600), install_salt() . '|' . client_ip());
+
+    return hash_equals($previous, $sent);
 }
 
 function relative_age(int $seconds): string

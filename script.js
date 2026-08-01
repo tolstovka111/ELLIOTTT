@@ -142,15 +142,16 @@
 		});
 	}
 
-	var clipInput = document.getElementById("clip-input");
-	var clipName = document.getElementById("clip-name");
+	Array.prototype.forEach.call(document.querySelectorAll(".say-clip input[type=file]"), function (field) {
+		field.addEventListener("change", function () {
+			var label = field.parentNode.querySelector(".clip-name");
+			var file = field.files && field.files[0];
 
-	if (clipInput && clipName) {
-		clipInput.addEventListener("change", function () {
-			var file = clipInput.files && clipInput.files[0];
-			clipName.textContent = file ? file.name : "";
+			if (label) {
+				label.textContent = file ? file.name : "";
+			}
 		});
-	}
+	});
 
 	var sayForm = document.getElementById("sayform");
 	var saySend = document.getElementById("say-send");
@@ -219,36 +220,63 @@
 		lightboxStage.innerHTML = "";
 	}
 
-	if (chatList) {
-		chatList.addEventListener("click", function (event) {
-			var target = event.target;
+	document.addEventListener("click", function (event) {
+		var target = event.target;
 
-			if (target.classList && target.classList.contains("msg-reply")) {
-				var form = document.getElementById("r" + target.getAttribute("data-target"));
+		if (!target || !target.classList) {
+			return;
+		}
 
-				if (form) {
-					var open = form.classList.toggle("open");
+		if (target.classList.contains("msg-reply")) {
+			var form = document.getElementById("r" + target.getAttribute("data-target"));
 
-					if (open) {
-						var field = form.querySelector('input[name="text"]');
+			if (form) {
+				if (form.classList.toggle("open")) {
+					var field = form.querySelector('input[name="text"]');
 
-						if (field) {
-							field.focus();
-						}
+					if (field) {
+						field.focus();
 					}
 				}
-
-				return;
 			}
 
-			var full = target.getAttribute && target.getAttribute("data-full");
+			return;
+		}
 
-			if (full) {
-				event.preventDefault();
-				openLightbox(full, target.getAttribute("data-kind"));
+		var block = target.closest ? target.closest(".comments") : null;
+
+		if (block && target.classList.contains("comments-toggle")) {
+			block.querySelector(".comments-body").hidden = false;
+			block.querySelector(".comments-bar").hidden = true;
+			return;
+		}
+
+		if (block && target.classList.contains("comments-all")) {
+			Array.prototype.forEach.call(block.querySelectorAll(".comment.folded"), function (node) {
+				node.classList.remove("folded");
+			});
+			var more = block.querySelector(".comments-more");
+
+			if (more) {
+				more.hidden = true;
 			}
-		});
-	}
+
+			return;
+		}
+
+		if (block && target.classList.contains("comments-hide")) {
+			block.querySelector(".comments-body").hidden = true;
+			block.querySelector(".comments-bar").hidden = false;
+			return;
+		}
+
+		var full = target.getAttribute && target.getAttribute("data-full");
+
+		if (full) {
+			event.preventDefault();
+			openLightbox(full, target.getAttribute("data-kind"));
+		}
+	});
 
 	if (lightbox && lightboxClose) {
 		lightboxClose.addEventListener("click", closeLightbox);

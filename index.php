@@ -24,7 +24,7 @@ if ($authed) {
 <title>4real</title>
 <meta name="description" content="4real is a link-in-bio info-hub with every official profile in one place.">
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/style.css?v=3">
 </head>
 <body>
 
@@ -96,37 +96,24 @@ if ($authed) {
 	<div class="box" id="blog">
 		<div class="box-title">
 			Blog
-<?php if (count($posts) > 1): ?>
-			<span class="corner blognav" id="blog-nav"><span id="blog-prev">&#8249;</span> <span id="blog-pos">1/<?= count($posts) ?></span> <span id="blog-next">&#8250;</span></span>
-<?php endif; ?>
-		</div>
-		<div id="blog-posts">
-<?php foreach ($posts as $post): ?>
-<?php $background = in_array((string) ($post['bg'] ?? 'default'), post_backgrounds(), true) ? (string) ($post['bg'] ?? 'default') : 'default'; ?>
-			<div class="post bg-<?= e($background) ?>">
-<?php if (($post['images'] ?? []) !== []): ?>
-				<div class="post-images">
-<?php foreach ((array) $post['images'] as $media): ?>
-<?php $src = '/assets/blog/' . basename((string) $media['file']); ?>
-<?php if ((string) ($media['type'] ?? 'image') === 'video'): ?>
-					<span class="post-image"><video src="<?= e($src) ?>" controls preload="metadata"></video></span>
-<?php elseif ((string) ($media['link'] ?? '') !== ''): ?>
-					<a class="post-image linked" href="<?= e((string) $media['link']) ?>" target="_blank" rel="noopener noreferrer"><img src="<?= e($src) ?>" alt=""><span class="click">Click</span></a>
-<?php else: ?>
-					<span class="post-image"><img src="<?= e($src) ?>" alt=""></span>
-<?php endif; ?>
-<?php endforeach; ?>
-				</div>
-<?php endif; ?>
-<?php if ((string) $post['text'] !== ''): ?>
-				<p class="post-text"><?= render_post_text((string) $post['text']) ?></p>
-<?php endif; ?>
-				<div class="date"><?= e(relative_age($now - (int) $post['created'])) ?></div>
-			</div>
-<?php endforeach; ?>
+			<span class="corner"><a href="/thr/">all posts &#8250;</a></span>
 		</div>
 <?php if ($posts === []): ?>
-		<div class="empty" id="blog-empty">No Posts in my Blog yet.</div>
+		<div class="empty">No Posts in my Blog yet.</div>
+<?php else: ?>
+		<div class="threads">
+<?php foreach ($posts as $post): ?>
+<?php $thumb = post_thumb($post); ?>
+			<a class="thread" href="/thr/#p<?= e((string) $post['id']) ?>">
+<?php if ($thumb !== ''): ?>
+				<span class="thread-thumb"><img src="<?= e($thumb) ?>" alt=""></span>
+<?php endif; ?>
+<?php if ((string) $post['text'] !== ''): ?>
+				<span class="thread-text"><?= render_post_text(shorten((string) $post['text'], PREVIEW_CHARS)) ?></span>
+<?php endif; ?>
+			</a>
+<?php endforeach; ?>
+		</div>
 <?php endif; ?>
 	</div>
 
@@ -151,10 +138,10 @@ if ($authed) {
 
 	<div class="copyright">Copyright &copy; 2025-2026 4real community support. All rights reserved</div>
 
-	<div class="madeby">created by tolstovka (@nysha4real in telegram)</div>
+	<div class="madeby">created by tolstovka (<a href="https://t.me/nysh4real" target="_blank" rel="noopener">@nysh4real</a> in telegram)</div>
 
 </div>
 
-<script src="/script.js"></script>
+<script src="/script.js?v=3"></script>
 </body>
 </html>

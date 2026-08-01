@@ -32,7 +32,7 @@ $now = time();
 <meta name="robots" content="noindex, nofollow">
 <title>Admin Tools - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/style.css?v=3">
 </head>
 <body>
 
@@ -157,10 +157,10 @@ $now = time();
 
 	<div class="copyright">Copyright &copy; 2025-2026 4real community support. All rights reserved</div>
 
-	<div class="madeby">created by tolstovka (@nysha4real in telegram)</div>
+	<div class="madeby">created by tolstovka (<a href="https://t.me/nysh4real" target="_blank" rel="noopener">@nysh4real</a> in telegram)</div>
 
 </div>
 
-<script src="/script.js"></script>
+<script src="/script.js?v=3"></script>
 </body>
 </html>

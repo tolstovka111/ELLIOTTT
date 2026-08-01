@@ -9,6 +9,7 @@ a public chat.
 | --- | --- |
 | `index.php` | Front page: intro, Boards, Blog, Stats, footer |
 | `chat.php` | `/c/` — the public chat |
+| `thread.php` | `/thr/` — every blog post in full, with comments |
 | `admintools.php` | Admin only: the blog editor |
 | `admin.php` | Setup, sign in, and the handler for publish / delete / log out |
 | `404.php` | Not-found page, shows a random picture from `assets/404/` |
@@ -22,7 +23,7 @@ a public chat.
 | `api/views.php` | Unique-visitor counter endpoint |
 | `assets/emoji/` | Emoji pack |
 | `assets/404/` | Pictures the 404 page picks from |
-| `assets/blog/`, `assets/chat/` | Uploaded files |
+| `assets/blog/`, `assets/chat/`, `assets/comments/` | Uploaded files |
 
 Requirements: Apache with `mod_rewrite` and PHP 7.4+, write access to `api/`,
 `assets/blog/` and `assets/chat/`. No database.
@@ -60,6 +61,7 @@ sudo chmod -R 755 /var/www/html/api /var/www/html/assets
 | `/a/` `/g/` | anime, game characters |
 | `/b/` | random pictures |
 | `/c/` | chat |
+| `/thr/` | all blog posts |
 | `/faq` `/rules` | FAQ, rules |
 
 Everything else falls through to the styled 404 page. Drop your own pictures into
@@ -95,7 +97,7 @@ form, and a 15 minute lockout after five wrong logins.
 
 ## Blog
 
-Posts are written in **Admin Tools** and shown in the Blog box on the front page.
+Posts are written in **Admin Tools**.
 
 - Up to **3 files** per post, each either a picture (JPG, PNG, GIF, WEBP, 5 MB)
   or an **MP4** video (15 MB).
@@ -104,9 +106,24 @@ Posts are written in **Admin Tools** and shown in the Blog box on the front page
 - Text up to 1000 characters, with `:emoji:` shortcodes.
 - **Background** per post: Default, Dark, Coffee or Green. The text colour
   follows the background so it never blends in.
-- Posts **expire after 2 days**; the next request after that drops the post and
-  deletes its files, so no cron job is needed.
-- More than one live post adds `‹ 1/3 ›` arrows to the box title.
+
+The front page shows the newest posts as a grid of up to **8 previews** — the
+first attached picture and the text cut to 110 characters with `...`, no dates.
+A preview leads to the post on `/thr/`. Previews drop off the front page after
+**2 days**; the posts themselves stay on `/thr/` forever, newest first, with all
+their pictures, videos, text and date.
+
+### Comments
+
+Every post on `/thr/` has comments, folded behind a **Comments (N)** line.
+
+- Opening shows the **5 newest**; with more than five a **Load all N comments**
+  button reveals the rest, and **Hide comments** folds everything back.
+- A comment is a name (empty means `Anonymous`), text and one optional
+  attachment — **PNG, JPG or GIF up to 3 MB**, no video. There is no cooldown.
+- **Answer** appears under other people's comments only; you cannot answer your
+  own, which is checked by the same salted address hash as everywhere else.
+- Anyone can delete their own comment or answer, the admin can delete any.
 
 ## Chat
 

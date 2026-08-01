@@ -33,7 +33,7 @@ $picture = $pictures === [] ? '' : $pictures[random_int(0, count($pictures) - 1)
 <meta name="robots" content="noindex">
 <title>404 Not Found - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/style.css?v=3">
 </head>
 <body>
 
@@ -64,7 +64,7 @@ $picture = $pictures === [] ? '' : $pictures[random_int(0, count($pictures) - 1)
 
 	<div class="copyright">Copyright &copy; 2025-2026 4real community support. All rights reserved</div>
 
-	<div class="madeby">created by tolstovka (@nysha4real in telegram)</div>
+	<div class="madeby">created by tolstovka (<a href="https://t.me/nysh4real" target="_blank" rel="noopener">@nysh4real</a> in telegram)</div>
 
 </div>
 
