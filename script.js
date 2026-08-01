@@ -98,6 +98,21 @@
 
 	var tracks = document.querySelectorAll(".track");
 
+	function closeRateMenus() {
+		Array.prototype.forEach.call(document.querySelectorAll(".track-rate-menu.open"), function (menu) {
+			menu.classList.remove("open");
+		});
+	}
+
+	if (tracks.length) {
+		document.addEventListener("click", closeRateMenus);
+		document.addEventListener("keydown", function (event) {
+			if (event.key === "Escape") {
+				closeRateMenus();
+			}
+		});
+	}
+
 	function clockText(seconds) {
 		if (!isFinite(seconds) || seconds < 0) {
 			return "0:00";
@@ -113,7 +128,10 @@
 		var play = track.querySelector(".track-play");
 		var seek = track.querySelector(".track-seek");
 		var time = track.querySelector(".track-time");
-		var rates = track.querySelectorAll(".track-rates span");
+		var rate = track.querySelector(".track-rate");
+		var rateCurrent = track.querySelector(".track-rate-current");
+		var rateMenu = track.querySelector(".track-rate-menu");
+		var rateOptions = track.querySelectorAll(".track-rate-menu span");
 		var scrubbing = false;
 
 		if (!audio || !play || !seek || !time) {
@@ -172,12 +190,28 @@
 			scrubbing = false;
 		});
 
-		Array.prototype.forEach.call(rates, function (button) {
-			button.addEventListener("click", function () {
-				audio.playbackRate = Number(button.getAttribute("data-rate"));
-				Array.prototype.forEach.call(rates, function (other) {
-					other.classList.toggle("on", other === button);
+		if (!rate || !rateCurrent || !rateMenu) {
+			return;
+		}
+
+		rateCurrent.addEventListener("click", function (event) {
+			event.stopPropagation();
+			var open = rateMenu.classList.contains("open");
+			closeRateMenus();
+
+			if (!open) {
+				rateMenu.classList.add("open");
+			}
+		});
+
+		Array.prototype.forEach.call(rateOptions, function (option) {
+			option.addEventListener("click", function () {
+				audio.playbackRate = Number(option.getAttribute("data-rate"));
+				rateCurrent.textContent = option.textContent;
+				Array.prototype.forEach.call(rateOptions, function (other) {
+					other.classList.toggle("on", other === option);
 				});
+				rateMenu.classList.remove("open");
 			});
 		});
 	});

@@ -139,12 +139,15 @@ if ($authed) {
 						<div class="track-controls">
 							<input type="range" class="track-seek" min="0" max="1000" value="0" step="1" aria-label="Seek">
 							<span class="track-time">0:00</span>
-							<div class="track-rates">
-								<span data-rate="0.5">0.5</span>
-								<span data-rate="0.8">0.8</span>
-								<span data-rate="1" class="on">1x</span>
-								<span data-rate="1.25">1.25x</span>
-								<span data-rate="2">2x</span>
+							<div class="track-rate">
+								<span class="track-rate-current">1x</span>
+								<div class="track-rate-menu">
+									<span data-rate="0.5">0.5x</span>
+									<span data-rate="0.8">0.8x</span>
+									<span data-rate="1" class="on">1x</span>
+									<span data-rate="1.25">1.25x</span>
+									<span data-rate="2">2x</span>
+								</div>
 							</div>
 						</div>
 					</div>

@@ -110,9 +110,11 @@ pass, the limit is 5 MB per image, files are renamed to random hex, and
 ## Audio
 
 The audio field takes MP3, OGG, WAV, M4A or FLAC up to 20 MB. The player sits
-between the images and the text: cover art with the play button on top, the
-title, the author in a smaller font, a seek bar, the elapsed time and the speed
-buttons 0.5 / 0.8 / 1x / 1.25x / 2x on the right. Starting one track pauses any
+between the images and the text and stays narrow so the pictures keep the room:
+cover art with a plain triangle play button on top, the title, the author in a
+smaller font, a seek bar, the elapsed time and the current speed. Clicking the
+speed opens a row of 0.5x / 0.8x / 1x / 1.25x / 2x above it, which closes as soon
+as one is picked or the page is clicked elsewhere. Starting one track pauses any
 other on the page.
 
 Title and author come from the fields in the form. Leave them empty and the ID3
