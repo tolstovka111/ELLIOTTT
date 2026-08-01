@@ -72,134 +72,61 @@
 	}
 
 	var blogPosts = document.getElementById("blog-posts");
-	var blogEmpty = document.getElementById("blog-empty");
-	var blogNav = document.getElementById("blog-nav");
 	var blogPos = document.getElementById("blog-pos");
 	var blogPrev = document.getElementById("blog-prev");
 	var blogNext = document.getElementById("blog-next");
+	var slides = blogPosts ? blogPosts.querySelectorAll(".post") : [];
 	var current = 0;
-	var rendered = [];
-
-	function ageLabel(seconds) {
-		if (seconds < 60) {
-			return "just now";
-		}
-		if (seconds < 3600) {
-			var minutes = Math.floor(seconds / 60);
-			return minutes + (minutes === 1 ? " minute ago" : " minutes ago");
-		}
-		if (seconds < 86400) {
-			var hours = Math.floor(seconds / 3600);
-			return hours + (hours === 1 ? " hour ago" : " hours ago");
-		}
-		return "yesterday";
-	}
 
 	function showPost(index) {
-		if (!rendered.length) {
-			return;
-		}
-		current = (index + rendered.length) % rendered.length;
-		rendered.forEach(function (node, i) {
+		current = (index + slides.length) % slides.length;
+		Array.prototype.forEach.call(slides, function (node, i) {
 			node.style.display = i === current ? "" : "none";
 		});
-		blogPos.textContent = current + 1 + "/" + rendered.length;
+		blogPos.textContent = current + 1 + "/" + slides.length;
 	}
 
-	function buildPost(post) {
-		var wrap = document.createElement("div");
-		wrap.className = "post";
-
-		if (post.images && post.images.length) {
-			var strip = document.createElement("div");
-			strip.className = "post-images";
-
-			post.images.forEach(function (image) {
-				var holder;
-
-				if (image.link) {
-					holder = document.createElement("a");
-					holder.href = image.link;
-					holder.target = "_blank";
-					holder.rel = "noopener noreferrer";
-					holder.className = "post-image linked";
-				} else {
-					holder = document.createElement("span");
-					holder.className = "post-image";
-				}
-
-				var picture = document.createElement("img");
-				picture.src = image.src;
-				picture.alt = "";
-				holder.appendChild(picture);
-
-				if (image.link) {
-					var badge = document.createElement("span");
-					badge.className = "click";
-					badge.textContent = "Click";
-					holder.appendChild(badge);
-				}
-
-				strip.appendChild(holder);
-			});
-
-			wrap.appendChild(strip);
-		}
-
-		if (post.text) {
-			var text = document.createElement("p");
-			text.className = "post-text";
-			text.textContent = post.text;
-			wrap.appendChild(text);
-		}
-
-		var date = document.createElement("div");
-		date.className = "date";
-		date.textContent = ageLabel(post.age);
-		wrap.appendChild(date);
-
-		return wrap;
-	}
-
-	function renderBlog(posts) {
-		if (!posts.length) {
-			return;
-		}
-
-		blogEmpty.style.display = "none";
-		rendered = posts.map(function (post) {
-			var node = buildPost(post);
-			blogPosts.appendChild(node);
-			return node;
+	if (slides.length > 1 && blogPos && blogPrev && blogNext) {
+		blogPrev.addEventListener("click", function () {
+			showPost(current - 1);
 		});
-
-		if (posts.length > 1) {
-			blogNav.hidden = false;
-			blogPrev.addEventListener("click", function () {
-				showPost(current - 1);
-			});
-			blogNext.addEventListener("click", function () {
-				showPost(current + 1);
-			});
-		}
-
+		blogNext.addEventListener("click", function () {
+			showPost(current + 1);
+		});
 		showPost(0);
 	}
 
-	if (blogPosts && blogEmpty && window.fetch) {
-		fetch("api/posts.php", { credentials: "same-origin" })
-			.then(function (response) {
-				if (!response.ok) {
-					throw new Error("bad status " + response.status);
-				}
-				return response.json();
-			})
-			.then(function (data) {
-				renderBlog(Array.isArray(data.posts) ? data.posts : []);
-			})
-			.catch(function () {
-				blogEmpty.style.display = "";
-			});
+	var emojibar = document.getElementById("emojibar");
+	var postText = document.getElementById("post-text");
+
+	if (emojibar && postText) {
+		emojibar.addEventListener("click", function (event) {
+			var code = event.target.getAttribute("data-code");
+
+			if (!code) {
+				return;
+			}
+
+			var start = postText.selectionStart;
+			var end = postText.selectionEnd;
+			var value = postText.value;
+			var insert = code + " ";
+
+			postText.value = value.slice(0, start) + insert + value.slice(end);
+			postText.focus();
+			postText.selectionStart = start + insert.length;
+			postText.selectionEnd = postText.selectionStart;
+		});
+	}
+
+	var logoutLink = document.getElementById("logout-link");
+	var logoutForm = document.getElementById("logout-form");
+
+	if (logoutLink && logoutForm) {
+		logoutLink.addEventListener("click", function (event) {
+			event.preventDefault();
+			logoutForm.submit();
+		});
 	}
 
 	var viewsTotal = document.getElementById("views-total");

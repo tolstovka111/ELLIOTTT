@@ -4,18 +4,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/api/lib.php';
 
-$secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-    || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
-
-session_name('realadmin');
-session_set_cookie_params([
-    'lifetime' => 0,
-    'path' => '/',
-    'httponly' => true,
-    'samesite' => 'Strict',
-    'secure' => $secure,
-]);
-session_start();
+admin_session_start();
 
 header('Cache-Control: no-store, no-cache, must-revalidate');
 header('X-Frame-Options: DENY');
@@ -55,7 +44,7 @@ function throttle_read(): array
 
 function throttle_key(): string
 {
-    return hash('sha256', install_salt() . '|login|' . client_ip());
+    return secret_hash('login', client_ip());
 }
 
 function throttle_blocked_for(): int
@@ -120,36 +109,15 @@ function throttle_clear(): void
     @file_put_contents($path, (string) json_encode($data), LOCK_EX);
 }
 
-function redirect_self(): void
+function go(string $url): void
 {
-    header('Location: admin.php');
+    header('Location: ' . $url);
     exit;
 }
 
-function flash(string $type, string $message): void
+function flash(string $message): void
 {
-    $_SESSION['flash'] = ['type' => $type, 'message' => $message];
-}
-
-function relative_age(int $seconds): string
-{
-    if ($seconds < 60) {
-        return 'just now';
-    }
-
-    if ($seconds < 3600) {
-        $minutes = (int) floor($seconds / 60);
-
-        return $minutes . ($minutes === 1 ? ' minute ago' : ' minutes ago');
-    }
-
-    if ($seconds < 86400) {
-        $hours = (int) floor($seconds / 3600);
-
-        return $hours . ($hours === 1 ? ' hour ago' : ' hours ago');
-    }
-
-    return 'yesterday';
+    $_SESSION['flash'] = ['message' => $message];
 }
 
 $config = load_config();
@@ -159,7 +127,7 @@ if ($config !== null) {
 
     if ($provided !== '' && hash_equals((string) $config['key_hash'], secret_hash('key', $provided))) {
         $_SESSION['gate'] = true;
-        redirect_self();
+        go('admin.php');
     }
 
     if (empty($_SESSION['gate'])) {
@@ -212,8 +180,8 @@ if ($action === 'setup' && $config === null) {
             $errors[] = 'Could not write api/config.php. Check permissions.';
         } else {
             $_SESSION['gate'] = true;
-            flash('ok', 'Account created. Save your link: admin.php?k=' . $key);
-            redirect_self();
+            flash('Account created. Your admin link is admin.php?k=' . $key);
+            go('admin.php');
         }
     }
 }
@@ -226,15 +194,15 @@ if ($action === 'login' && $config !== null) {
     } else {
         $user = trim((string) ($_POST['user'] ?? ''));
         $pass = (string) ($_POST['pass'] ?? '');
-
         $userOk = hash_equals((string) $config['user_hash'], secret_hash('user', $user));
 
         if ($userOk && password_verify($pass, (string) $config['pass_hash'])) {
             throttle_clear();
             session_regenerate_id(true);
             $_SESSION['admin'] = true;
+            $_SESSION['gate'] = true;
             $_SESSION['csrf'] = bin2hex(random_bytes(32));
-            redirect_self();
+            go('index.php');
         }
 
         throttle_fail();
@@ -245,8 +213,7 @@ if ($action === 'login' && $config !== null) {
 if ($action === 'logout') {
     $_SESSION = [];
     session_destroy();
-    header('Location: index.html');
-    exit;
+    go('index.php');
 }
 
 if ($action === 'create' && $authed) {
@@ -334,33 +301,37 @@ if ($action === 'create' && $authed) {
         foreach ($saved as $file) {
             @unlink($file);
         }
-    } else {
-        $posts = live_posts();
-        array_unshift($posts, [
-            'id' => bin2hex(random_bytes(8)),
-            'created' => time(),
-            'text' => $text,
-            'images' => $images,
-        ]);
 
-        if (!write_store(['posts' => $posts])) {
-            foreach ($saved as $file) {
-                @unlink($file);
-            }
-            $errors[] = 'Could not write api/data/posts.json. Check permissions.';
-        } else {
-            flash('ok', 'Posted.');
-            redirect_self();
-        }
+        $_SESSION['form_errors'] = $errors;
+        go('index.php#blog-editor');
     }
+
+    $posts = live_posts();
+    array_unshift($posts, [
+        'id' => bin2hex(random_bytes(8)),
+        'created' => time(),
+        'text' => $text,
+        'images' => $images,
+    ]);
+
+    if (!write_store(['posts' => $posts])) {
+        foreach ($saved as $file) {
+            @unlink($file);
+        }
+
+        $_SESSION['form_errors'] = ['Could not write api/data/posts.json. Check permissions.'];
+        go('index.php#blog-editor');
+    }
+
+    flash('Posted.');
+    go('index.php#blog-editor');
 }
 
 if ($action === 'delete' && $authed) {
     $id = (string) ($_POST['id'] ?? '');
-    $posts = live_posts();
     $kept = [];
 
-    foreach ($posts as $post) {
+    foreach (live_posts() as $post) {
         if ((string) ($post['id'] ?? '') === $id) {
             drop_images($post);
             continue;
@@ -370,21 +341,18 @@ if ($action === 'delete' && $authed) {
     }
 
     write_store(['posts' => $kept]);
-    flash('ok', 'Post deleted.');
-    redirect_self();
+    flash('Post deleted.');
+    go('index.php#blog-editor');
+}
+
+if ($authed) {
+    go('index.php#blog-editor');
 }
 
 $flash = $_SESSION['flash'] ?? null;
 unset($_SESSION['flash']);
 $csrf = (string) $_SESSION['csrf'];
 $suggestedKey = $config === null ? bin2hex(random_bytes(12)) : '';
-$posts = $authed ? live_posts() : [];
-$now = time();
-
-function e(string $value): string
-{
-    return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-}
 
 ?><!DOCTYPE html>
 <html lang="en">
@@ -399,12 +367,12 @@ function e(string $value): string
 <body>
 
 <div class="logo">
-	<a href="index.html"><img src="assets/4real-logo.png" alt="4real"></a>
+	<a href="index.php"><img src="assets/4real-logo.png" alt="4real"></a>
 </div>
 
 <div class="page">
 
-	<div class="nav">[<a href="index.html">Return to Home</a>]</div>
+	<div class="nav">[<a href="index.php">Return to Home</a>]</div>
 
 <?php if ($flash !== null): ?>
 	<div class="box">
@@ -442,7 +410,7 @@ function e(string $value): string
 		</div>
 	</div>
 
-<?php elseif (!$authed): ?>
+<?php else: ?>
 
 	<div class="box">
 		<div class="box-title">Sign in</div>
@@ -457,63 +425,10 @@ function e(string $value): string
 		</div>
 	</div>
 
-<?php else: ?>
-
-	<div class="box">
-		<div class="box-title">
-			New post
-			<span class="corner"><a href="#" onclick="document.getElementById('logout').submit();return false;">log out</a></span>
-		</div>
-		<div class="box-body">
-			<form method="post" enctype="multipart/form-data" class="adminform">
-				<input type="hidden" name="csrf" value="<?= e($csrf) ?>">
-				<input type="hidden" name="action" value="create">
-<?php for ($i = 0; $i < MAX_IMAGES; $i++): ?>
-				<div class="uploadrow">
-					<label>Image <?= $i + 1 ?><input type="file" name="image[]" accept="image/jpeg,image/png,image/gif,image/webp"></label>
-					<label>Link for image <?= $i + 1 ?> (optional)<input type="url" name="link[]" placeholder="https://"></label>
-				</div>
-<?php endfor; ?>
-				<label>Text<textarea name="text" rows="4" maxlength="<?= MAX_TEXT ?>"></textarea></label>
-				<button type="submit">Publish</button>
-			</form>
-		</div>
-	</div>
-
-	<form method="post" id="logout">
-		<input type="hidden" name="csrf" value="<?= e($csrf) ?>">
-		<input type="hidden" name="action" value="logout">
-	</form>
-
-	<div class="box">
-		<div class="box-title">Live posts</div>
-<?php if ($posts === []): ?>
-		<div class="empty">No Posts in my Blog yet.</div>
-<?php else: ?>
-<?php foreach ($posts as $post): ?>
-		<div class="entry adminpost">
-			<div class="adminpost-images">
-<?php foreach ((array) $post['images'] as $image): ?>
-				<img src="assets/blog/<?= e(basename((string) $image['file'])) ?>" alt="">
-<?php endforeach; ?>
-			</div>
-			<p><?= e((string) $post['text']) ?></p>
-			<div class="date"><?= e(relative_age($now - (int) $post['created'])) ?></div>
-			<form method="post">
-				<input type="hidden" name="csrf" value="<?= e($csrf) ?>">
-				<input type="hidden" name="action" value="delete">
-				<input type="hidden" name="id" value="<?= e((string) $post['id']) ?>">
-				<button type="submit">Delete</button>
-			</form>
-		</div>
-<?php endforeach; ?>
-<?php endif; ?>
-	</div>
-
 <?php endif; ?>
 
 	<div class="pagelinks">
-		<a href="index.html">Home</a>
+		<a href="index.php">Home</a>
 		<a href="faq.html">FAQ</a>
 		<a href="rules.html">Rules</a>
 	</div>

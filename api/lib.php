@@ -213,6 +213,105 @@ function public_posts(): array
     return $out;
 }
 
+function relative_age(int $seconds): string
+{
+    if ($seconds < 60) {
+        return 'just now';
+    }
+
+    if ($seconds < 3600) {
+        $minutes = (int) floor($seconds / 60);
+
+        return $minutes . ($minutes === 1 ? ' minute ago' : ' minutes ago');
+    }
+
+    if ($seconds < 86400) {
+        $hours = (int) floor($seconds / 3600);
+
+        return $hours . ($hours === 1 ? ' hour ago' : ' hours ago');
+    }
+
+    return 'yesterday';
+}
+
+function admin_session_start(): void
+{
+    $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+
+    session_name('realadmin');
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'httponly' => true,
+        'samesite' => 'Strict',
+        'secure' => $secure,
+    ]);
+    session_start();
+}
+
+function e(string $value): string
+{
+    return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+function emoji_map(): array
+{
+    $dir = project_root() . '/assets/emoji';
+
+    if (!is_dir($dir)) {
+        return [];
+    }
+
+    $map = [];
+
+    foreach ((array) scandir($dir) as $file) {
+        if (!is_string($file) || $file === '' || $file[0] === '.') {
+            continue;
+        }
+
+        $extension = strtolower((string) pathinfo($file, PATHINFO_EXTENSION));
+
+        if (!in_array($extension, ['png', 'gif', 'webp', 'jpg', 'jpeg'], true)) {
+            continue;
+        }
+
+        $name = (string) pathinfo($file, PATHINFO_FILENAME);
+
+        if (preg_match('/^[a-z0-9_-]+$/i', $name) === 1) {
+            $map[$name] = 'assets/emoji/' . $file;
+        }
+    }
+
+    ksort($map);
+
+    return $map;
+}
+
+function render_post_text(string $text): string
+{
+    $safe = htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $map = emoji_map();
+
+    if ($map === []) {
+        return $safe;
+    }
+
+    return (string) preg_replace_callback(
+        '/:([A-Za-z0-9_-]+):/',
+        static function (array $match) use ($map): string {
+            $name = $match[1];
+
+            if (!isset($map[$name])) {
+                return $match[0];
+            }
+
+            return '<img class="emoji" src="' . htmlspecialchars($map[$name], ENT_QUOTES) . '" alt=":' . htmlspecialchars($name, ENT_QUOTES) . ':">';
+        },
+        $safe
+    );
+}
+
 function client_ip(): string
 {
     $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');

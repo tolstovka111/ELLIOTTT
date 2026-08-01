@@ -267,6 +267,40 @@ a:hover {
 	color: #a06a5a;
 }
 
+.emoji {
+	display: inline-block;
+	height: 22px;
+	width: auto;
+	vertical-align: -5px;
+}
+
+.emojibar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding: 6px;
+	margin-bottom: 10px;
+	border: 1px solid #d9bfb7;
+	background-color: #f0e0d6;
+}
+
+.emojibar img {
+	height: 32px;
+	width: auto;
+	cursor: pointer;
+	border: 1px solid transparent;
+	background-color: #ffffff;
+}
+
+.emojibar img:hover {
+	border-color: #800000;
+}
+
+.box-title.sub {
+	border-top: 1px solid #d9bfb7;
+	font-size: 11pt;
+}
+
 .adminform label {
 	display: block;
 	margin-bottom: 10px;

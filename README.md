@@ -6,31 +6,53 @@
 
 | File | What it is |
 | --- | --- |
-| `index.html` | Front page: "What is 4real?" box, Boards, Blog, Stats, footer |
+| `index.php` | Front page: "What is 4real?" box, Boards, Blog, Blog editor, Stats, footer |
 | `roblox.html`, `minecraft.html` | Avatars |
 | `anime.html`, `games.html` | Fav Characters |
 | `random.html` | Pictures |
 | `faq.html`, `rules.html` | Pages behind the FAQ / Rules buttons |
-| `admin.php` | Admin panel: sign in, publish and delete blog posts |
+| `admin.php` | Setup, sign in, and the handler for publish / delete / log out |
 | `style.css` | Yotsuba-style theme |
-| `script.js` | Intro box, board filter, gallery state, blog, view counter |
-| `api/lib.php` | Shared storage, post and hashing helpers |
-| `api/posts.php` | Serves the live blog posts |
+| `script.js` | Intro box, board filter, gallery state, blog arrows, emoji picker |
+| `api/lib.php` | Storage, posts, emoji and hashing helpers |
 | `api/views.php` | Unique-visitor counter endpoint |
 | `fonts/tahomabd.ttf` | Font used for box titles |
-| `assets/` | Logo, per-page picture folders, uploaded blog images |
+| `assets/emoji/` | Emoji pack used in blog posts |
+| `assets/blog/` | Uploaded blog images |
 
-Requirements: PHP 7.4+ with write access to `api/` and `assets/blog/`. Static
-hosting without PHP (GitHub Pages, plain S3) cannot run the blog or the counter.
+## Hosting
 
-## First run
+The site needs plain **PHP 7.4+ shared hosting** — nothing else. No database, no
+Node, no server to run: the host already runs PHP, it just executes `.php` files
+when they are requested.
 
-Upload the files, then open `admin.php` **once** and fill in the setup form:
-login, password and a secret key for the admin link. Do this straight after the
-upload — until the account exists, the setup form is open to anyone who finds the
-page.
+1. Upload the whole folder into the public web root (`public_html`, `www` or
+   `htdocs`, depending on the host).
+2. Make sure `api/` and `assets/blog/` are writable (chmod `755` is usually
+   enough; some hosts need `775`). The site creates `api/data/` on the first
+   request.
+3. Open `https://your-site/` — the front page must appear. If the browser
+   downloads the file or shows the source code instead, PHP is off for that
+   directory; turn it on in the hosting panel.
+4. Open `https://your-site/admin.php` once and fill in the setup form.
 
-The form writes `api/config.php` containing three hashes and nothing else:
+There is no `index.html` any more, only `index.php` — hosts serve it for `/`
+automatically. If the host insists on `index.html` first, delete the leftover
+file or add `DirectoryIndex index.php` to `.htaccess`.
+
+## Setting the login and password
+
+The credentials are **not** stored in the repository. They are created directly
+on your server, once, through the setup form at `admin.php`:
+
+| Field | What to put in |
+| --- | --- |
+| Login | your login, 3-32 characters |
+| Password | at least 8 characters |
+| Repeat password | the same again |
+| Secret key for the link | prefilled with a random one; it becomes part of the admin URL |
+
+Pressing **Create** writes `api/config.php` with three values and nothing else:
 
 - login — SHA-256 with the per-installation salt,
 - password — bcrypt (`password_hash`), not reversible,
@@ -41,24 +63,28 @@ executes `api/config.php` instead of showing it, `api/data/.htaccess` denies the
 storage folder, and the login form is checked server-side only — no credentials
 ever reach the browser.
 
-## Admin panel
+Do the setup immediately after upload: until the account exists, the setup form
+is open to whoever finds the page.
 
-After setup the panel lives at:
+To change the login, password or key later, delete `api/config.php` and fill in
+the setup form again.
+
+## Signing in
 
 ```
 https://your-site/admin.php?k=<secret key>
 ```
 
-Opening `admin.php` without the key — or with a wrong one — returns a plain
-**404**, so the panel is invisible to anyone who does not know the link. A
-correct key opens the gate for the browser session and disappears from the
-address bar, then the login form asks for the login and password.
+1. Open that link. A wrong key, or no key at all, returns a plain **404** — the
+   panel is invisible to anyone who does not know the link.
+2. The key opens the gate for the browser session and disappears from the address
+   bar; the login form asks for the login and password.
+3. On success you land back on the front page, where a **Blog editor** box is now
+   shown under the Blog box. Visitors never see it.
+4. `log out` in the corner of that box ends the session.
 
-Protection: session cookie is `HttpOnly` + `SameSite=Strict`, every form carries
-a CSRF token, and five wrong logins lock that address out for 15 minutes.
-
-To change the login, password or key, delete `api/config.php` and run the setup
-form again.
+Protection: the session cookie is `HttpOnly` + `SameSite=Strict`, every form
+carries a CSRF token, and five wrong logins lock that address out for 15 minutes.
 
 ## Blog
 
@@ -73,12 +99,23 @@ The Blog box sits between Boards and Stats on the front page.
 - More than one live post adds `‹ 1/3 ›` arrows to the box title. They switch
   posts instantly, without animation.
 - The date line reads `just now`, `N minutes ago`, `N hours ago` for the first
-  day and `yesterday` after that. The age comes from the server, so a wrong clock
-  on the visitor's computer cannot skew it.
+  day and `yesterday` after that. The age is computed on the server, so a wrong
+  clock on the visitor's computer cannot skew it.
 
 Uploads are validated by content, not by file name: only JPG, PNG, GIF and WEBP
 pass, the limit is 5 MB per image, files are renamed to random hex, and
 `assets/blog/.htaccess` forbids executing anything in the upload folder.
+
+## Emoji
+
+The emoji bar under the text field inserts a shortcode such as `:konatathink:`
+at the cursor; on the page it turns into the picture. Typing the shortcode by
+hand works just as well.
+
+To add or remove emoji, drop PNG, GIF or WEBP files into `assets/emoji/` — the
+file name is the shortcode, so `konatacry.png` becomes `:konatacry:`. Names may
+contain letters, digits, dashes and underscores. Unknown shortcodes are left as
+plain text.
 
 ## View counter
 
