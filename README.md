@@ -58,16 +58,29 @@ Drop the files into the matching folder under `assets/` (for example
 
 The "Nothing here yet." line disappears on its own once the gallery has items.
 
-## Adding a blog post
+## Filling in FAQ, Rules and Blog
 
-Replace the `<div class="empty">No posts yet.</div>` line in `blog.html` with one
-block per post:
+All three pages start empty. Replace the `<div class="empty">…</div>` line with
+your own content.
+
+For a list of questions or posts, use one block per item:
 
 ```html
 <div class="entry">
-	<h3>Post title</h3>
+	<h3>Question or post title</h3>
 	<div class="date">1 August 2026</div>
-	<p>Post text.</p>
+	<p>Text.</p>
+</div>
+```
+
+For a numbered list of rules, use a normal list inside a body block:
+
+```html
+<div class="box-body">
+	<ol>
+		<li>First rule.</li>
+		<li>Second rule.</li>
+	</ol>
 </div>
 ```
 
