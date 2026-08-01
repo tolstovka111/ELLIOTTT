@@ -12,10 +12,17 @@
 | `random.html` | Pictures |
 | `faq.html`, `rules.html`, `blog.html` | Pages behind the FAQ / Rules / Blog buttons |
 | `style.css` | Yotsuba-style theme |
-| `script.js` | Intro box, board filter, gallery state, view counter |
+| `script.js` | Theme toggle, intro box, board filter, gallery state, view counter |
 | `api/views.php` | Unique-visitor counter endpoint |
 | `fonts/tahomabd.ttf` | Font used for box titles |
 | `assets/` | Logo and per-page picture folders |
+
+## Dark theme
+
+The `dark` / `light` switch in the top right corner puts a `dark` class on the
+`<html>` element and remembers the choice in `localStorage`, so it carries over
+to every page. Each page applies the saved theme in a small inline script in the
+`<head>` so the light theme never flashes before the dark one is applied.
 
 ## View counter
 
