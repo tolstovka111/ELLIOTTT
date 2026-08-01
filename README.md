@@ -75,13 +75,16 @@ the setup form again.
 https://your-site/admin.php?k=<secret key>
 ```
 
-1. Open that link. A wrong key, or no key at all, returns a plain **404** — the
-   panel is invisible to anyone who does not know the link.
-2. The key opens the gate for the browser session and disappears from the address
-   bar; the login form asks for the login and password.
+1. Open that link. Every request without the key — or with a wrong one — returns
+   a plain **404**, so the panel is invisible to anyone who does not know it.
+   The key is not remembered between requests: reaching the login form always
+   needs it in the URL. Bookmark the link.
+2. The login form asks for the login and password.
 3. On success you land back on the front page, where a **Blog editor** box is now
-   shown under the Blog box. Visitors never see it.
-4. `log out` in the corner of that box ends the session.
+   shown under the Blog box. Visitors never see it. From here on the session
+   stands in for the key, so publishing and deleting need no link.
+4. `log out` in the corner of that box ends the session, and `admin.php` goes
+   back to answering 404 without the key.
 
 Protection: the session cookie is `HttpOnly` + `SameSite=Strict`, every form
 carries a CSRF token, and five wrong logins lock that address out for 15 minutes.

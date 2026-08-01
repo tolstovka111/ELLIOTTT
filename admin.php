@@ -121,24 +121,20 @@ function flash(string $message): void
 }
 
 $config = load_config();
-
-if ($config !== null) {
-    $provided = (string) ($_GET['k'] ?? '');
-
-    if ($provided !== '' && hash_equals((string) $config['key_hash'], secret_hash('key', $provided))) {
-        $_SESSION['gate'] = true;
-        go('admin.php');
-    }
-
-    if (empty($_SESSION['gate'])) {
-        http_response_code(404);
-        header('Content-Type: text/html; charset=utf-8');
-        echo "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><title>404 Not Found</title></head>\n<body><h1>Not Found</h1></body>\n</html>\n";
-        exit;
-    }
-}
-
+$provided = (string) ($_GET['k'] ?? $_POST['k'] ?? '');
 $authed = !empty($_SESSION['admin']) && $config !== null;
+$keyOk = $config !== null
+    && $provided !== ''
+    && hash_equals((string) $config['key_hash'], secret_hash('key', $provided));
+
+unset($_SESSION['gate']);
+
+if ($config !== null && !$keyOk && !$authed) {
+    http_response_code(404);
+    header('Content-Type: text/html; charset=utf-8');
+    echo "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><title>404 Not Found</title></head>\n<body><h1>Not Found</h1></body>\n</html>\n";
+    exit;
+}
 $action = (string) ($_POST['action'] ?? '');
 $errors = [];
 
@@ -179,9 +175,8 @@ if ($action === 'setup' && $config === null) {
         if (!$written) {
             $errors[] = 'Could not write api/config.php. Check permissions.';
         } else {
-            $_SESSION['gate'] = true;
-            flash('Account created. Your admin link is admin.php?k=' . $key);
-            go('admin.php');
+            flash('Account created. Save this link, it is the only way in: admin.php?k=' . $key);
+            go('admin.php?k=' . urlencode($key));
         }
     }
 }
@@ -200,7 +195,6 @@ if ($action === 'login' && $config !== null) {
             throttle_clear();
             session_regenerate_id(true);
             $_SESSION['admin'] = true;
-            $_SESSION['gate'] = true;
             $_SESSION['csrf'] = bin2hex(random_bytes(32));
             go('index.php');
         }
@@ -512,6 +506,7 @@ $suggestedKey = $config === null ? bin2hex(random_bytes(12)) : '';
 			<form method="post" class="adminform">
 				<input type="hidden" name="csrf" value="<?= e($csrf) ?>">
 				<input type="hidden" name="action" value="login">
+				<input type="hidden" name="k" value="<?= e($provided) ?>">
 				<label>Login<input type="text" name="user" autocomplete="username" required></label>
 				<label>Password<input type="password" name="pass" autocomplete="current-password" required></label>
 				<button type="submit">Sign in</button>
