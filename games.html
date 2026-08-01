@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Games - 4real</title>
+<link rel="icon" href="assets/4real-logo.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="logo">
+	<a href="index.html"><img src="assets/4real-logo.png" alt="4real"></a>
+</div>
+
+<div class="page">
+
+	<div class="nav">[<a href="index.html">Return to index</a>]</div>
+
+	<div class="box">
+		<div class="box-title">Fav Characters / Games</div>
+		<div class="box-body">My favourite game characters.</div>
+	</div>
+
+	<div class="box">
+		<div class="box-title">Gallery</div>
+		<!--
+			Add pictures here. Drop the files into assets/games/ and copy one block per picture:
+
+			<figure>
+				<img src="assets/games/example.png" alt="Example">
+				<figcaption>Example</figcaption>
+			</figure>
+		-->
+		<div class="gallery" id="gallery"></div>
+		<div class="empty" id="gallery-empty">Nothing here yet.</div>
+	</div>
+
+</div>
+
+<script>
+	var g = document.getElementById("gallery");
+	if (g && g.children.length) {
+		document.getElementById("gallery-empty").style.display = "none";
+	} else if (g) {
+		g.style.display = "none";
+	}
+</script>
+</body>
+</html>

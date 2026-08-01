@@ -1,0 +1,264 @@
+@font-face {
+	font-family: "4chanFont";
+	src: url("fonts/tahomabd.ttf") format("truetype");
+	font-weight: normal;
+	font-style: normal;
+	font-display: swap;
+}
+
+html {
+	background-color: #ffffee;
+}
+
+body {
+	margin: 0;
+	padding: 0 10px 40px;
+	background-color: #ffffee;
+	background-image: linear-gradient(to bottom, #f6cb9c 0%, #ffd9b0 22%, #ffffee 100%);
+	background-repeat: no-repeat;
+	background-size: 100% 330px;
+	color: #800000;
+	font-family: Tahoma, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 10pt;
+}
+
+a,
+a:visited {
+	color: #800000;
+	text-decoration: underline;
+}
+
+a:hover {
+	color: #f00000;
+}
+
+/* ---------- header ---------- */
+
+.logo {
+	text-align: center;
+	padding: 18px 0 14px;
+}
+
+.logo img {
+	display: inline-block;
+	width: 330px;
+	max-width: 90%;
+	height: auto;
+}
+
+.page {
+	width: 750px;
+	max-width: 100%;
+	margin: 0 auto;
+}
+
+/* ---------- generic box ---------- */
+
+.box {
+	border: 1px solid #d9bfb7;
+	background-color: #ffffff;
+	margin-bottom: 12px;
+}
+
+.box-title {
+	background-color: #f0e0d6;
+	border-bottom: 1px solid #d9bfb7;
+	color: #800000;
+	font-family: "4chanFont", Tahoma, Verdana, Arial, sans-serif;
+	font-size: 13pt;
+	font-weight: bold;
+	padding: 3px 8px;
+	position: relative;
+}
+
+.box-title .corner {
+	position: absolute;
+	right: 8px;
+	top: 5px;
+	font-family: Tahoma, Verdana, Arial, sans-serif;
+	font-size: 9pt;
+	font-weight: bold;
+	cursor: pointer;
+	user-select: none;
+}
+
+.box-body {
+	padding: 10px 12px;
+	line-height: 1.45;
+}
+
+/* ---------- "What is 4real?" box ---------- */
+
+.box.intro {
+	border-color: #800000;
+}
+
+.box.intro .box-title {
+	background-color: #800000;
+	border-bottom: 1px solid #800000;
+	color: #ffffff;
+}
+
+.box.intro .box-title .close {
+	position: absolute;
+	right: 6px;
+	top: 3px;
+	width: 15px;
+	height: 15px;
+	line-height: 13px;
+	text-align: center;
+	font-family: Tahoma, Verdana, Arial, sans-serif;
+	font-size: 10pt;
+	font-weight: bold;
+	color: #ffffff;
+	border: 1px solid #ffffff;
+	cursor: pointer;
+	user-select: none;
+}
+
+.box.intro .box-title .close:hover {
+	background-color: #ffffff;
+	color: #800000;
+}
+
+.box.intro .box-body p {
+	margin: 0 0 12px;
+}
+
+.box.intro .box-body p:last-child {
+	margin-bottom: 0;
+}
+
+/* ---------- boards ---------- */
+
+.boards-filter {
+	display: none;
+	padding: 6px 12px 0;
+}
+
+.boards-filter input {
+	width: 100%;
+	box-sizing: border-box;
+	border: 1px solid #d9bfb7;
+	background-color: #ffffff;
+	color: #800000;
+	font-family: inherit;
+	font-size: 10pt;
+	padding: 3px 5px;
+}
+
+.boards-filter.open {
+	display: block;
+}
+
+.board-columns {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 30px;
+	padding: 10px 12px 14px;
+}
+
+.board-col {
+	flex: 1 1 150px;
+	min-width: 140px;
+}
+
+.board-col h2 {
+	margin: 0 0 4px;
+	font-size: 10pt;
+	font-weight: bold;
+}
+
+.board-col h2 a,
+.board-col h2 span {
+	color: #800000;
+	text-decoration: underline;
+}
+
+.board-col ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.board-col li {
+	margin: 0;
+	padding: 1px 0;
+}
+
+.board-col li a {
+	text-decoration: none;
+}
+
+.board-col li a:hover {
+	text-decoration: underline;
+}
+
+.board-col li.hidden {
+	display: none;
+}
+
+/* ---------- sub pages ---------- */
+
+.nav {
+	padding: 0 0 8px;
+	font-size: 10pt;
+}
+
+.nav a {
+	text-decoration: underline;
+}
+
+.gallery {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	padding: 12px;
+}
+
+.gallery figure {
+	margin: 0;
+	width: 160px;
+	text-align: center;
+}
+
+.gallery img {
+	display: block;
+	width: 160px;
+	height: 160px;
+	object-fit: cover;
+	border: 1px solid #d9bfb7;
+	background-color: #f0e0d6;
+}
+
+.gallery figcaption {
+	padding-top: 4px;
+	font-size: 9pt;
+	word-wrap: break-word;
+}
+
+.empty {
+	padding: 14px 12px;
+	font-style: italic;
+	color: #a06a5a;
+}
+
+/* ---------- footer ---------- */
+
+.footer {
+	text-align: center;
+	padding: 6px 0 0;
+	font-size: 9pt;
+	color: #a06a5a;
+}
+
+@media (max-width: 620px) {
+	.board-columns {
+		gap: 0 18px;
+	}
+
+	.board-col {
+		flex: 1 1 45%;
+		margin-bottom: 12px;
+	}
+}
