@@ -255,13 +255,18 @@
 			return;
 		}
 
-		var block = target.closest ? target.closest(".comments") : null;
+		if (target.classList.contains("comments-toggle")) {
+			var owner = document.getElementById("c" + target.getAttribute("data-comments"));
 
-		if (block && target.classList.contains("comments-toggle")) {
-			block.querySelector(".comments-body").hidden = false;
-			block.querySelector(".comments-bar").hidden = true;
+			if (owner) {
+				owner.querySelector(".comments-body").hidden = false;
+				target.parentNode.hidden = true;
+			}
+
 			return;
 		}
+
+		var block = target.closest ? target.closest(".comments") : null;
 
 		if (block && target.classList.contains("comments-all")) {
 			Array.prototype.forEach.call(block.querySelectorAll(".comment.folded"), function (node) {
@@ -278,7 +283,16 @@
 
 		if (block && target.classList.contains("comments-hide")) {
 			block.querySelector(".comments-body").hidden = true;
-			block.querySelector(".comments-bar").hidden = false;
+			var post = block.closest(".thread-post");
+
+			if (post) {
+				var bar = post.querySelector(".post-side .comments-bar");
+
+				if (bar) {
+					bar.hidden = false;
+				}
+			}
+
 			return;
 		}
 

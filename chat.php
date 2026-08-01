@@ -307,9 +307,9 @@ if ($fragment) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/c/ - Chat - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=4">
+<link rel="stylesheet" href="/style.css?v=5">
 </head>
-<body>
+<body class="blue">
 
 <div class="logo">
 	<a href="/home"><img src="/assets/4real-logo.png" alt="4real"></a>
@@ -384,6 +384,6 @@ if ($fragment) {
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=4"></script>
+<script src="/script.js?v=5"></script>
 </body>
 </html>

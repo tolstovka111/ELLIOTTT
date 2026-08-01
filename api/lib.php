@@ -654,3 +654,30 @@ function online_count(bool $touch): int
 
     return count($seen);
 }
+
+function random_asset(string $folder, array $extensions): string
+{
+    $dir = project_root() . '/assets/' . $folder;
+
+    if (!is_dir($dir)) {
+        return '';
+    }
+
+    $found = [];
+
+    foreach ((array) scandir($dir) as $file) {
+        if (!is_string($file) || $file === '' || $file[0] === '.') {
+            continue;
+        }
+
+        if (in_array(strtolower((string) pathinfo($file, PATHINFO_EXTENSION)), $extensions, true)) {
+            $found[] = '/assets/' . $folder . '/' . $file;
+        }
+    }
+
+    if ($found === []) {
+        return '';
+    }
+
+    return $found[random_int(0, count($found) - 1)];
+}

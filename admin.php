@@ -380,9 +380,9 @@ $suggestedKey = $config === null ? bin2hex(random_bytes(12)) : '';
 <meta name="robots" content="noindex, nofollow">
 <title>Admin - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=4">
+<link rel="stylesheet" href="/style.css?v=5">
 </head>
-<body>
+<body class="blue">
 
 <div class="logo">
 	<a href="/home"><img src="/assets/4real-logo.png" alt="4real"></a>

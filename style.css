@@ -1142,3 +1142,233 @@ a:hover {
 		grid-template-columns: repeat(2, 1fr);
 	}
 }
+
+.boardhead {
+	text-align: center;
+	padding: 10px 0 6px;
+}
+
+.boardbanner,
+.boardclip {
+	display: block;
+	margin: 0 auto;
+	width: 300px;
+	height: auto;
+	max-height: 160px;
+	border: 1px solid #34345c;
+	background-color: #ffffff;
+}
+
+.boardtitle {
+	margin: 8px 0;
+	font-family: "4chanFont", Tahoma, Verdana, Arial, sans-serif;
+	font-size: 20pt;
+	font-weight: bold;
+	color: #af0a0f;
+}
+
+.board {
+	padding: 0 0 10px;
+}
+
+.thread-post {
+	padding: 8px 0 12px;
+	border-bottom: 1px solid #b7c5d9;
+}
+
+.thread-post .post {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	padding: 8px 10px;
+}
+
+.post-side {
+	flex: 0 0 auto;
+	max-width: 260px;
+}
+
+.post-main {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.post-side .post-images {
+	flex-direction: column;
+	margin-bottom: 6px;
+}
+
+.post-side .comments-bar {
+	padding: 2px 0 0;
+}
+
+html:has(body.blue) {
+	background-color: #eef2ff;
+}
+
+body.blue {
+	min-height: 100vh;
+	box-sizing: border-box;
+	background-color: #eef2ff;
+	background-image: none;
+	color: #000000;
+}
+
+body.blue a,
+body.blue a:visited {
+	color: #34345c;
+}
+
+body.blue a:hover {
+	color: #dd0000;
+}
+
+body.blue .box,
+body.blue .thread-post .post {
+	border-color: #b7c5d9;
+	background-color: #d6daf0;
+}
+
+body.blue .box-title {
+	background-color: #9988ee;
+	border-bottom-color: #b7c5d9;
+	color: #000000;
+}
+
+body.blue .box-title .corner,
+body.blue .box-title .corner a {
+	color: #000000;
+}
+
+body.blue .box.intro {
+	border-color: #b7c5d9;
+}
+
+body.blue .msg,
+body.blue .comment,
+body.blue .entry,
+body.blue .adminpost {
+	border-color: #b7c5d9;
+}
+
+body.blue .msg-no,
+body.blue .msg-date {
+	color: #34345c;
+}
+
+body.blue .empty,
+body.blue .post .date,
+body.blue .entry .date {
+	color: #707090;
+}
+
+body.blue .copyright {
+	color: #34345c;
+}
+
+body.blue .madeby {
+	color: rgba(50, 50, 90, 0.85);
+}
+
+body.blue .madeby a,
+body.blue .madeby a:visited {
+	color: #34345c;
+}
+
+body.blue .board-col h2 a,
+body.blue .board-col h2 span,
+body.blue .board-col li a,
+body.blue .nav a {
+	color: #34345c;
+}
+
+body.blue .post-image,
+body.blue .msg-media img,
+body.blue .gallery img,
+body.blue .adminpost-images img,
+body.blue .adminpost-images video,
+body.blue .thread-thumb {
+	border-color: #b7c5d9;
+	background-color: #eef2ff;
+}
+
+body.blue .say-name,
+body.blue .say-text,
+body.blue .replyform input[type="text"],
+body.blue .commentform input[type="text"],
+body.blue .boards-filter input,
+body.blue .adminform input,
+body.blue .adminform textarea,
+body.blue .formfield input[type="url"],
+body.blue .formfield input[type="text"],
+body.blue .formfield textarea {
+	border-color: #aaaacc;
+	background-color: #ffffff;
+	color: #000000;
+}
+
+body.blue .say-send,
+body.blue .say-clip,
+body.blue .replyform button,
+body.blue .commentform button,
+body.blue .adminform button,
+body.blue .adminpost button,
+body.blue .postform button,
+body.blue .lightbox-download,
+body.blue .formlabel,
+body.blue .emojibar {
+	border-color: #b7c5d9;
+	background-color: #c0c8f0;
+	color: #000000;
+}
+
+body.blue .say-clip:hover,
+body.blue .say-send:hover,
+body.blue .replyform button:hover,
+body.blue .commentform button:hover,
+body.blue .adminform button:hover,
+body.blue .adminpost button:hover,
+body.blue .postform button:hover {
+	background-color: #d6daf0;
+}
+
+body.blue .say-timer {
+	border-color: #b7c5d9;
+	color: #34345c;
+}
+
+body.blue .msg-file a,
+body.blue .comments-toggle,
+body.blue .comments-hide,
+body.blue .comments-all,
+body.blue .msg-reply,
+body.blue .msg-remove button {
+	color: #34345c;
+}
+
+body.blue .msg-reply:hover,
+body.blue .msg-remove button:hover,
+body.blue .comments-toggle:hover,
+body.blue .comments-hide:hover,
+body.blue .comments-all:hover {
+	color: #dd0000;
+}
+
+body.blue .reply,
+body.blue .comment {
+	border-color: rgba(52, 52, 92, 0.35);
+}
+
+body.blue .notfound-fallback {
+	color: #9988ee;
+}
+
+@media (max-width: 620px) {
+	.thread-post .post {
+		flex-direction: column;
+	}
+
+	.post-side {
+		max-width: 100%;
+	}
+}

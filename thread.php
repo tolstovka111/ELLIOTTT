@@ -125,9 +125,15 @@ if ($action !== '' && !public_token_valid((string) ($_POST['token'] ?? ''))) {
 if ($action === 'comment' || $action === 'answer') {
     $postId = (string) ($_POST['post'] ?? '');
     $text = mb_substr(trim((string) ($_POST['text'] ?? '')), 0, MAX_CHAT_TEXT);
-    $name = $authed ? 'nysha4real' : clean_name((string) ($_POST['name'] ?? ''));
+    $name = clean_name((string) ($_POST['name'] ?? ''));
 
     if ($name === '') {
+        $name = $authed ? 'nysha4real' : 'Anonymous';
+    }
+
+    $asAdmin = $authed && $name === 'nysha4real';
+
+    if (!$authed && strcasecmp($name, 'nysha4real') === 0) {
         $name = 'Anonymous';
     }
 
@@ -154,7 +160,7 @@ if ($action === 'comment' || $action === 'answer') {
                     'name' => $name,
                     'text' => $text,
                     'ip' => $me,
-                    'admin' => $authed,
+                    'admin' => $asAdmin,
                     'answers' => [],
                 ], $upload);
                 $done = true;
@@ -179,7 +185,7 @@ if ($action === 'comment' || $action === 'answer') {
                     'name' => $name,
                     'text' => $text,
                     'ip' => $me,
-                    'admin' => $authed,
+                    'admin' => $asAdmin,
                 ];
                 $done = true;
                 break;
@@ -257,6 +263,8 @@ if ($action === 'uncomment') {
 }
 
 $posts = all_posts();
+$banner = random_asset('banners', ['png', 'jpg', 'jpeg', 'gif', 'webp']);
+$clip = random_asset('videos', ['mp4', 'webm']);
 $me = visitor_hash();
 $now = time();
 $token = public_token();
@@ -268,20 +276,25 @@ $token = public_token();
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/thr/ - Blog - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=4">
+<link rel="stylesheet" href="/style.css?v=5">
 </head>
-<body>
-
-<div class="logo">
-	<a href="/home"><img src="/assets/4real-logo.png" alt="4real"></a>
-</div>
+<body class="blue">
 
 <div class="page">
 
+	<div class="boardhead">
+<?php if ($banner !== ''): ?>
+		<a href="/home"><img class="boardbanner" src="<?= e($banner) ?>" alt="4real"></a>
+<?php endif; ?>
+		<h1 class="boardtitle">/thr/ - Blog</h1>
+<?php if ($clip !== ''): ?>
+		<video class="boardclip" src="<?= e($clip) ?>" autoplay loop muted playsinline></video>
+<?php endif; ?>
+	</div>
+
 	<div class="nav">[<a href="/home">Return to Home</a>]</div>
 
-	<div class="box">
-		<div class="box-title">/thr/ - Blog</div>
+	<div class="board">
 
 <?php if ($errors !== []): ?>
 		<div class="box-body error">
@@ -306,31 +319,34 @@ $recent = array_slice($comments, -COMMENTS_OPEN);
 ?>
 		<div class="thread-post" id="p<?= e((string) $post['id']) ?>">
 			<div class="post bg-<?= e($background) ?>">
+				<div class="post-side">
 <?php if (($post['images'] ?? []) !== []): ?>
-				<div class="post-images">
+					<div class="post-images">
 <?php foreach ((array) $post['images'] as $media): ?>
 <?php $src = '/assets/blog/' . basename((string) $media['file']); ?>
 <?php if ((string) ($media['type'] ?? 'image') === 'video'): ?>
-					<span class="post-image"><video src="<?= e($src) ?>" controls preload="metadata"></video></span>
+						<span class="post-image"><video src="<?= e($src) ?>" controls preload="metadata"></video></span>
 <?php elseif ((string) ($media['link'] ?? '') !== ''): ?>
-					<a class="post-image linked" href="<?= e((string) $media['link']) ?>" target="_blank" rel="noopener noreferrer"><img src="<?= e($src) ?>" alt=""><span class="click">Click</span></a>
+						<a class="post-image linked" href="<?= e((string) $media['link']) ?>" target="_blank" rel="noopener noreferrer"><img src="<?= e($src) ?>" alt=""><span class="click">Click</span></a>
 <?php else: ?>
-					<span class="post-image"><img src="<?= e($src) ?>" alt=""></span>
+						<span class="post-image"><img src="<?= e($src) ?>" alt=""></span>
 <?php endif; ?>
 <?php endforeach; ?>
+					</div>
+<?php endif; ?>
+					<div class="comments-bar">
+						<span class="comments-toggle" data-comments="<?= e((string) $post['id']) ?>">Comments (<?= $total ?>)</span>
+					</div>
 				</div>
-<?php endif; ?>
+				<div class="post-main">
 <?php if ((string) $post['text'] !== ''): ?>
-				<p class="post-text"><?= render_post_text((string) $post['text']) ?></p>
+					<p class="post-text"><?= render_post_text((string) $post['text']) ?></p>
 <?php endif; ?>
-				<div class="date"><?= e(chat_age($now - (int) $post['created'])) ?></div>
+					<div class="date"><?= e(chat_age($now - (int) $post['created'])) ?></div>
+				</div>
 			</div>
 
-			<div class="comments" data-total="<?= $total ?>">
-				<div class="comments-bar">
-					<span class="comments-toggle">Comments (<?= $total ?>)</span>
-				</div>
-
+			<div class="comments" id="c<?= e((string) $post['id']) ?>" data-total="<?= $total ?>">
 				<div class="comments-body" hidden>
 <?php foreach ($comments as $index => $comment): ?>
 <?php
@@ -363,11 +379,7 @@ $hidden = $total > COMMENTS_OPEN && $index < $total - COMMENTS_OPEN;
 							<input type="hidden" name="action" value="answer">
 							<input type="hidden" name="post" value="<?= e((string) $post['id']) ?>">
 							<input type="hidden" name="comment" value="<?= e((string) $comment['id']) ?>">
-<?php if ($authed): ?>
-							<span class="replyname">nysha4real &mdash; <span class="msg-admin">Admin</span></span>
-<?php else: ?>
-							<input type="text" name="name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous">
-<?php endif; ?>
+							<input type="text" name="name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous"<?= $authed ? ' value="nysha4real"' : '' ?>>
 							<input type="text" name="text" maxlength="<?= MAX_CHAT_TEXT ?>" placeholder="Write an answer&hellip;" required>
 							<button type="submit">Answer</button>
 						</form>
@@ -400,11 +412,7 @@ $hidden = $total > COMMENTS_OPEN && $index < $total - COMMENTS_OPEN;
 						<input type="hidden" name="token" value="<?= e($token) ?>">
 						<input type="hidden" name="action" value="comment">
 						<input type="hidden" name="post" value="<?= e((string) $post['id']) ?>">
-<?php if ($authed): ?>
-						<span class="replyname">nysha4real &mdash; <span class="msg-admin">Admin</span></span>
-<?php else: ?>
-						<input type="text" name="name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous">
-<?php endif; ?>
+						<input type="text" name="name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous"<?= $authed ? ' value="nysha4real"' : '' ?>>
 						<input type="text" name="text" maxlength="<?= MAX_CHAT_TEXT ?>" placeholder="Write a comment&hellip;">
 						<label class="say-clip" title="Attach PNG / JPG / GIF, up to 3 MB">
 							<input type="file" name="file" accept="image/png,image/jpeg,image/gif">
@@ -445,6 +453,6 @@ $hidden = $total > COMMENTS_OPEN && $index < $total - COMMENTS_OPEN;
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=4"></script>
+<script src="/script.js?v=5"></script>
 </body>
 </html>

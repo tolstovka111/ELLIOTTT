@@ -24,6 +24,8 @@ a public chat.
 | `api/online.php` | Marks the visitor present and returns the current online count |
 | `assets/emoji/` | Emoji pack |
 | `assets/404/` | Pictures the 404 page picks from |
+| `assets/banners/` | Banners the /thr/ header picks from |
+| `assets/videos/` | Looping clips the /thr/ header picks from |
 | `assets/blog/`, `assets/chat/`, `assets/comments/` | Uploaded files |
 
 Requirements: Apache with `mod_rewrite` and PHP 7.4+, write access to `api/`,
@@ -114,6 +116,17 @@ A preview leads to the post on `/thr/`. Previews drop off the front page after
 **2 days**; the posts themselves stay on `/thr/` forever, newest first, with all
 their pictures, videos, text and date.
 
+### The /thr/ header
+
+The page opens with a random banner from `assets/banners/`, the board title
+`/thr/ - Blog` under it and a random looping clip from `assets/videos/` under
+that. Drop PNG, JPG, GIF or WEBP files into the first folder and MP4 or WEBM
+into the second — the page picks one of each on every visit. With a folder
+empty its slot is simply skipped.
+
+Posts sit like 4chan threads: the pictures on the left with the **Comments (N)**
+button under them, the text and the date to the right.
+
 ### Comments
 
 Every post on `/thr/` has comments, folded behind a **Comments (N)** line.
@@ -127,6 +140,8 @@ Every post on `/thr/` has comments, folded behind a **Comments (N)** line.
 - **Answer** appears under other people's comments only; you cannot answer your
   own, which is checked by the same salted address hash as everywhere else.
 - Anyone can delete their own comment or answer, the admin can delete any.
+- The signed-in admin gets the name field prefilled with `nysha4real`; leaving it
+  posts with the **Admin** tag, changing it posts under that plain name instead.
 
 ## Chat
 
@@ -157,6 +172,13 @@ File: photo.jpg (162 KB, 954x954)
 - The page refreshes the list by itself every 9 seconds, unless a picture is open
   or a reply is being typed.
 - The newest 300 messages are kept; older ones drop off with their files.
+
+## Colours
+
+The front page keeps the orange Yotsuba palette. Every other page carries
+`class="blue"` on its `<body>` and switches to the Yotsuba B blues of the
+reference — `#EEF2FF` behind the page, `#D6DAF0` blocks, `#9988EE` title bars,
+`#34345C` links.
 
 ## Emoji
 
