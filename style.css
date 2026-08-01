@@ -32,8 +32,6 @@ a:hover {
 	color: #f00000;
 }
 
-/* ---------- header ---------- */
-
 .logo {
 	text-align: center;
 	padding: 18px 0 14px;
@@ -51,8 +49,6 @@ a:hover {
 	max-width: 100%;
 	margin: 0 auto;
 }
-
-/* ---------- generic box ---------- */
 
 .box {
 	border: 1px solid #d9bfb7;
@@ -86,8 +82,6 @@ a:hover {
 	padding: 10px 12px;
 	line-height: 1.45;
 }
-
-/* ---------- "What is 4real?" box ---------- */
 
 .box.intro {
 	border-color: #800000;
@@ -128,8 +122,6 @@ a:hover {
 .box.intro .box-body p:last-child {
 	margin-bottom: 0;
 }
-
-/* ---------- boards ---------- */
 
 .boards-filter {
 	display: none;
@@ -198,7 +190,39 @@ a:hover {
 	display: none;
 }
 
-/* ---------- sub pages ---------- */
+.box-body.stats {
+	text-align: center;
+}
+
+.box-body.stats .stat {
+	display: inline-block;
+	margin: 0 12px;
+	white-space: nowrap;
+}
+
+.pagelinks {
+	text-align: center;
+	padding: 2px 0 10px;
+}
+
+.pagelinks a,
+.pagelinks a:visited {
+	display: inline-block;
+	margin: 0 14px;
+	color: #34345c;
+	text-decoration: underline;
+}
+
+.pagelinks a:hover {
+	color: #f00000;
+}
+
+.copyright {
+	text-align: center;
+	padding: 4px 0 0;
+	font-size: 9pt;
+	color: #800000;
+}
 
 .nav {
 	padding: 0 0 8px;
@@ -243,13 +267,39 @@ a:hover {
 	color: #a06a5a;
 }
 
-/* ---------- footer ---------- */
+.entry {
+	padding: 10px 12px;
+	border-bottom: 1px solid #f0e0d6;
+	line-height: 1.45;
+}
 
-.footer {
-	text-align: center;
-	padding: 6px 0 0;
+.entry:last-child {
+	border-bottom: 0;
+}
+
+.entry h3 {
+	margin: 0 0 4px;
+	font-size: 10pt;
+	font-weight: bold;
+}
+
+.entry p {
+	margin: 0;
+}
+
+.entry .date {
 	font-size: 9pt;
 	color: #a06a5a;
+}
+
+.box-body ol,
+.box-body ul {
+	margin: 0;
+	padding-left: 22px;
+}
+
+.box-body li {
+	padding: 2px 0;
 }
 
 @media (max-width: 620px) {
@@ -260,5 +310,9 @@ a:hover {
 	.board-col {
 		flex: 1 1 45%;
 		margin-bottom: 12px;
+	}
+
+	.pagelinks a {
+		margin: 0 8px;
 	}
 }

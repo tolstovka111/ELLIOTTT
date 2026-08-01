@@ -24,27 +24,20 @@
 
 	<div class="box">
 		<div class="box-title">Gallery</div>
-		<!--
-			Add pictures here. Drop the files into assets/minecraft/ and copy one block per picture:
-
-			<figure>
-				<img src="assets/minecraft/example.png" alt="Example">
-				<figcaption>Example</figcaption>
-			</figure>
-		-->
 		<div class="gallery" id="gallery"></div>
 		<div class="empty" id="gallery-empty">Nothing here yet.</div>
 	</div>
 
+	<div class="pagelinks">
+		<a href="faq.html">FAQ</a>
+		<a href="rules.html">Rules</a>
+		<a href="blog.html">Blog</a>
+	</div>
+
+	<div class="copyright">Copyright &copy; 2025-2026 4real community support. All rights reserved</div>
+
 </div>
 
-<script>
-	var g = document.getElementById("gallery");
-	if (g && g.children.length) {
-		document.getElementById("gallery-empty").style.display = "none";
-	} else if (g) {
-		g.style.display = "none";
-	}
-</script>
+<script src="script.js"></script>
 </body>
 </html>

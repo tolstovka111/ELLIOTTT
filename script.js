@@ -1,8 +1,6 @@
 (function () {
 	"use strict";
 
-	/* "What is 4real?" box – closable, stays closed for the session */
-
 	var intro = document.getElementById("intro");
 	var introClose = document.getElementById("intro-close");
 
@@ -15,12 +13,10 @@
 			try {
 				sessionStorage.setItem("hideIntro", "1");
 			} catch (e) {
-				/* private mode – ignore */
+				intro.style.display = "none";
 			}
 		});
 	}
-
-	/* Boards filter */
 
 	var toggle = document.getElementById("filter-toggle");
 	var panel = document.getElementById("boards-filter");
@@ -62,5 +58,39 @@
 
 			column.style.display = visible === 0 ? "none" : "";
 		});
+	}
+
+	var gallery = document.getElementById("gallery");
+	var galleryEmpty = document.getElementById("gallery-empty");
+
+	if (gallery && galleryEmpty) {
+		if (gallery.children.length) {
+			galleryEmpty.style.display = "none";
+		} else {
+			gallery.style.display = "none";
+		}
+	}
+
+	var viewsTotal = document.getElementById("views-total");
+
+	if (viewsTotal && window.fetch) {
+		fetch("api/views.php", { credentials: "same-origin" })
+			.then(function (response) {
+				if (!response.ok) {
+					throw new Error("bad status " + response.status);
+				}
+				return response.json();
+			})
+			.then(function (data) {
+				if (typeof data.views !== "number") {
+					throw new Error("bad payload");
+				}
+				viewsTotal.textContent = data.views.toLocaleString("en-US");
+			})
+			.catch(function () {
+				viewsTotal.textContent = "—";
+			});
+	} else if (viewsTotal) {
+		viewsTotal.textContent = "—";
 	}
 })();
