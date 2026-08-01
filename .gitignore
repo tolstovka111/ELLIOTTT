@@ -2,3 +2,5 @@ api/data/
 api/config.php
 assets/blog/*
 !assets/blog/.gitkeep
+assets/chat/*
+!assets/chat/.gitkeep

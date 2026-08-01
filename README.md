@@ -1,73 +1,82 @@
 # ELLIOTTT
 
-4real — a link-in-bio info-hub styled after the 4chan front page.
+4real — a link-in-bio info-hub styled after the 4chan front page, with a blog and
+a public chat.
 
 ## Structure
 
 | File | What it is |
 | --- | --- |
-| `index.php` | Front page: "What is 4real?" box, Boards, Blog, Blog editor, Stats, footer |
-| `roblox.html`, `minecraft.html` | Avatars |
-| `anime.html`, `games.html` | Fav Characters |
-| `random.html` | Pictures |
-| `faq.html`, `rules.html` | Pages behind the FAQ / Rules buttons |
+| `index.php` | Front page: intro, Boards, Blog, Stats, footer |
+| `chat.php` | `/c/` — the public chat |
+| `admintools.php` | Admin only: the blog editor |
 | `admin.php` | Setup, sign in, and the handler for publish / delete / log out |
-| `style.css` | Yotsuba-style theme |
-| `script.js` | Intro box, board filter, gallery state, blog arrows, emoji picker |
-| `api/lib.php` | Storage, posts, emoji and hashing helpers |
+| `404.php` | Not-found page, shows a random picture from `assets/404/` |
+| `roblox.html`, `minecraft.html` | `/o/`, `/m/` — avatars |
+| `anime.html`, `games.html` | `/a/`, `/g/` — favourite characters |
+| `random.html` | `/b/` — random pictures |
+| `faq.html`, `rules.html` | `/faq`, `/rules` |
+| `.htaccess` | Short URLs, directory index, 404 document |
+| `style.css`, `script.js` | Theme and front-end logic |
+| `api/lib.php` | Storage, posts, chat, emoji and hashing helpers |
 | `api/views.php` | Unique-visitor counter endpoint |
-| `fonts/tahomabd.ttf` | Font used for box titles |
-| `assets/emoji/` | Emoji pack used in blog posts |
-| `assets/blog/` | Uploaded blog images |
+| `assets/emoji/` | Emoji pack |
+| `assets/404/` | Pictures the 404 page picks from |
+| `assets/blog/`, `assets/chat/` | Uploaded files |
 
-## Hosting
+Requirements: Apache with `mod_rewrite` and PHP 7.4+, write access to `api/`,
+`assets/blog/` and `assets/chat/`. No database.
 
-The site needs plain **PHP 7.4+ shared hosting** — nothing else. No database, no
-Node, no server to run: the host already runs PHP, it just executes `.php` files
-when they are requested.
+## Hosting on a VPS
 
-1. Upload the whole folder into the public web root (`public_html`, `www` or
-   `htdocs`, depending on the host).
-2. Make sure `api/` and `assets/blog/` are writable (chmod `755` is usually
-   enough; some hosts need `775`). The site creates `api/data/` on the first
-   request.
-3. Open `https://your-site/` — the front page must appear. If the browser
-   downloads the file or shows the source code instead, PHP is off for that
-   directory; turn it on in the hosting panel.
-4. Open `https://your-site/admin.php` once and fill in the setup form.
+```
+sudo apt install -y apache2 php php-mbstring php-gd php-xml libapache2-mod-php
+sudo a2enmod rewrite
+```
 
-There is no `index.html` any more, only `index.php` — hosts serve it for `/`
-automatically. If the host insists on `index.html` first, delete the leftover
-file or add `DirectoryIndex index.php` to `.htaccess`.
+Ubuntu ships `AllowOverride None`, which makes Apache **ignore every `.htaccess`
+file** — short URLs stop working and the rules that protect `api/data/` never
+apply. Fix it once:
 
-## Setting the login and password
+```
+sudo sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+sudo systemctl restart apache2
+```
 
-The credentials are **not** stored in the repository. They are created directly
-on your server, once, through the setup form at `admin.php`:
+Then upload the files into `/var/www/html` and give the web server write access:
 
-| Field | What to put in |
+```
+sudo chown -R www-data /var/www/html/api /var/www/html/assets
+sudo chgrp -R www-data /var/www/html/api /var/www/html/assets
+sudo chmod -R 755 /var/www/html/api /var/www/html/assets
+```
+
+## Short URLs
+
+| Address | Page |
 | --- | --- |
-| Login | your login, 3-32 characters |
-| Password | at least 8 characters |
-| Repeat password | the same again |
-| Secret key for the link | prefilled with a random one; it becomes part of the admin URL |
+| `/` or `/home` | front page |
+| `/o/` `/m/` | Roblox, Minecraft avatars |
+| `/a/` `/g/` | anime, game characters |
+| `/b/` | random pictures |
+| `/c/` | chat |
+| `/faq` `/rules` | FAQ, rules |
 
-Pressing **Create** writes `api/config.php` with three values and nothing else:
+Everything else falls through to the styled 404 page. Drop your own pictures into
+`assets/404/` — the page shows a random one on every visit.
 
-- login — SHA-256 with the per-installation salt,
-- password — bcrypt (`password_hash`), not reversible,
-- secret key — SHA-256 with the same salt.
+## First run
 
-Nothing is stored in plain text, and none of it is reachable over HTTP: PHP
-executes `api/config.php` instead of showing it, `api/data/.htaccess` denies the
-storage folder, and the login form is checked server-side only — no credentials
-ever reach the browser.
+Open `admin.php` once and fill in the setup form: login, password and a secret
+key for the admin link. Do it straight after the upload — until the account
+exists, the setup form is open to anyone who finds the page.
 
-Do the setup immediately after upload: until the account exists, the setup form
-is open to whoever finds the page.
+The form writes `api/config.php` with three hashes and nothing else: the login
+(SHA-256 with the per-installation salt), the password (bcrypt) and the key
+(SHA-256 with the same salt). Nothing is stored in plain text and none of it is
+reachable over HTTP.
 
-To change the login, password or key later, delete `api/config.php` and fill in
-the setup form again.
+To change any of them, delete `api/config.php` and run the setup again.
 
 ## Signing in
 
@@ -75,81 +84,72 @@ the setup form again.
 https://your-site/admin.php?k=<secret key>
 ```
 
-1. Open that link. Every request without the key — or with a wrong one — returns
-   a plain **404**, so the panel is invisible to anyone who does not know it.
-   The key is not remembered between requests: reaching the login form always
-   needs it in the URL. Bookmark the link.
-2. The login form asks for the login and password.
-3. On success you land back on the front page, where a **Blog editor** box is now
-   shown under the Blog box. Visitors never see it. From here on the session
-   stands in for the key, so publishing and deleting need no link.
-4. `log out` in the corner of that box ends the session, and `admin.php` goes
-   back to answering 404 without the key.
+Every request without the key — or with a wrong one — returns the 404 page, so
+the panel is invisible to anyone who does not know the link. The key is not
+remembered between requests; bookmark the link. After signing in the session
+takes over: **Admin Tools** appears in the footer, and publishing, deleting and
+logging out no longer need the key. Logging out puts the 404 back.
 
-Protection: the session cookie is `HttpOnly` + `SameSite=Strict`, every form
-carries a CSRF token, and five wrong logins lock that address out for 15 minutes.
+Protection: `HttpOnly` + `SameSite=Strict` session cookie, a CSRF token on every
+form, and a 15 minute lockout after five wrong logins.
 
 ## Blog
 
-The Blog box sits between Boards and Stats on the front page.
+Posts are written in **Admin Tools** and shown in the Blog box on the front page.
 
-- A post is up to **3 images**, one audio track and text, shown in that order.
-- An image with a link shows a semi-transparent **Click** badge in its bottom
-  left corner and opens the link in a new tab.
-- Posts **expire after 2 days**. Expiry is lazy: the next request after a post
-  ages out drops it from `api/data/posts.json` and deletes its image files, so no
-  cron job is needed.
-- With nothing live the box shows `No Posts in my Blog yet.`
-- More than one live post adds `‹ 1/3 ›` arrows to the box title. They switch
-  posts instantly, without animation.
-- The date line reads `just now`, `N minutes ago`, `N hours ago` for the first
-  day and `yesterday` after that. The age is computed on the server, so a wrong
-  clock on the visitor's computer cannot skew it.
+- Up to **3 files** per post, each either a picture (JPG, PNG, GIF, WEBP, 5 MB)
+  or an **MP4** video (15 MB).
+- A picture can carry a link; it then shows a semi-transparent **Click** badge in
+  its bottom left corner.
+- Text up to 1000 characters, with `:emoji:` shortcodes.
+- **Background** per post: Default, Dark, Coffee or Green. The text colour
+  follows the background so it never blends in.
+- Posts **expire after 2 days**; the next request after that drops the post and
+  deletes its files, so no cron job is needed.
+- More than one live post adds `‹ 1/3 ›` arrows to the box title.
 
-Uploads are validated by content, not by file name: only JPG, PNG, GIF and WEBP
-pass, the limit is 5 MB per image, files are renamed to random hex, and
-`assets/blog/.htaccess` forbids executing anything in the upload folder.
+## Chat
 
-## Audio
+`/c/` is open to everyone, no registration.
 
-The audio field takes MP3, OGG, WAV, M4A or FLAC up to 20 MB. The player sits
-between the images and the text and stays narrow so the pictures keep the room:
-cover art with a plain triangle play button on top, the title, the author in a
-smaller font, a seek bar, the elapsed time and the current speed. Clicking the
-speed opens a row of 0.5x / 0.8x / 1x / 1.25x / 2x above it, which closes as soon
-as one is picked or the page is clicked elsewhere. Starting one track pauses any
-other on the page.
-
-Title and author come from the fields in the form. Leave them empty and the ID3
-tags of the uploaded file are used instead (`TIT2` and `TPE1`); with no tags
-either, the file name becomes the title and the author reads `Unknown artist`.
-
-The cover works the same way: upload one, or let the embedded `APIC` picture from
-the file be used. With neither, `assets/track-cover.svg` is shown.
+- The compose row is avatar, name, text and a paperclip for one attachment —
+  PNG, WEBP, JPG, GIF or MP4 up to 3 MB. An empty name posts as `Anonymous`.
+- Messages are newest first. The attachment sits to the right of the text as a
+  thumbnail; clicking it opens the full size with a download button and a close
+  cross.
+- Dates read `just now`, `5 minutes ago`, `3 hours ago`, `1 day ago`,
+  `2 weeks ago`, `1 year ago`.
+- **Reply** under a message opens a small form — name and text only, no
+  attachments.
+- **One message per minute per address.** After sending, the Send button becomes
+  a countdown; the last five seconds shimmer through the rainbow and grow a
+  little. Replies obey the same limit but show no timer.
+- Anyone can delete their own message or reply — ownership is checked by a salted
+  hash of the address, never the raw address. A signed-in admin can delete
+  anything, always posts as **nysha4real** with a dark red **Admin** tag, and can
+  reply to anyone.
+- The page refreshes the list by itself every 9 seconds, unless a picture is open
+  or a reply is being typed.
+- The newest 300 messages are kept; older ones drop off with their files.
 
 ## Emoji
 
-The emoji bar under the text field inserts a shortcode such as `:konatathink:`
-at the cursor; on the page it turns into the picture. Typing the shortcode by
-hand works just as well.
+The emoji bar under the text field inserts a shortcode such as `:konatathink:`;
+on the page it turns into the picture. It works in blog posts and in chat.
 
 To add or remove emoji, drop PNG, GIF or WEBP files into `assets/emoji/` — the
-file name is the shortcode, so `konatacry.png` becomes `:konatacry:`. Names may
-contain letters, digits, dashes and underscores. Unknown shortcodes are left as
-plain text.
+file name is the shortcode, so `konatacry.png` becomes `:konatacry:`.
 
 ## View counter
 
-`api/views.php` counts **unique visitors, not page loads**. On each request it
-hashes the visitor address with a per-installation random salt and stores the
-hash in `api/data/views.json`. An address that is already in the file does not
-increase the total, so reloading the page cannot inflate the counter. The raw
-address is never written to disk.
+`api/views.php` counts **unique visitors, not page loads**. It hashes the visitor
+address with a per-installation random salt and stores the hash, so reloading the
+page cannot inflate the counter and the raw address is never written to disk.
 
-If the site sits behind Cloudflare or another reverse proxy, `REMOTE_ADDR` is the
-proxy, so set the environment variable `VIEWS_TRUST_PROXY=1` to read
-`CF-Connecting-IP` / `X-Forwarded-For` instead. Leave it unset otherwise —
-without a proxy in front, those headers can be spoofed by anyone.
+Behind Cloudflare or another reverse proxy, set `VIEWS_TRUST_PROXY=1` so the real
+visitor address is read from `CF-Connecting-IP` / `X-Forwarded-For`. This also
+drives the chat rate limit and the delete permissions. Leave it unset without a
+proxy in front — those headers can be spoofed by anyone.
 
 ## nginx
 
@@ -157,48 +157,28 @@ without a proxy in front, those headers can be spoofed by anyone.
 
 ```
 location ^~ /api/data/ { deny all; }
-location ~ ^/assets/blog/.*\.(php|phtml|phar)$ { deny all; }
+location ~ ^/assets/(blog|chat)/.*\.(php|phtml|phar)$ { deny all; }
 ```
 
-## Adding pictures to a sub page
+plus rewrites for the short URLs above.
 
-Drop the files into the matching folder under `assets/` (for example
-`assets/roblox/`), then add one block per picture inside the
-`<div class="gallery">` of that page:
+## Adding pictures to a board page
+
+Drop the files into the matching folder under `assets/`, then add one block per
+picture inside the `<div class="gallery">` of that page:
 
 ```html
 <figure>
-	<img src="assets/roblox/example.png" alt="Example">
+	<img src="/assets/roblox/example.png" alt="Example">
 	<figcaption>Example</figcaption>
 </figure>
 ```
 
-The "Nothing here yet." line disappears on its own once the gallery has items.
-
 ## Filling in FAQ and Rules
 
 Both pages start empty. Replace the `<div class="empty">…</div>` line with your
-own content.
-
-For a list of questions, use one block per item:
-
-```html
-<div class="entry">
-	<h3>Question</h3>
-	<p>Answer.</p>
-</div>
-```
-
-For a numbered list of rules, use a normal list inside a body block:
-
-```html
-<div class="box-body">
-	<ol>
-		<li>First rule.</li>
-		<li>Second rule.</li>
-	</ol>
-</div>
-```
+own content — `<div class="entry">` blocks for questions, a plain `<ol>` inside
+`<div class="box-body">` for rules.
 
 ## Running locally
 
@@ -206,4 +186,4 @@ For a numbered list of rules, use a normal list inside a body block:
 php -S 127.0.0.1:8000
 ```
 
-Then open <http://127.0.0.1:8000/>.
+The built-in server ignores `.htaccess`, so short URLs only work under Apache.

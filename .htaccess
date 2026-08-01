@@ -1,0 +1,17 @@
+DirectoryIndex index.php index.html
+
+ErrorDocument 404 /404.php
+
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+
+	RewriteRule ^home/?$ /index.php [L]
+	RewriteRule ^faq/?$ /faq.html [L]
+	RewriteRule ^rules/?$ /rules.html [L]
+	RewriteRule ^o/?$ /roblox.html [L]
+	RewriteRule ^m/?$ /minecraft.html [L]
+	RewriteRule ^a/?$ /anime.html [L]
+	RewriteRule ^g/?$ /games.html [L]
+	RewriteRule ^b/?$ /random.html [L]
+	RewriteRule ^c/?$ /chat.php [L]
+</IfModule>

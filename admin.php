@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/api/lib.php';
+require_once __DIR__ . '/api/lib.php';
 
 admin_session_start();
 
@@ -130,11 +130,10 @@ $keyOk = $config !== null
 unset($_SESSION['gate']);
 
 if ($config !== null && !$keyOk && !$authed) {
-    http_response_code(404);
-    header('Content-Type: text/html; charset=utf-8');
-    echo "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><title>404 Not Found</title></head>\n<body><h1>Not Found</h1></body>\n</html>\n";
+    require __DIR__ . '/404.php';
     exit;
 }
+
 $action = (string) ($_POST['action'] ?? '');
 $errors = [];
 
@@ -196,7 +195,7 @@ if ($action === 'login' && $config !== null) {
             session_regenerate_id(true);
             $_SESSION['admin'] = true;
             $_SESSION['csrf'] = bin2hex(random_bytes(32));
-            go('index.php');
+            go('/home');
         }
 
         throttle_fail();
@@ -207,7 +206,7 @@ if ($action === 'login' && $config !== null) {
 if ($action === 'logout') {
     $_SESSION = [];
     session_destroy();
-    go('index.php');
+    go('/home');
 }
 
 if ($action === 'create' && $authed) {
@@ -217,16 +216,17 @@ if ($action === 'create' && $authed) {
         $text = mb_substr($text, 0, MAX_TEXT);
     }
 
-    $allowed = [
-        IMAGETYPE_JPEG => '.jpg',
-        IMAGETYPE_PNG => '.png',
-        IMAGETYPE_GIF => '.gif',
-        IMAGETYPE_WEBP => '.webp',
-    ];
+    $background = (string) ($_POST['bg'] ?? 'default');
 
+    if (!in_array($background, post_backgrounds(), true)) {
+        $background = 'default';
+    }
+
+    $pictures = image_types();
+    $movies = video_types();
     $dir = uploads_dir();
     $links = (array) ($_POST['link'] ?? []);
-    $images = [];
+    $media = [];
     $saved = [];
 
     if ($dir === '') {
@@ -241,30 +241,53 @@ if ($action === 'create' && $authed) {
         }
 
         if ($error !== UPLOAD_ERR_OK) {
-            $errors[] = 'Image ' . ($i + 1) . ' failed to upload.';
+            $errors[] = 'File ' . ($i + 1) . ' failed to upload.';
             break;
         }
 
         $tmp = (string) ($_FILES['image']['tmp_name'][$i] ?? '');
 
         if (!is_uploaded_file($tmp)) {
-            $errors[] = 'Image ' . ($i + 1) . ' is not a valid upload.';
+            $errors[] = 'File ' . ($i + 1) . ' is not a valid upload.';
             break;
         }
 
-        if ((int) ($_FILES['image']['size'][$i] ?? 0) > MAX_UPLOAD_BYTES) {
-            $errors[] = 'Image ' . ($i + 1) . ' is larger than 5 MB.';
-            break;
-        }
-
+        $size = (int) ($_FILES['image']['size'][$i] ?? 0);
         $info = @getimagesize($tmp);
+        $kind = '';
+        $extension = '';
 
-        if ($info === false || !isset($allowed[$info[2]])) {
-            $errors[] = 'Image ' . ($i + 1) . ' must be JPG, PNG, GIF or WEBP.';
-            break;
+        if ($info !== false && isset($pictures[$info[2]])) {
+            $kind = 'image';
+            $extension = $pictures[$info[2]];
+
+            if ($size > MAX_UPLOAD_BYTES) {
+                $errors[] = 'Picture ' . ($i + 1) . ' is larger than 5 MB.';
+                break;
+            }
+        } else {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = $finfo === false ? '' : strtolower((string) finfo_file($finfo, $tmp));
+
+            if ($finfo !== false) {
+                finfo_close($finfo);
+            }
+
+            if (!isset($movies[$mime])) {
+                $errors[] = 'File ' . ($i + 1) . ' must be JPG, PNG, GIF, WEBP or MP4.';
+                break;
+            }
+
+            $kind = 'video';
+            $extension = $movies[$mime];
+
+            if ($size > MAX_VIDEO_BYTES) {
+                $errors[] = 'Video ' . ($i + 1) . ' is larger than 15 MB.';
+                break;
+            }
         }
 
-        $link = trim((string) ($links[$i] ?? ''));
+        $link = $kind === 'image' ? trim((string) ($links[$i] ?? '')) : '';
 
         if ($link !== '') {
             $scheme = strtolower((string) parse_url($link, PHP_URL_SCHEME));
@@ -275,113 +298,20 @@ if ($action === 'create' && $authed) {
             }
         }
 
-        $name = bin2hex(random_bytes(8)) . $allowed[$info[2]];
+        $name = bin2hex(random_bytes(8)) . $extension;
 
         if (!move_uploaded_file($tmp, $dir . '/' . $name)) {
-            $errors[] = 'Could not save image ' . ($i + 1) . '.';
+            $errors[] = 'Could not save file ' . ($i + 1) . '.';
             break;
         }
 
         @chmod($dir . '/' . $name, 0644);
         $saved[] = $dir . '/' . $name;
-        $images[] = ['file' => $name, 'link' => $link];
+        $media[] = ['file' => $name, 'link' => $link, 'type' => $kind];
     }
 
-    $audio = null;
-    $audioError = (int) ($_FILES['audio']['error'] ?? UPLOAD_ERR_NO_FILE);
-
-    if ($errors === [] && $audioError !== UPLOAD_ERR_NO_FILE) {
-        $tmp = (string) ($_FILES['audio']['tmp_name'] ?? '');
-        $types = audio_types();
-        $mime = '';
-
-        if ($audioError !== UPLOAD_ERR_OK || !is_uploaded_file($tmp)) {
-            $errors[] = 'Audio failed to upload.';
-        } elseif ((int) ($_FILES['audio']['size'] ?? 0) > MAX_AUDIO_BYTES) {
-            $errors[] = 'Audio is larger than 20 MB.';
-        } else {
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = $finfo === false ? '' : strtolower((string) finfo_file($finfo, $tmp));
-
-            if ($finfo !== false) {
-                finfo_close($finfo);
-            }
-
-            if (!isset($types[$mime])) {
-                $errors[] = 'Audio must be MP3, OGG, WAV, M4A or FLAC.';
-            }
-        }
-
-        if ($errors === []) {
-            $tags = id3_read($tmp);
-            $title = trim((string) ($_POST['audio_title'] ?? ''));
-            $author = trim((string) ($_POST['audio_author'] ?? ''));
-
-            if ($title === '') {
-                $title = (string) ($tags['title'] ?? '');
-            }
-
-            if ($title === '') {
-                $title = (string) pathinfo((string) ($_FILES['audio']['name'] ?? ''), PATHINFO_FILENAME);
-            }
-
-            if ($author === '') {
-                $author = (string) ($tags['author'] ?? '');
-            }
-
-            $title = mb_substr($title === '' ? 'Untitled' : $title, 0, MAX_META);
-            $author = mb_substr($author === '' ? 'Unknown artist' : $author, 0, MAX_META);
-            $name = bin2hex(random_bytes(8)) . $types[$mime];
-
-            if (!move_uploaded_file($tmp, $dir . '/' . $name)) {
-                $errors[] = 'Could not save the audio file.';
-            } else {
-                @chmod($dir . '/' . $name, 0644);
-                $saved[] = $dir . '/' . $name;
-                $cover = '';
-                $coverError = (int) ($_FILES['cover']['error'] ?? UPLOAD_ERR_NO_FILE);
-
-                if ($coverError === UPLOAD_ERR_OK && is_uploaded_file((string) $_FILES['cover']['tmp_name'])) {
-                    $coverTmp = (string) $_FILES['cover']['tmp_name'];
-                    $info = @getimagesize($coverTmp);
-
-                    if ($info !== false && isset($allowed[$info[2]]) && (int) $_FILES['cover']['size'] <= MAX_UPLOAD_BYTES) {
-                        $cover = bin2hex(random_bytes(8)) . $allowed[$info[2]];
-
-                        if (move_uploaded_file($coverTmp, $dir . '/' . $cover)) {
-                            @chmod($dir . '/' . $cover, 0644);
-                            $saved[] = $dir . '/' . $cover;
-                        } else {
-                            $cover = '';
-                        }
-                    } else {
-                        $errors[] = 'Cover must be a JPG, PNG, GIF or WEBP under 5 MB.';
-                    }
-                }
-
-                if ($errors === [] && $cover === '' && isset($tags['cover']['data'])) {
-                    $embedded = ['image/jpeg' => '.jpg', 'image/jpg' => '.jpg', 'image/png' => '.png', 'image/gif' => '.gif', 'image/webp' => '.webp'];
-                    $coverMime = (string) $tags['cover']['mime'];
-
-                    if (isset($embedded[$coverMime])) {
-                        $cover = bin2hex(random_bytes(8)) . $embedded[$coverMime];
-
-                        if (@file_put_contents($dir . '/' . $cover, (string) $tags['cover']['data']) !== false) {
-                            @chmod($dir . '/' . $cover, 0644);
-                            $saved[] = $dir . '/' . $cover;
-                        } else {
-                            $cover = '';
-                        }
-                    }
-                }
-
-                $audio = ['file' => $name, 'title' => $title, 'author' => $author, 'cover' => $cover];
-            }
-        }
-    }
-
-    if ($errors === [] && $text === '' && $images === [] && $audio === null) {
-        $errors[] = 'Add some text, an image or an audio file.';
+    if ($errors === [] && $text === '' && $media === []) {
+        $errors[] = 'Add some text, a picture or a video.';
     }
 
     if ($errors !== []) {
@@ -390,7 +320,7 @@ if ($action === 'create' && $authed) {
         }
 
         $_SESSION['form_errors'] = $errors;
-        go('index.php#blog-editor');
+        go('/admintools.php');
     }
 
     $posts = live_posts();
@@ -398,8 +328,8 @@ if ($action === 'create' && $authed) {
         'id' => bin2hex(random_bytes(8)),
         'created' => time(),
         'text' => $text,
-        'images' => $images,
-        'audio' => $audio,
+        'images' => $media,
+        'bg' => $background,
     ]);
 
     if (!write_store(['posts' => $posts])) {
@@ -408,11 +338,11 @@ if ($action === 'create' && $authed) {
         }
 
         $_SESSION['form_errors'] = ['Could not write api/data/posts.json. Check permissions.'];
-        go('index.php#blog-editor');
+        go('/admintools.php');
     }
 
     flash('Posted.');
-    go('index.php#blog-editor');
+    go('/admintools.php');
 }
 
 if ($action === 'delete' && $authed) {
@@ -430,11 +360,11 @@ if ($action === 'delete' && $authed) {
 
     write_store(['posts' => $kept]);
     flash('Post deleted.');
-    go('index.php#blog-editor');
+    go('/admintools.php');
 }
 
 if ($authed) {
-    go('index.php#blog-editor');
+    go('/admintools.php');
 }
 
 $flash = $_SESSION['flash'] ?? null;
@@ -449,18 +379,18 @@ $suggestedKey = $config === null ? bin2hex(random_bytes(12)) : '';
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Admin - 4real</title>
-<link rel="icon" href="assets/4real-logo.png">
-<link rel="stylesheet" href="style.css">
+<link rel="icon" href="/assets/4real-logo.png">
+<link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
 <div class="logo">
-	<a href="index.php"><img src="assets/4real-logo.png" alt="4real"></a>
+	<a href="/home"><img src="/assets/4real-logo.png" alt="4real"></a>
 </div>
 
 <div class="page">
 
-	<div class="nav">[<a href="index.php">Return to Home</a>]</div>
+	<div class="nav">[<a href="/home">Return to Home</a>]</div>
 
 <?php if ($flash !== null): ?>
 	<div class="box">
@@ -517,9 +447,11 @@ $suggestedKey = $config === null ? bin2hex(random_bytes(12)) : '';
 <?php endif; ?>
 
 	<div class="pagelinks">
-		<a href="index.php">Home</a>
-		<a href="faq.html">FAQ</a>
-		<a href="rules.html">Rules</a>
+		<a href="/home">Home</a>
+		<span class="dot">&#9679;</span>
+		<a href="/faq">FAQ</a>
+		<span class="dot">&#9679;</span>
+		<a href="/rules">Rules</a>
 	</div>
 
 	<div class="copyright">Copyright &copy; 2025-2026 4real community support. All rights reserved</div>
