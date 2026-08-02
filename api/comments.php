@@ -107,7 +107,7 @@ function comment_drop_file(array $comment): void
 function comment_stamp(array $item): string
 {
     return '<span class="msg-date" data-ts="' . (int) $item['created'] . '">'
-        . e(gmdate('m/d/y(D)H:i', (int) $item['created'])) . '</span>';
+        . e(gmdate('m/d/y(D)H:i:s', (int) $item['created'])) . '</span>';
 }
 
 function comment_file_line(array $comment): string
@@ -141,7 +141,7 @@ function hidden_fields(array $fields): string
 }
 
 /**
- * Name, flag, date and the bracketed [reply] / [delete] links, as on 4chan.
+ * Name, flag, date, number and the bracketed [reply] / [delete] links.
  */
 function comment_head(array $item, array $ctx, array $keys, bool $canReply, bool $canDelete): string
 {
@@ -153,6 +153,10 @@ function comment_head(array $item, array $ctx, array $keys, bool $canReply, bool
     }
 
     $line .= ' ' . comment_stamp($item);
+
+    if ((int) ($item['no'] ?? 0) > 0) {
+        $line .= ' <span class="msg-no">No.' . (int) $item['no'] . '</span>';
+    }
 
     if ($canReply) {
         $line .= ' <span class="msg-act">[<span class="msg-reply" data-target="'
@@ -172,53 +176,41 @@ function comment_head(array $item, array $ctx, array $keys, bool $canReply, bool
 }
 
 /**
- * The whole comment area: the folded list, the answers and the compose box.
+ * The comment area: the newest three always in view, the rest behind a toggle,
+ * and the compose box underneath.
  */
 function render_comments(array $comments, array $ctx): string
 {
     $total = count($comments);
     $authed = (bool) $ctx['authed'];
     $me = (string) $ctx['me'];
-    $out = '<div class="comments" data-total="' . $total . '">'
-        . '<div class="comments-body"' . ($total > 0 ? ' hidden' : '') . '>';
+    $out = '<div class="comments" data-total="' . $total . '"><div class="comments-body">';
 
     foreach ($comments as $index => $comment) {
         $mine = hash_equals((string) ($comment['ip'] ?? ''), $me);
         $folded = $total > BLOG_COMMENTS_OPEN && $index < $total - BLOG_COMMENTS_OPEN;
         $keys = array_merge($ctx['keys'], ['comment' => (string) $comment['id']]);
+        $anchor = (int) ($comment['no'] ?? 0) > 0 ? ' id="p' . (int) $comment['no'] . '"' : '';
 
-        $out .= '<div class="comment' . ($folded ? ' folded' : '') . '">'
+        $out .= '<div class="comment' . ($folded ? ' folded' : '') . '"' . $anchor . '>'
             . '<div class="msg-head">' . comment_head($comment, $ctx, $keys, $authed || !$mine, $authed || $mine) . '</div>'
-            . comment_file_line($comment);
+            . comment_file_line($comment)
+            . quote_html($comment);
 
         if ((string) $comment['text'] !== '') {
             $out .= '<div class="msg-text">' . render_post_text((string) $comment['text']) . '</div>';
         }
 
-        if ($authed || !$mine) {
-            $out .= '<form method="post" action="' . e((string) $ctx['form']) . '" class="replyform" id="r'
-                . e((string) $comment['id']) . '">'
-                . hidden_fields(array_merge(
-                    ['token' => $ctx['token'], 'action' => $ctx['action_answer']],
-                    $keys
-                ))
-                . '<input type="text" name="name" maxlength="' . MAX_NAME . '" placeholder="Anonymous"'
-                . ($authed ? ' value="' . e((string) $ctx['admin_name']) . '"' : '') . '>'
-                . '<input type="text" name="text" maxlength="' . MAX_CHAT_TEXT . '" placeholder="Write an answer&hellip;" required>'
-                . '<button type="submit">Answer</button></form>';
-        }
-
-        foreach ((array) ($comment['answers'] ?? []) as $answer) {
-            $ownAnswer = hash_equals((string) ($answer['ip'] ?? ''), $me);
-            $answerKeys = array_merge($keys, ['answer' => (string) $answer['id']]);
-
-            $out .= '<div class="reply">'
-                . '<div class="msg-head">' . comment_head($answer, $ctx, $answerKeys, false, $authed || $ownAnswer) . '</div>'
-                . '<div class="msg-text">' . render_post_text((string) $answer['text']) . '</div>'
-                . '</div>';
-        }
-
         $out .= '</div>';
+    }
+
+    $out .= '</div>';
+
+    if ($total > BLOG_COMMENTS_OPEN) {
+        $out .= '<div class="comments-bar">'
+            . '<span class="comments-all">Show more comments</span>'
+            . '<span class="comments-hide" hidden>Hide more comments</span>'
+            . '</div>';
     }
 
     $out .= '<form method="post" action="' . e((string) $ctx['form']) . '" enctype="multipart/form-data" class="commentform">'
@@ -226,6 +218,9 @@ function render_comments(array $comments, array $ctx): string
             ['token' => $ctx['token'], 'action' => $ctx['action_add']],
             $ctx['keys']
         ))
+        . '<input type="hidden" name="to" value="" class="reply-to">'
+        . '<span class="reply-note" hidden>replying to <span class="reply-note-no"></span> '
+        . '<span class="reply-clear">[x]</span></span>'
         . '<input type="text" name="name" maxlength="' . MAX_NAME . '" placeholder="Anonymous"'
         . ($authed ? ' value="' . e((string) $ctx['admin_name']) . '"' : '') . '>'
         . '<input type="text" name="text" maxlength="' . MAX_CHAT_TEXT . '" placeholder="Write a comment&hellip;">'
@@ -233,73 +228,35 @@ function render_comments(array $comments, array $ctx): string
         . '<input type="file" name="file" accept="image/png,image/jpeg,image/gif">'
         . '<img class="clip-icon" src="/assets/clip.png" alt="Attach">'
         . '<span class="clip-name"></span></label>'
-        . '<button type="submit">Send</button></form>'
-        . '</div>';
-
-    if ($total > 0) {
-        $out .= '<div class="comments-bar">';
-
-        if ($total > BLOG_COMMENTS_OPEN) {
-            $out .= '<span class="comments-all" hidden>Show all ' . $total . ' comments</span>';
-        }
-
-        $out .= '<span class="comments-hide" hidden>Hide comments</span>'
-            . '<span class="comments-show">Show comments (' . $total . ')</span>'
-            . '</div>';
-    }
+        . '<button type="submit">Send</button></form>';
 
     return $out . '</div>';
 }
 
 /**
- * Shared handling of a new comment or answer; returns the updated list.
+ * Appends a comment; a reply is an ordinary comment that quotes a number.
  */
-function apply_comment(array $comments, string $action, array $input, array &$errors): array
+function apply_comment(array $comments, array $input): array
 {
-    $me = visitor_hash();
-    $entry = [
+    $comments[] = array_merge([
         'id' => bin2hex(random_bytes(8)),
+        'no' => next_no(),
+        'to' => (int) $input['to'],
         'created' => time(),
         'name' => (string) $input['name'],
         'text' => (string) $input['text'],
-        'ip' => $me,
+        'ip' => visitor_hash(),
         'country' => visitor_country(),
         'admin' => (bool) $input['admin'],
-    ];
-
-    if ($action === 'add') {
-        $comments[] = array_merge($entry, ['answers' => []], (array) $input['upload']);
-
-        return $comments;
-    }
-
-    $target = (string) $input['comment'];
-
-    foreach ($comments as $index => $comment) {
-        if ((string) ($comment['id'] ?? '') !== $target) {
-            continue;
-        }
-
-        if (!$input['authed'] && hash_equals((string) ($comment['ip'] ?? ''), $me)) {
-            $errors[] = 'You cannot answer your own comment.';
-
-            return $comments;
-        }
-
-        $comments[$index]['answers'][] = $entry;
-
-        return $comments;
-    }
-
-    $errors[] = 'That comment is gone.';
+    ], (array) $input['upload']);
 
     return $comments;
 }
 
 /**
- * Shared deletion of a comment or one of its answers.
+ * Deletes one comment, if it belongs to the visitor or the visitor is admin.
  */
-function remove_comment(array $comments, string $target, string $answer, bool $authed): array
+function remove_comment(array $comments, string $target, bool $authed): array
 {
     $me = visitor_hash();
     $kept = [];
@@ -307,27 +264,9 @@ function remove_comment(array $comments, string $target, string $answer, bool $a
     foreach ($comments as $comment) {
         $mine = hash_equals((string) ($comment['ip'] ?? ''), $me);
 
-        if ($answer === '' && (string) ($comment['id'] ?? '') === $target) {
-            if ($authed || $mine) {
-                comment_drop_file($comment);
-                continue;
-            }
-        }
-
-        if ($answer !== '' && (string) ($comment['id'] ?? '') === $target) {
-            $keptAnswers = [];
-
-            foreach ((array) ($comment['answers'] ?? []) as $item) {
-                $ownAnswer = hash_equals((string) ($item['ip'] ?? ''), $me);
-
-                if ((string) ($item['id'] ?? '') === $answer && ($authed || $ownAnswer)) {
-                    continue;
-                }
-
-                $keptAnswers[] = $item;
-            }
-
-            $comment['answers'] = $keptAnswers;
+        if ((string) ($comment['id'] ?? '') === $target && ($authed || $mine)) {
+            comment_drop_file($comment);
+            continue;
         }
 
         $kept[] = $comment;

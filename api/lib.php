@@ -13,11 +13,12 @@ const CHAT_KEEP = 300;
 const FRONT_POSTS = 8;
 const PREVIEW_CHARS = 110;
 const COMMENTS_OPEN = 5;
-const BLOG_COMMENTS_OPEN = 2;
+const BLOG_COMMENTS_OPEN = 3;
 const ONLINE_WINDOW = 180;
 const MAX_NAME = 32;
 const MAX_CHAT_TEXT = 600;
 const GEO_TTL = 2592000;
+const EMOJI_BYTES = 2097152;
 const LOGIN_MAX_ATTEMPTS = 5;
 const LOGIN_LOCK_SECONDS = 900;
 
@@ -239,34 +240,157 @@ function live_posts(): array
     return array_slice($fresh, 0, FRONT_POSTS);
 }
 
-function number_posts(array $store): array
+/**
+ * Runs once, when the site moves to the shared counter: every message, post and
+ * comment gets a number in the order it was written, and the nested replies are
+ * flattened into ordinary entries that quote what they answered.
+ */
+function migrate_numbers(): void
 {
-    $posts = (array) ($store['posts'] ?? []);
-    $seq = (int) ($store['pseq'] ?? 0);
+    $dir = data_dir();
 
-    if ($seq > 0) {
-        return $store;
+    if ($dir === '' || is_file($dir . '/seq.json')) {
+        return;
     }
 
-    $order = array_keys($posts);
-    usort($order, static function ($a, $b) use ($posts): int {
-        return (int) ($posts[$a]['created'] ?? 0) <=> (int) ($posts[$b]['created'] ?? 0);
+    $chat = chat_read();
+    $posts = read_store();
+    $pages = [];
+    $pagesPath = $dir . '/pages.json';
+
+    if (is_file($pagesPath)) {
+        $raw = @file_get_contents($pagesPath);
+        $decoded = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+        $pages = is_array($decoded) ? $decoded : [];
+    }
+
+    $flat = [];
+
+    foreach ((array) ($chat['messages'] ?? []) as $index => $message) {
+        $flat[] = ['at' => (int) ($message['created'] ?? 0), 'kind' => 'chat', 'i' => $index];
+
+        foreach ((array) ($message['replies'] ?? []) as $spot => $reply) {
+            $flat[] = ['at' => (int) ($reply['created'] ?? 0), 'kind' => 'chatreply', 'i' => $index, 'j' => $spot];
+        }
+    }
+
+    foreach ((array) ($posts['posts'] ?? []) as $index => $post) {
+        $flat[] = ['at' => (int) ($post['created'] ?? 0), 'kind' => 'post', 'i' => $index];
+
+        foreach ((array) ($post['comments'] ?? []) as $spot => $comment) {
+            $flat[] = ['at' => (int) ($comment['created'] ?? 0), 'kind' => 'comment', 'i' => $index, 'j' => $spot];
+
+            foreach ((array) ($comment['answers'] ?? []) as $k => $answer) {
+                $flat[] = ['at' => (int) ($answer['created'] ?? 0), 'kind' => 'answer', 'i' => $index, 'j' => $spot, 'k' => $k];
+            }
+        }
+    }
+
+    foreach ($pages as $key => $comments) {
+        foreach ((array) $comments as $spot => $comment) {
+            $flat[] = ['at' => (int) ($comment['created'] ?? 0), 'kind' => 'page', 'i' => $key, 'j' => $spot];
+
+            foreach ((array) ($comment['answers'] ?? []) as $k => $answer) {
+                $flat[] = ['at' => (int) ($answer['created'] ?? 0), 'kind' => 'pageanswer', 'i' => $key, 'j' => $spot, 'k' => $k];
+            }
+        }
+    }
+
+    usort($flat, static function (array $a, array $b): int {
+        return $a['at'] <=> $b['at'];
     });
 
-    foreach ($order as $index) {
-        if ((int) ($posts[$index]['no'] ?? 0) > 0) {
-            $seq = max($seq, (int) $posts[$index]['no']);
-            continue;
-        }
+    $seq = 0;
+    $extraChat = [];
+    $extraComments = [];
+    $extraPages = [];
 
+    foreach ($flat as $row) {
         $seq++;
-        $posts[$index]['no'] = $seq;
+
+        if ($row['kind'] === 'chat') {
+            $chat['messages'][$row['i']]['no'] = $seq;
+        } elseif ($row['kind'] === 'chatreply') {
+            $reply = $chat['messages'][$row['i']]['replies'][$row['j']];
+            $reply['no'] = $seq;
+            $reply['to'] = (int) ($chat['messages'][$row['i']]['no'] ?? 0);
+            $reply['replies'] = [];
+            $extraChat[] = $reply;
+        } elseif ($row['kind'] === 'post') {
+            $posts['posts'][$row['i']]['no'] = $seq;
+        } elseif ($row['kind'] === 'comment') {
+            $posts['posts'][$row['i']]['comments'][$row['j']]['no'] = $seq;
+        } elseif ($row['kind'] === 'answer') {
+            $answer = $posts['posts'][$row['i']]['comments'][$row['j']]['answers'][$row['k']];
+            $answer['no'] = $seq;
+            $answer['to'] = (int) ($posts['posts'][$row['i']]['comments'][$row['j']]['no'] ?? 0);
+            $extraComments[$row['i']][] = $answer;
+        } elseif ($row['kind'] === 'page') {
+            $pages[$row['i']][$row['j']]['no'] = $seq;
+        } elseif ($row['kind'] === 'pageanswer') {
+            $answer = $pages[$row['i']][$row['j']]['answers'][$row['k']];
+            $answer['no'] = $seq;
+            $answer['to'] = (int) ($pages[$row['i']][$row['j']]['no'] ?? 0);
+            $extraPages[$row['i']][] = $answer;
+        }
     }
 
-    $store['posts'] = $posts;
-    $store['pseq'] = $seq;
+    foreach ((array) ($chat['messages'] ?? []) as $index => $message) {
+        $chat['messages'][$index]['replies'] = [];
+    }
 
-    return $store;
+    foreach ($extraChat as $reply) {
+        $chat['messages'][] = $reply;
+    }
+
+    usort($chat['messages'], static function (array $a, array $b): int {
+        return (int) ($b['created'] ?? 0) <=> (int) ($a['created'] ?? 0);
+    });
+
+    foreach ((array) ($posts['posts'] ?? []) as $index => $post) {
+        foreach ((array) ($post['comments'] ?? []) as $spot => $comment) {
+            unset($posts['posts'][$index]['comments'][$spot]['answers']);
+        }
+
+        foreach ((array) ($extraComments[$index] ?? []) as $answer) {
+            $posts['posts'][$index]['comments'][] = $answer;
+        }
+
+        if (isset($posts['posts'][$index]['comments'])) {
+            $list = array_values((array) $posts['posts'][$index]['comments']);
+            usort($list, static function (array $a, array $b): int {
+                return (int) ($a['created'] ?? 0) <=> (int) ($b['created'] ?? 0);
+            });
+            $posts['posts'][$index]['comments'] = $list;
+        }
+    }
+
+    foreach ($pages as $key => $comments) {
+        foreach ((array) $comments as $spot => $comment) {
+            unset($pages[$key][$spot]['answers']);
+        }
+
+        foreach ((array) ($extraPages[$key] ?? []) as $answer) {
+            $pages[$key][] = $answer;
+        }
+
+        $list = array_values((array) $pages[$key]);
+        usort($list, static function (array $a, array $b): int {
+            return (int) ($a['created'] ?? 0) <=> (int) ($b['created'] ?? 0);
+        });
+        $pages[$key] = $list;
+    }
+
+    unset($posts['pseq'], $chat['seq']);
+
+    chat_write($chat);
+    write_store($posts);
+
+    if ($pages !== []) {
+        @file_put_contents($pagesPath, (string) json_encode($pages), LOCK_EX);
+    }
+
+    seq_seed($seq);
 }
 
 function post_thumb(array $post): string
@@ -694,27 +818,42 @@ function admin_name_path(): string
     return $dir === '' ? '' : $dir . '/adminname.json';
 }
 
-function admin_name(): string
+function admin_profile(): array
 {
+    $fallback = ['name' => 'nysha4real', 'color' => 'yellow'];
     $path = admin_name_path();
 
     if ($path === '' || !is_file($path)) {
-        return 'nysha4real';
+        return $fallback;
     }
 
     $raw = @file_get_contents($path);
     $data = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
 
     if (!is_array($data)) {
-        return 'nysha4real';
+        return $fallback;
     }
 
     $name = clean_name((string) ($data['name'] ?? ''));
+    $color = (string) ($data['color'] ?? 'yellow');
 
-    return $name === '' ? 'nysha4real' : $name;
+    return [
+        'name' => $name === '' ? 'nysha4real' : $name,
+        'color' => $color === 'green' ? 'green' : 'yellow',
+    ];
 }
 
-function save_admin_name(string $name): bool
+function admin_name(): string
+{
+    return (string) admin_profile()['name'];
+}
+
+function admin_color(): string
+{
+    return (string) admin_profile()['color'];
+}
+
+function save_admin_name(string $name, string $color): bool
 {
     $path = admin_name_path();
 
@@ -722,12 +861,102 @@ function save_admin_name(string $name): bool
         return false;
     }
 
-    return @file_put_contents($path, (string) json_encode(['name' => $name]), LOCK_EX) !== false;
+    $body = (string) json_encode([
+        'name' => $name,
+        'color' => $color === 'green' ? 'green' : 'yellow',
+    ]);
+
+    return @file_put_contents($path, $body, LOCK_EX) !== false;
 }
 
 function poster_name_html(string $name, bool $isAdmin): string
 {
-    return '<span class="msg-name' . ($isAdmin ? ' admin' : '') . '">' . e($name) . '</span>';
+    $class = 'msg-name';
+
+    if ($isAdmin && admin_color() === 'yellow') {
+        $class .= ' admin';
+    }
+
+    return '<span class="' . $class . '">' . e($name) . '</span>';
+}
+
+/**
+ * One running number for the whole site: the chat, the blog and every comment
+ * draw from the same counter, so No.N is unique wherever it shows up.
+ */
+function next_no(): int
+{
+    $dir = data_dir();
+
+    if ($dir === '') {
+        return 0;
+    }
+
+    $handle = @fopen($dir . '/seq.json', 'c+');
+
+    if ($handle === false) {
+        return 0;
+    }
+
+    if (!flock($handle, LOCK_EX)) {
+        fclose($handle);
+
+        return 0;
+    }
+
+    $raw = stream_get_contents($handle);
+    $data = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+    $next = (int) (is_array($data) ? ($data['seq'] ?? 0) : 0) + 1;
+
+    rewind($handle);
+    ftruncate($handle, 0);
+    fwrite($handle, (string) json_encode(['seq' => $next]));
+    fflush($handle);
+    flock($handle, LOCK_UN);
+    fclose($handle);
+
+    return $next;
+}
+
+function seq_seed(int $value): void
+{
+    $dir = data_dir();
+
+    if ($dir !== '') {
+        @file_put_contents($dir . '/seq.json', (string) json_encode(['seq' => $value]), LOCK_EX);
+    }
+}
+
+function quote_html(array $item): string
+{
+    $to = (int) ($item['to'] ?? 0);
+
+    if ($to <= 0) {
+        return '';
+    }
+
+    return '<div class="quotelink"><a href="#p' . $to . '">&gt;&gt;' . $to . '</a></div>';
+}
+
+function emoji_dir(): string
+{
+    $dir = project_root() . '/assets/emoji';
+
+    if (!is_dir($dir)) {
+        if (!@mkdir($dir, 0775, true) && !is_dir($dir)) {
+            return '';
+        }
+    }
+
+    return is_writable($dir) ? $dir : '';
+}
+
+function clean_emoji_name(string $name): string
+{
+    $name = strtolower(trim($name));
+    $name = preg_replace('/[^a-z0-9_-]+/', '', $name) ?? '';
+
+    return mb_substr($name, 0, 32);
 }
 
 function geo_path(): string

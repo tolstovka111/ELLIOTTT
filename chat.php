@@ -80,7 +80,7 @@ if ($action !== '' && !public_token_valid((string) ($_POST['token'] ?? ''))) {
     $action = '';
 }
 
-if ($action === 'say' || $action === 'reply') {
+if ($action === 'say') {
     $left = $authed ? 0 : chat_cooldown_left();
 
     if ($left > 0) {
@@ -99,7 +99,7 @@ if ($action === 'say' || $action === 'reply') {
             $name = 'Anonymous';
         }
 
-        $upload = $action === 'say' ? chat_store_upload($errors) : [];
+        $upload = chat_store_upload($errors);
 
         if ($errors === [] && $text === '' && $upload === []) {
             $errors[] = 'Write something first.';
@@ -110,48 +110,30 @@ if ($action === 'say' || $action === 'reply') {
                 chat_drop_file($upload);
             }
         } else {
+            migrate_numbers();
             $store = chat_read();
-            $store['seq'] = (int) ($store['seq'] ?? 0) + 1;
 
-            $entry = [
+            $entry = array_merge([
                 'id' => bin2hex(random_bytes(8)),
-                'no' => $store['seq'],
+                'no' => next_no(),
+                'to' => max(0, (int) ($_POST['to'] ?? 0)),
                 'created' => time(),
                 'name' => $name,
                 'text' => $text,
                 'ip' => visitor_hash(),
                 'country' => visitor_country(),
                 'admin' => $asAdmin,
-            ];
+            ], $upload);
 
-            if ($action === 'say') {
-                array_unshift($store['messages'], array_merge($entry, $upload, ['replies' => []]));
-            } else {
-                $target = (string) ($_POST['id'] ?? '');
-                $found = false;
+            array_unshift($store['messages'], $entry);
 
-                foreach ($store['messages'] as $index => $message) {
-                    if ((string) ($message['id'] ?? '') === $target) {
-                        $store['messages'][$index]['replies'][] = $entry;
-                        $found = true;
-                        break;
-                    }
-                }
-
-                if (!$found) {
-                    $errors[] = 'That message is gone.';
-                }
-            }
-
-            if ($errors === [] && !chat_write($store)) {
+            if (!chat_write($store)) {
                 if ($upload !== []) {
                     chat_drop_file($upload);
                 }
 
                 $errors[] = 'Could not save the message: the server cannot write to api/data. Check the folder permissions.';
-            }
-
-            if ($errors === []) {
+            } else {
                 if (!$authed) {
                     chat_touch_cooldown();
                 }
@@ -165,7 +147,6 @@ if ($action === 'say' || $action === 'reply') {
 
 if ($action === 'remove') {
     $target = (string) ($_POST['id'] ?? '');
-    $reply = (string) ($_POST['reply'] ?? '');
     $store = chat_read();
     $me = visitor_hash();
     $kept = [];
@@ -173,29 +154,13 @@ if ($action === 'remove') {
     foreach ($store['messages'] as $message) {
         $mine = hash_equals((string) ($message['ip'] ?? ''), $me);
 
-        if ($reply === '' && (string) ($message['id'] ?? '') === $target) {
+        if ((string) ($message['id'] ?? '') === $target) {
             if ($authed || $mine) {
                 chat_drop_file($message);
                 continue;
             }
 
             $errors[] = 'You can only delete your own messages.';
-        }
-
-        if ($reply !== '' && (string) ($message['id'] ?? '') === $target) {
-            $keptReplies = [];
-
-            foreach ((array) ($message['replies'] ?? []) as $item) {
-                $ownReply = hash_equals((string) ($item['ip'] ?? ''), $me);
-
-                if ((string) ($item['id'] ?? '') === $reply && ($authed || $ownReply)) {
-                    continue;
-                }
-
-                $keptReplies[] = $item;
-            }
-
-            $message['replies'] = $keptReplies;
         }
 
         $kept[] = $message;
@@ -222,7 +187,7 @@ $cooldown = $authed ? 0 : chat_cooldown_left();
 function stamp(array $item): string
 {
     return '<span class="msg-date" data-ts="' . (int) $item['created'] . '">'
-        . e(gmdate('m/d/y(D)H:i', (int) $item['created'])) . '</span>';
+        . e(gmdate('m/d/y(D)H:i:s', (int) $item['created'])) . '</span>';
 }
 
 function poster(array $item): string
@@ -240,20 +205,16 @@ function poster(array $item): string
 /**
  * The bracketed [reply] and [delete] links that follow the timestamp.
  */
-function chat_actions(string $id, string $reply, bool $canReply, bool $canDelete, string $token): string
+function chat_actions(array $item, bool $canDelete, string $token): string
 {
-    $out = '';
-
-    if ($canReply) {
-        $out .= ' <span class="msg-act">[<span class="msg-reply" data-target="' . e($id) . '">reply</span>]</span>';
-    }
+    $out = ' <span class="msg-act">[<span class="msg-reply" data-no="' . (int) ($item['no'] ?? 0)
+        . '">reply</span>]</span>';
 
     if ($canDelete) {
         $out .= ' <span class="msg-act">[<form method="post" action="/c/" class="msg-remove">'
             . '<input type="hidden" name="token" value="' . e($token) . '">'
             . '<input type="hidden" name="action" value="remove">'
-            . '<input type="hidden" name="id" value="' . e($id) . '">'
-            . ($reply === '' ? '' : '<input type="hidden" name="reply" value="' . e($reply) . '">')
+            . '<input type="hidden" name="id" value="' . e((string) $item['id']) . '">'
             . '<button type="submit">delete</button></form>]</span>';
     }
 
@@ -283,30 +244,13 @@ ob_start();
 <?php endif; ?>
 <?php foreach ($messages as $message): ?>
 <?php $mine = hash_equals((string) ($message['ip'] ?? ''), $me); ?>
-		<div class="msg" id="m<?= e((string) $message['id']) ?>">
-			<div class="msg-head"><?= poster($message) ?><?= chat_actions((string) $message['id'], '', true, $authed || $mine, $token) ?></div>
+		<div class="msg" id="p<?= (int) ($message['no'] ?? 0) ?>">
+			<div class="msg-head"><?= poster($message) ?><?= chat_actions($message, $authed || $mine, $token) ?></div>
 <?= chat_file_line($message) ?>
+<?= quote_html($message) ?>
 <?php if ((string) $message['text'] !== ''): ?>
 			<div class="msg-text"><?= render_post_text((string) $message['text']) ?></div>
 <?php endif; ?>
-			<form method="post" action="/c/" class="replyform" id="r<?= e((string) $message['id']) ?>">
-				<input type="hidden" name="token" value="<?= e($token) ?>">
-				<input type="hidden" name="action" value="reply">
-				<input type="hidden" name="id" value="<?= e((string) $message['id']) ?>">
-<?php if ($authed): ?>
-				<label class="adminswitch"><input type="checkbox" name="asadmin" value="1" checked><span>Post as admin</span></label>
-<?php endif; ?>
-				<input type="text" name="name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous"<?= $authed ? ' hidden' : '' ?>>
-				<input type="text" name="text" maxlength="<?= MAX_CHAT_TEXT ?>" placeholder="Write a reply&hellip;" required>
-				<button type="submit">Reply</button>
-			</form>
-<?php foreach ((array) ($message['replies'] ?? []) as $reply): ?>
-<?php $ownReply = hash_equals((string) ($reply['ip'] ?? ''), $me); ?>
-			<div class="reply">
-				<div class="msg-head"><?= poster($reply) ?><?= chat_actions((string) $message['id'], (string) $reply['id'], false, $authed || $ownReply, $token) ?></div>
-				<div class="msg-text"><?= render_post_text((string) $reply['text']) ?></div>
-			</div>
-<?php endforeach; ?>
 		</div>
 <?php endforeach; ?>
 <?php
@@ -326,7 +270,7 @@ if ($fragment) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/c/ - chat - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=9">
+<link rel="stylesheet" href="/style.css?v=10">
 </head>
 <body class="blue">
 
@@ -349,6 +293,7 @@ if ($fragment) {
 		<form method="post" action="/c/" enctype="multipart/form-data" class="sayform" id="sayform" data-cooldown="<?= (int) $cooldown ?>">
 			<input type="hidden" name="token" value="<?= e($token) ?>">
 			<input type="hidden" name="action" value="say">
+			<input type="hidden" name="to" value="" class="reply-to">
 
 			<div class="say-fields">
 <?php if ($authed): ?>
@@ -358,6 +303,7 @@ if ($fragment) {
 				</div>
 <?php endif; ?>
 				<input type="text" name="name" class="say-name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous" autocomplete="off"<?= $authed ? ' hidden' : '' ?>>
+				<span class="reply-note" hidden>replying to <span class="reply-note-no"></span> <span class="reply-clear">[x]</span></span>
 				<div class="say-line">
 					<input type="text" name="text" class="say-text" maxlength="<?= MAX_CHAT_TEXT ?>" placeholder="Type text here" autocomplete="off">
 
@@ -373,7 +319,7 @@ if ($fragment) {
 			</div>
 		</form>
 
-		<div class="rgbline"></div>
+		<div class="boardline"></div>
 
 		<div id="chat-list"><?= $list ?></div>
 	</div>
@@ -388,6 +334,6 @@ if ($fragment) {
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=9"></script>
+<script src="/script.js?v=10"></script>
 </body>
 </html>

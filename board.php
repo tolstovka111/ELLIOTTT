@@ -30,36 +30,31 @@ if ($action !== '' && !public_token_valid((string) ($_POST['token'] ?? ''))) {
     $action = '';
 }
 
-if ($action === 'comment' || $action === 'answer') {
+if ($action === 'comment') {
     $author = comment_author($authed);
     $text = mb_substr(trim((string) ($_POST['text'] ?? '')), 0, MAX_CHAT_TEXT);
-    $upload = $action === 'comment' ? comment_upload($errors) : [];
+    $upload = comment_upload($errors);
 
     if ($errors === [] && $text === '' && $upload === []) {
         $errors[] = 'Write something first.';
     }
 
     if ($errors === []) {
+        migrate_numbers();
         $store = page_store_read();
-        $comments = (array) ($store[$key] ?? []);
-        $comments = apply_comment($comments, $action === 'comment' ? 'add' : 'answer', [
+        $store[$key] = apply_comment((array) ($store[$key] ?? []), [
             'name' => $author['name'],
             'text' => $text,
             'admin' => $author['admin'],
             'upload' => $upload,
-            'comment' => (string) ($_POST['comment'] ?? ''),
-            'authed' => $authed,
-        ], $errors);
+            'to' => (int) ($_POST['to'] ?? 0),
+        ]);
 
-        if ($errors === []) {
-            $store[$key] = $comments;
-
-            if (!page_store_write($store)) {
-                $errors[] = 'Could not save the comment: the server cannot write to api/data. Check the folder permissions.';
-            } else {
-                header('Location: ' . $url . '#comments');
-                exit;
-            }
+        if (!page_store_write($store)) {
+            $errors[] = 'Could not save the comment: the server cannot write to api/data. Check the folder permissions.';
+        } else {
+            header('Location: ' . $url . '#comments');
+            exit;
         }
     }
 
@@ -73,7 +68,6 @@ if ($action === 'uncomment') {
     $store[$key] = remove_comment(
         (array) ($store[$key] ?? []),
         (string) ($_POST['comment'] ?? ''),
-        (string) ($_POST['answer'] ?? ''),
         $authed
     );
     page_store_write($store);
@@ -93,7 +87,7 @@ $fragment = project_root() . '/pages/' . $key . '.html';
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e((string) $board['title']) ?> - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=9">
+<link rel="stylesheet" href="/style.css?v=10">
 </head>
 <body class="blue">
 
@@ -131,7 +125,6 @@ $fragment = project_root() . '/pages/' . $key . '.html';
     'form' => $url,
     'keys' => [],
     'action_add' => 'comment',
-    'action_answer' => 'answer',
     'action_delete' => 'uncomment',
 ]) ?>
 		</div>
@@ -148,6 +141,6 @@ $fragment = project_root() . '/pages/' . $key . '.html';
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=9"></script>
+<script src="/script.js?v=10"></script>
 </body>
 </html>

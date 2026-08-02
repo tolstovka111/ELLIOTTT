@@ -24,7 +24,7 @@ if ($authed) {
 <title>4real</title>
 <meta name="description" content="4real is a link-in-bio info-hub with every official profile in one place.">
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=9">
+<link rel="stylesheet" href="/style.css?v=10">
 </head>
 <body>
 
@@ -143,6 +143,6 @@ if ($authed) {
 
 </div>
 
-<script src="/script.js?v=9"></script>
+<script src="/script.js?v=10"></script>
 </body>
 </html>

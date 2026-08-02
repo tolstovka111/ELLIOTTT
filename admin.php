@@ -216,12 +216,6 @@ if ($action === 'create' && $authed) {
         $text = mb_substr($text, 0, MAX_TEXT);
     }
 
-    $background = (string) ($_POST['bg'] ?? 'default');
-
-    if (!in_array($background, post_backgrounds(), true)) {
-        $background = 'default';
-    }
-
     $pictures = image_types();
     $movies = video_types();
     $dir = uploads_dir();
@@ -315,8 +309,8 @@ if ($action === 'create' && $authed) {
         ];
     }
 
-    if ($errors === [] && $text === '' && $media === []) {
-        $errors[] = 'Add some text, a picture or a video.';
+    if ($errors === [] && $media === []) {
+        $errors[] = 'A post needs a picture or a video. Text on its own cannot be published.';
     }
 
     if ($errors !== []) {
@@ -328,15 +322,14 @@ if ($action === 'create' && $authed) {
         go('/admintools.php');
     }
 
-    $store = number_posts(read_store());
-    $store['pseq'] = (int) ($store['pseq'] ?? 0) + 1;
+    migrate_numbers();
+    $store = read_store();
     array_unshift($store['posts'], [
         'id' => bin2hex(random_bytes(8)),
-        'no' => $store['pseq'],
+        'no' => next_no(),
         'created' => time(),
         'text' => $text,
         'images' => $media,
-        'bg' => $background,
         'country' => visitor_country(),
     ]);
 
@@ -355,6 +348,7 @@ if ($action === 'create' && $authed) {
 
 if ($action === 'nickname' && $authed) {
     $name = clean_name((string) ($_POST['nickname'] ?? ''));
+    $colour = (string) ($_POST['colour'] ?? 'yellow') === 'green' ? 'green' : 'yellow';
 
     if ($name === '') {
         $_SESSION['form_errors'] = ['The nickname cannot be empty.'];
@@ -366,12 +360,72 @@ if ($action === 'nickname' && $authed) {
         go('/admintools.php');
     }
 
-    if (!save_admin_name($name)) {
+    if (!save_admin_name($name, $colour)) {
         $_SESSION['form_errors'] = ['Could not write api/data/adminname.json. Check permissions.'];
         go('/admintools.php');
     }
 
     flash('Nickname saved.');
+    go('/admintools.php');
+}
+
+if ($action === 'emoji' && $authed) {
+    $dir = emoji_dir();
+    $allowed = [IMAGETYPE_PNG => '.png', IMAGETYPE_GIF => '.gif', IMAGETYPE_WEBP => '.webp', IMAGETYPE_JPEG => '.jpg'];
+    $error = (int) ($_FILES['emoji']['error'] ?? UPLOAD_ERR_NO_FILE);
+
+    if ($dir === '') {
+        $errors[] = 'Folder assets/emoji is not writable.';
+    } elseif ($error !== UPLOAD_ERR_OK) {
+        $errors[] = 'Pick a picture first.';
+    }
+
+    if ($errors === []) {
+        $tmp = (string) ($_FILES['emoji']['tmp_name'] ?? '');
+        $info = is_uploaded_file($tmp) ? @getimagesize($tmp) : false;
+
+        if ($info === false || !isset($allowed[$info[2]])) {
+            $errors[] = 'The emoji must be PNG, GIF, WEBP or JPG.';
+        } elseif ((int) ($_FILES['emoji']['size'] ?? 0) > EMOJI_BYTES) {
+            $errors[] = 'The emoji is larger than 2 MB.';
+        } else {
+            $name = clean_emoji_name((string) ($_POST['code'] ?? ''));
+
+            if ($name === '') {
+                $name = clean_emoji_name((string) pathinfo((string) ($_FILES['emoji']['name'] ?? ''), PATHINFO_FILENAME));
+            }
+
+            if ($name === '') {
+                $errors[] = 'Give the emoji a name: letters, digits, dash or underscore.';
+            } elseif (isset(emoji_map()[$name])) {
+                $errors[] = 'There is already an emoji called :' . $name . ':';
+            } elseif (!move_uploaded_file($tmp, $dir . '/' . $name . $allowed[$info[2]])) {
+                $errors[] = 'Could not save the emoji.';
+            } else {
+                @chmod($dir . '/' . $name . $allowed[$info[2]], 0644);
+                flash('Emoji :' . $name . ': added.');
+                go('/admintools.php');
+            }
+        }
+    }
+
+    $_SESSION['form_errors'] = $errors;
+    go('/admintools.php');
+}
+
+if ($action === 'unemoji' && $authed) {
+    $name = clean_emoji_name((string) ($_POST['code'] ?? ''));
+    $map = emoji_map();
+
+    if ($name !== '' && isset($map[$name])) {
+        $file = project_root() . '/assets/emoji/' . basename((string) $map[$name]);
+
+        if (is_file($file)) {
+            @unlink($file);
+        }
+    }
+
+    flash('Emoji removed.');
     go('/admintools.php');
 }
 
@@ -428,7 +482,7 @@ $suggestedKey = $config === null ? bin2hex(random_bytes(12)) : '';
 <meta name="robots" content="noindex, nofollow">
 <title>Admin - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=9">
+<link rel="stylesheet" href="/style.css?v=10">
 </head>
 <body class="blue">
 

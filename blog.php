@@ -66,17 +66,18 @@ if ($action !== '' && !public_token_valid((string) ($_POST['token'] ?? ''))) {
     $action = '';
 }
 
-if ($action === 'comment' || $action === 'answer') {
+if ($action === 'comment') {
     $postId = (string) ($_POST['post'] ?? '');
     $author = comment_author($authed);
     $text = mb_substr(trim((string) ($_POST['text'] ?? '')), 0, MAX_CHAT_TEXT);
-    $upload = $action === 'comment' ? comment_upload($errors) : [];
+    $upload = comment_upload($errors);
 
     if ($errors === [] && $text === '' && $upload === []) {
         $errors[] = 'Write something first.';
     }
 
     if ($errors === []) {
+        migrate_numbers();
         $store = read_store();
         $done = false;
 
@@ -90,20 +91,14 @@ if ($action === 'comment' || $action === 'answer') {
                 break;
             }
 
-            $store['posts'][$index]['comments'] = apply_comment(
-                (array) ($post['comments'] ?? []),
-                $action === 'comment' ? 'add' : 'answer',
-                [
-                    'name' => $author['name'],
-                    'text' => $text,
-                    'admin' => $author['admin'],
-                    'upload' => $upload,
-                    'comment' => (string) ($_POST['comment'] ?? ''),
-                    'authed' => $authed,
-                ],
-                $errors
-            );
-            $done = $errors === [];
+            $store['posts'][$index]['comments'] = apply_comment((array) ($post['comments'] ?? []), [
+                'name' => $author['name'],
+                'text' => $text,
+                'admin' => $author['admin'],
+                'upload' => $upload,
+                'to' => (int) ($_POST['to'] ?? 0),
+            ]);
+            $done = true;
             break;
         }
 
@@ -138,7 +133,6 @@ if ($action === 'uncomment') {
         $store['posts'][$index]['comments'] = remove_comment(
             (array) ($post['comments'] ?? []),
             (string) ($_POST['comment'] ?? ''),
-            (string) ($_POST['answer'] ?? ''),
             $authed
         );
         break;
@@ -157,7 +151,7 @@ $now = time();
 $token = public_token();
 $adminName = admin_name();
 $csrf = (string) ($_SESSION['csrf'] ?? '');
-$boardTitle = '/n/ - posts by ' . $adminName;
+$boardTitle = '/n/ - posts by nysha4real';
 
 ?><!DOCTYPE html>
 <html lang="en">
@@ -166,7 +160,7 @@ $boardTitle = '/n/ - posts by ' . $adminName;
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($boardTitle) ?> - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=9">
+<link rel="stylesheet" href="/style.css?v=10">
 </head>
 <body class="blue">
 
@@ -192,14 +186,11 @@ $boardTitle = '/n/ - posts by ' . $adminName;
 
 <?php foreach ($posts as $post): ?>
 <?php
-$background = in_array((string) ($post['bg'] ?? 'default'), post_backgrounds(), true)
-    ? (string) ($post['bg'] ?? 'default')
-    : 'default';
 $comments = (array) ($post['comments'] ?? []);
 $open = !empty($post['comments_open']);
 ?>
-		<div class="thread-post" id="p<?= e((string) $post['id']) ?>">
-			<div class="post bg-<?= e($background) ?>">
+		<div class="thread-post" id="p<?= (int) ($post['no'] ?? 0) ?>">
+			<div class="post">
 				<div class="post-head">
 					<?= poster_name_html($adminName, true) ?>
 <?php $flag = country_flag_html((string) ($post['country'] ?? '')); ?>
@@ -210,7 +201,7 @@ $open = !empty($post['comments_open']);
 <?php if ((int) ($post['no'] ?? 0) > 0): ?>
 					<span class="msg-no">No.<?= (int) $post['no'] ?></span>
 <?php endif; ?>
-					<a class="post-anchor" href="#p<?= e((string) $post['id']) ?>" title="Link to this post">&#9654;</a>
+					<a class="post-anchor" href="#p<?= (int) ($post['no'] ?? 0) ?>" title="Link to this post">&#9654;</a>
 				</div>
 <?= post_file_line($post) ?>
 <?php if (($post['images'] ?? []) !== []): ?>
@@ -254,7 +245,6 @@ $open = !empty($post['comments_open']);
     'form' => '/blog/',
     'keys' => ['post' => (string) $post['id']],
     'action_add' => 'comment',
-    'action_answer' => 'answer',
     'action_delete' => 'uncomment',
 ]) ?>
 <?php endif; ?>
@@ -272,6 +262,6 @@ $open = !empty($post['comments_open']);
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=9"></script>
+<script src="/script.js?v=10"></script>
 </body>
 </html>

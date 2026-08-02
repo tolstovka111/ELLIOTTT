@@ -152,6 +152,18 @@
 		});
 	}
 
+	var tagYellow = document.getElementById("tag-yellow");
+	var tagGreen = document.getElementById("tag-green");
+
+	if (tagPreview && tagYellow && tagGreen) {
+		var paintName = function () {
+			tagPreview.className = tagYellow.checked ? "msg-name admin" : "msg-name";
+		};
+
+		tagYellow.addEventListener("change", paintName);
+		tagGreen.addEventListener("change", paintName);
+	}
+
 	var goPosts = document.querySelector(".goposts");
 
 	if (goPosts) {
@@ -235,7 +247,7 @@
 			var seconds = parseInt(node.getAttribute("data-ts"), 10);
 
 			if (seconds) {
-				node.textContent = localStamp(seconds, node.classList.contains("post-date"));
+				node.textContent = localStamp(seconds, true);
 			}
 		});
 	}
@@ -289,15 +301,56 @@
 		}
 
 		if (target.classList.contains("msg-reply")) {
-			var form = document.getElementById("r" + target.getAttribute("data-target"));
+			var scope = target.closest(".comments") || document;
+			var form = scope.querySelector(".commentform") || document.getElementById("sayform");
 
-			if (form) {
-				if (form.classList.toggle("open")) {
-					var field = form.querySelector('input[name="text"]');
+			if (!form) {
+				return;
+			}
 
-					if (field) {
-						field.focus();
-					}
+			var no = target.getAttribute("data-no");
+
+			if (!no) {
+				var head = target.closest(".msg-head");
+				var label = head ? head.querySelector(".msg-no") : null;
+				no = label ? label.textContent.replace(/[^0-9]/g, "") : "";
+			}
+
+			var toField = form.querySelector(".reply-to");
+			var note = form.querySelector(".reply-note");
+			var noteNo = form.querySelector(".reply-note-no");
+
+			if (toField && no) {
+				toField.value = no;
+			}
+
+			if (note && noteNo && no) {
+				noteNo.textContent = ">>" + no;
+				note.hidden = false;
+			}
+
+			var field = form.querySelector('input[name="text"]');
+
+			if (field) {
+				field.focus();
+			}
+
+			return;
+		}
+
+		if (target.classList.contains("reply-clear")) {
+			var owner = target.closest("form");
+
+			if (owner) {
+				var clearField = owner.querySelector(".reply-to");
+				var clearNote = owner.querySelector(".reply-note");
+
+				if (clearField) {
+					clearField.value = "";
+				}
+
+				if (clearNote) {
+					clearNote.hidden = true;
 				}
 			}
 
@@ -308,38 +361,20 @@
 
 		if (block && target.classList.contains("comments-all")) {
 			Array.prototype.forEach.call(block.querySelectorAll(".comment.folded"), function (node) {
-				node.classList.remove("folded");
+				node.classList.add("unfolded");
 			});
 			target.hidden = true;
+			block.querySelector(".comments-hide").hidden = false;
 
 			return;
 		}
 
 		if (block && target.classList.contains("comments-hide")) {
-			block.querySelector(".comments-body").hidden = true;
+			Array.prototype.forEach.call(block.querySelectorAll(".comment.folded"), function (node) {
+				node.classList.remove("unfolded");
+			});
 			target.hidden = true;
-
-			var all = block.querySelector(".comments-all");
-
-			if (all) {
-				all.hidden = true;
-			}
-
-			block.querySelector(".comments-show").hidden = false;
-
-			return;
-		}
-
-		if (block && target.classList.contains("comments-show")) {
-			block.querySelector(".comments-body").hidden = false;
-			target.hidden = true;
-			block.querySelector(".comments-hide").hidden = false;
-
-			var hiddenAll = block.querySelector(".comments-all");
-
-			if (hiddenAll && block.querySelector(".comment.folded")) {
-				hiddenAll.hidden = false;
-			}
+			block.querySelector(".comments-all").hidden = false;
 
 			return;
 		}
@@ -374,11 +409,12 @@
 
 			var typing = false;
 
-			Array.prototype.forEach.call(chatList.querySelectorAll(".replyform.open input"), function (field) {
-				if (field.value !== "") {
-					typing = true;
-				}
-			});
+			var sayField = document.querySelector("#sayform .say-text");
+			var sayTo = document.querySelector("#sayform .reply-to");
+
+			if ((sayField && sayField.value !== "") || (sayTo && sayTo.value !== "")) {
+				typing = true;
+			}
 
 			if (typing) {
 				return;

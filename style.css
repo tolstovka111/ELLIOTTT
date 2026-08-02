@@ -304,7 +304,6 @@ a:hover {
 	height: 22px;
 	width: auto;
 	vertical-align: -5px;
-	border-radius: 5px;
 }
 
 .emojibar {
@@ -321,13 +320,11 @@ a:hover {
 	height: 32px;
 	width: auto;
 	cursor: pointer;
-	border: 1px solid transparent;
-	border-radius: 6px;
-	background-color: #ffffff;
+	opacity: 0.85;
 }
 
 .emojibar img:hover {
-	border-color: #800000;
+	opacity: 1;
 }
 
 .box-body.stats {
@@ -471,13 +468,13 @@ a:hover {
 }
 
 .notfound {
-	padding: 30px 12px 40px;
+	padding: 16px 12px 18px;
 	text-align: center;
 }
 
 .notfound img {
 	max-width: 96%;
-	max-height: 72vh;
+	max-height: 60vh;
 	height: auto;
 }
 
@@ -761,16 +758,10 @@ a:hover {
 	100% { color: #ff0000; }
 }
 
-.rgbline {
-	height: 4px;
-	background-image: linear-gradient(90deg, #ff0000, #ff9900, #ffee00, #00cc00, #00ccff, #3333ff, #cc00ff, #ff0000);
-	background-size: 200% 100%;
-	animation: rgbslide 7s linear infinite;
-}
-
-@keyframes rgbslide {
-	from { background-position: 0 0; }
-	to { background-position: 200% 0; }
+.boardline {
+	height: 2px;
+	margin: 8px 0 4px;
+	background-color: #b7c5d9;
 }
 
 .msg {
@@ -1141,6 +1132,10 @@ a:hover {
 	display: none;
 }
 
+.comment.folded.unfolded {
+	display: block;
+}
+
 .commentform {
 	display: flex;
 	flex-wrap: wrap;
@@ -1195,11 +1190,9 @@ a:hover {
 	justify-content: space-between;
 	align-items: baseline;
 	gap: 8px;
-	padding: 3px 6px;
+	padding: 4px 6px 2px;
 	font-size: 9pt;
 	line-height: 1.5;
-	background-color: #d6daf0;
-	border-bottom: 1px solid #b7c5d9;
 }
 
 .boardnav a,
@@ -1229,9 +1222,9 @@ a:hover {
 .boardclip {
 	display: block;
 	margin: 0 auto;
-	width: 300px;
+	width: 350px;
 	height: auto;
-	max-height: 160px;
+	max-height: 185px;
 	border: 1px solid #34345c;
 	background-color: #ffffff;
 }
@@ -1280,7 +1273,7 @@ a:hover {
 
 .adbanner img {
 	display: inline-block;
-	max-width: 468px;
+	max-width: 540px;
 	width: auto;
 	height: auto;
 	border: 1px solid #34345c;
@@ -1428,14 +1421,16 @@ a:hover {
 }
 
 html:has(body.blue) {
-	background-color: #eef2ff;
+	background-color: #ffffff;
 }
 
 body.blue {
 	min-height: 100vh;
 	box-sizing: border-box;
-	background-color: #eef2ff;
-	background-image: none;
+	background-color: #ffffff;
+	background-image: linear-gradient(to bottom, #b8c4e8 0%, #d6dcf4 30%, #eef2ff 62%, #ffffff 100%);
+	background-repeat: no-repeat;
+	background-size: 100% 330px;
 	color: #000000;
 }
 
@@ -1599,4 +1594,99 @@ body.blue .notfound-fallback {
 	.post-side {
 		max-width: 100%;
 	}
+}
+
+.quotelink {
+	font-size: 9.5pt;
+	line-height: 1.5;
+}
+
+.quotelink a,
+.quotelink a:visited {
+	color: #789922;
+	text-decoration: underline;
+}
+
+.quotelink a:hover {
+	color: #dd0000;
+}
+
+.reply-note {
+	font-size: 9pt;
+	color: #34345c;
+	white-space: nowrap;
+}
+
+.reply-note[hidden] {
+	display: none;
+}
+
+.reply-clear {
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.reply-clear:hover {
+	color: #dd0000;
+}
+
+.emojiform {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	padding-top: 6px;
+}
+
+.emojiform input[type="text"] {
+	width: 170px;
+	box-sizing: border-box;
+	border: 1px solid #aaaacc;
+	background-color: #ffffff;
+	color: #000000;
+	font-family: inherit;
+	font-size: 10pt;
+	padding: 4px 6px;
+}
+
+.emojilist {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	border-top: 1px solid #b7c5d9;
+}
+
+.emojicard {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	width: 92px;
+	padding: 6px 2px;
+	text-align: center;
+}
+
+.emojicard img {
+	height: 32px;
+	width: auto;
+}
+
+.emojicode {
+	font-size: 8pt;
+	word-break: break-all;
+}
+
+.emojicard button {
+	padding: 0;
+	border: 0;
+	background: none;
+	font-family: inherit;
+	font-size: 8pt;
+	color: #34345c;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.emojicard button:hover {
+	color: #dd0000;
 }

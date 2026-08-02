@@ -23,6 +23,7 @@ unset($_SESSION['flash'], $_SESSION['form_errors']);
 $posts = all_posts();
 $emoji = emoji_map();
 $adminName = admin_name();
+$adminColour = admin_color();
 $now = time();
 
 $checks = [
@@ -41,7 +42,7 @@ $broken = in_array(false, $checks, true);
 <meta name="robots" content="noindex, nofollow">
 <title>Admin Tools - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=9">
+<link rel="stylesheet" href="/style.css?v=10">
 </head>
 <body class="blue">
 
@@ -87,6 +88,8 @@ $broken = in_array(false, $checks, true);
 			<input type="hidden" name="csrf" value="<?= e($csrf) ?>">
 			<input type="hidden" name="action" value="create">
 
+			<div class="box-body notice">A post needs at least one picture or video. Text on its own cannot be published.</div>
+
 <?php for ($i = 0; $i < MAX_IMAGES; $i++): ?>
 			<div class="formrow">
 				<div class="formlabel">Image or MP4 <?= $i + 1 ?></div>
@@ -112,20 +115,6 @@ $broken = in_array(false, $checks, true);
 			</div>
 
 			<div class="formrow">
-				<div class="formlabel">Background</div>
-				<div class="formfield">
-					<div class="bgpicker">
-<?php foreach (post_backgrounds() as $background): ?>
-						<label class="bgoption bg-<?= e($background) ?>">
-							<input type="radio" name="bg" value="<?= e($background) ?>"<?= $background === 'default' ? ' checked' : '' ?>>
-							<span><?= e(ucfirst($background)) ?></span>
-						</label>
-<?php endforeach; ?>
-					</div>
-				</div>
-			</div>
-
-			<div class="formrow">
 				<div class="formlabel"></div>
 				<div class="formfield"><button type="submit">Post</button></div>
 			</div>
@@ -135,7 +124,7 @@ $broken = in_array(false, $checks, true);
 	<div class="box">
 		<div class="box-title">Admin nickname</div>
 		<div class="box-body">
-			<p>This is the name your posts, comments and chat messages are signed with. Up to <?= MAX_NAME ?> characters. It always shows in yellow; everyone else is green.</p>
+			<p>This is the name your posts, comments and chat messages are signed with, up to <?= MAX_NAME ?> characters. Pick whether it stands out in yellow or blends in with the green of everybody else.</p>
 			<form method="post" action="/admin.php" class="tagform" id="tagform">
 				<input type="hidden" name="csrf" value="<?= e($csrf) ?>">
 				<input type="hidden" name="action" value="nickname">
@@ -148,9 +137,17 @@ $broken = in_array(false, $checks, true);
 				</div>
 
 				<div class="formrow">
+					<div class="formlabel">Colour</div>
+					<div class="formfield">
+						<label class="adminswitch"><input type="radio" name="colour" value="yellow" id="tag-yellow"<?= $adminColour === 'yellow' ? ' checked' : '' ?>><span>Yellow (admin)</span></label>
+						<label class="adminswitch"><input type="radio" name="colour" value="green" id="tag-green"<?= $adminColour === 'green' ? ' checked' : '' ?>><span>Green (like everyone)</span></label>
+					</div>
+				</div>
+
+				<div class="formrow">
 					<div class="formlabel">Preview</div>
 					<div class="formfield">
-						<span class="msg-name admin" id="tag-preview"><?= e($adminName) ?></span>
+						<span class="msg-name<?= $adminColour === 'yellow' ? ' admin' : '' ?>" id="tag-preview"><?= e($adminName) ?></span>
 					</div>
 				</div>
 
@@ -160,6 +157,36 @@ $broken = in_array(false, $checks, true);
 				</div>
 			</form>
 		</div>
+	</div>
+
+	<div class="box">
+		<div class="box-title">Emoji</div>
+		<div class="box-body">
+			<p>The file name is the shortcode: <code>pepecry.png</code> becomes <code>:pepecry:</code>. PNG, GIF, WEBP or JPG up to 2 MB.</p>
+			<form method="post" action="/admin.php" enctype="multipart/form-data" class="emojiform">
+				<input type="hidden" name="csrf" value="<?= e($csrf) ?>">
+				<input type="hidden" name="action" value="emoji">
+				<input type="file" name="emoji" accept="image/png,image/gif,image/webp,image/jpeg" required>
+				<input type="text" name="code" maxlength="32" placeholder="name (optional)">
+				<button type="submit">Add emoji</button>
+			</form>
+		</div>
+<?php if ($emoji !== []): ?>
+		<div class="box-body emojilist">
+<?php foreach ($emoji as $name => $src): ?>
+			<div class="emojicard">
+				<img src="<?= e($src) ?>" alt=":<?= e($name) ?>:">
+				<span class="emojicode">:<?= e($name) ?>:</span>
+				<form method="post" action="/admin.php">
+					<input type="hidden" name="csrf" value="<?= e($csrf) ?>">
+					<input type="hidden" name="action" value="unemoji">
+					<input type="hidden" name="code" value="<?= e($name) ?>">
+					<button type="submit">remove</button>
+				</form>
+			</div>
+<?php endforeach; ?>
+		</div>
+<?php endif; ?>
 	</div>
 
 	<form method="post" action="/admin.php" id="logout-form">
@@ -187,7 +214,7 @@ $broken = in_array(false, $checks, true);
 			</div>
 <?php endif; ?>
 			<p><?= render_post_text((string) $post['text']) ?></p>
-			<div class="date"><?= e(relative_age($now - (int) $post['created'])) ?> &middot; background: <?= e((string) ($post['bg'] ?? 'default')) ?></div>
+			<div class="date"><?= e(relative_age($now - (int) $post['created'])) ?><?= (int) ($post['no'] ?? 0) > 0 ? ' &middot; No.' . (int) $post['no'] : '' ?></div>
 			<form method="post" action="/admin.php">
 				<input type="hidden" name="csrf" value="<?= e($csrf) ?>">
 				<input type="hidden" name="action" value="delete">
@@ -215,6 +242,6 @@ $broken = in_array(false, $checks, true);
 
 </div>
 
-<script src="/script.js?v=9"></script>
+<script src="/script.js?v=10"></script>
 </body>
 </html>

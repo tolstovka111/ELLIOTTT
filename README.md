@@ -109,12 +109,11 @@ form, and a 15 minute lockout after five wrong logins.
 Posts are written in **Admin Tools**.
 
 - Up to **3 files** per post, each either a picture (JPG, PNG, GIF, WEBP, 5 MB)
-  or an **MP4** video (15 MB).
+  or an **MP4** video (15 MB). **At least one is required** — text on its own
+  cannot be published, a picture on its own can.
 - A picture can carry a link; it then shows a semi-transparent **Click** badge in
   its bottom left corner.
 - Text up to 1000 characters, with `:emoji:` shortcodes.
-- **Background** per post: Default, Dark, Coffee or Green. The text colour
-  follows the background so it never blends in.
 
 The front page shows the newest posts as a grid of up to **8 previews** — the
 first attached picture and the text cut to 110 characters with `...`, no dates.
@@ -125,7 +124,7 @@ their pictures, videos, text and date.
 ### The /blog/ header
 
 The page opens with a random banner from `assets/banners/` (one of four) and the
-board title `/n/ - posts by <admin nickname>` under it, then a rule, a
+board title `/n/ - posts by nysha4real` under it, then a rule, a
 **[Go to the posts]** link that scrolls smoothly down to the first post, and a
 random clickable banner from `assets/adbanners/`. The page answers on both
 `/blog/` and `/n/`.
@@ -151,19 +150,17 @@ counter and no toggle — the post simply stands on its own.
 
 ### Comments
 
-Comments start **folded**: a post with comments shows only a **Show comments (N)**
-link, and one without shows just the comment box.
-
-- **Show comments** opens the **2 newest**; with more than two, **Show all N
-  comments** reveals the rest, and **Hide comments** folds them back. Each post
-  is toggled on its own.
+The **3 newest** comments are always in view. From the fourth on, **Show more
+comments** opens the rest and **Hide more comments** folds them back to three;
+with three or fewer there is no button at all. A post with no comments shows
+just the box.
 - A comment is a name (empty means `Anonymous`), text and one optional
   attachment — **PNG, JPG or GIF up to 3 MB**, no video. There is no cooldown.
   The header carries the name and the local-time stamp, and an attachment gets
   the same **File:** line as in the chat. Comments are not numbered.
-- **Answer** appears under other people's comments only; you cannot answer your
-  own, which is checked by the same salted address hash as everywhere else.
-- Anyone can delete their own comment or answer, the admin can delete any.
+- **[reply]** does not nest anything: the answer is posted as an ordinary
+  comment that opens with a green **>>N** pointing back at what it answers.
+- Anyone can delete their own comment, the admin can delete any.
 - The signed-in admin gets the name field prefilled with the admin nickname;
   leaving it posts in yellow, changing it posts under that plain name instead.
 
@@ -216,15 +213,19 @@ File: photo.jpg (162 KB, 954x954)
   or a reply is being typed.
 - The newest 300 messages are kept; older ones drop off with their files.
 
-## Names and flags
+## Names, numbers and flags
 
-Every name is **green**; the admin's is **yellow**. There are no tags or badges.
+Every name is **green**. The admin picks in **Admin Tools → Admin nickname**
+whether theirs stands out in **yellow** or blends in with the green of everyone
+else, and sets the name itself — up to 32 characters, `nysha4real` by default,
+saved in `api/data/adminname.json`. Nobody else can post under it: typed into a
+name field it falls back to `Anonymous`.
 
-**Admin Tools → Admin nickname** sets the name the admin signs posts, comments
-and chat messages with — up to 32 characters, `nysha4real` by default, saved in
-`api/data/adminname.json` and applied everywhere at once, including the board
-title. Nobody else can post under it: typed into a name field it falls back to
-`Anonymous`.
+Every message, post and comment on the site draws its **No.** from one counter
+in `api/data/seq.json`, so a chat message, a blog post and a comment under it
+carry 1, 2 and 3 in the order they were written. The numbers are what **>>N**
+quotes point at. The first page load after the update renumbers everything that
+was already there and unnests the old replies.
 
 A **country flag** sits between the name and the date on posts and comments. The
 country comes from the `CF-IPCountry` header behind Cloudflare, otherwise from a
@@ -244,8 +245,10 @@ reference — `#EEF2FF` behind the page, `#D6DAF0` blocks, `#9988EE` title bars,
 The emoji bar under the text field inserts a shortcode such as `:konatathink:`;
 on the page it turns into the picture. It works in blog posts and in chat.
 
-To add or remove emoji, drop PNG, GIF or WEBP files into `assets/emoji/` — the
-file name is the shortcode, so `konatacry.png` becomes `:konatacry:`.
+**Admin Tools → Emoji** adds and removes them without touching the server: pick
+a PNG, GIF, WEBP or JPG up to 2 MB and give it a name, or leave the name empty
+to use the file name. Dropping files straight into `assets/emoji/` still works —
+the file name is the shortcode, so `konatacry.png` becomes `:konatacry:`.
 
 ## Counters
 
