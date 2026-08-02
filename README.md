@@ -9,7 +9,7 @@ a public chat.
 | --- | --- |
 | `index.php` | Front page: intro, Boards, Blog, Stats, footer |
 | `chat.php` | `/c/` — the public chat |
-| `thread.php` | `/thr/` — every blog post in full, with comments |
+|  `blog.php` | `/blog/` — every blog post in full, with comments |
 | `admintools.php` | Admin only: the blog editor |
 | `admin.php` | Setup, sign in, and the handler for publish / delete / log out |
 | `404.php` | Not-found page, shows a random picture from `assets/404/` |
@@ -24,8 +24,9 @@ a public chat.
 | `api/online.php` | Marks the visitor present and returns the current online count |
 | `assets/emoji/` | Emoji pack |
 | `assets/404/` | Pictures the 404 page picks from |
-| `assets/banners/` | Banners the /thr/ header picks from |
-| `assets/videos/` | Looping clips the /thr/ header picks from |
+| `assets/banners/` | Banners the /blog/ header picks from |
+| `assets/adbanners/` | Clickable banners under the /blog/ header |
+| `assets/videos/` | Looping clips |
 | `assets/blog/`, `assets/chat/`, `assets/comments/` | Uploaded files |
 
 Requirements: Apache with `mod_rewrite` and PHP 7.4+, write access to `api/`,
@@ -64,11 +65,12 @@ sudo chmod -R 755 /var/www/html/api /var/www/html/assets
 | `/a/` `/g/` | anime, game characters |
 | `/b/` | random pictures |
 | `/c/` | chat |
-| `/thr/` | all blog posts |
+| `/blog/` | all blog posts |
 | `/faq` `/rules` | FAQ, rules |
 
 Everything else falls through to the styled 404 page. Drop your own pictures into
-`assets/404/` — the page shows a random one on every visit.
+`assets/404/` — the page shows a random one on every visit. Clicking the **4real
+logo** in the header of any page also leads there.
 
 ## First run
 
@@ -112,27 +114,35 @@ Posts are written in **Admin Tools**.
 
 The front page shows the newest posts as a grid of up to **8 previews** — the
 first attached picture and the text cut to 110 characters with `...`, no dates.
-A preview leads to the post on `/thr/`. Previews drop off the front page after
-**2 days**; the posts themselves stay on `/thr/` forever, newest first, with all
+A preview leads to the post on `/blog/`. Previews drop off the front page after
+**2 days**; the posts themselves stay on `/blog/` forever, newest first, with all
 their pictures, videos, text and date.
 
-### The /thr/ header
+### The /blog/ header
 
-The page opens with a random banner from `assets/banners/`, the board title
-`/thr/ - Blog` under it and a random looping clip from `assets/videos/` under
-that. Drop PNG, JPG, GIF or WEBP files into the first folder and MP4 or WEBM
-into the second — the page picks one of each on every visit. With a folder
-empty its slot is simply skipped.
+The page opens with a random banner from `assets/banners/` (one of four) and the
+board title `/blog/ - Nysh4real Blog` under it, then a rule, a
+**[Go to the posts]** link that scrolls smoothly down to the first post, and a
+random clickable banner from `assets/adbanners/`.
 
-Posts sit like 4chan threads: the pictures on the left with the **Comments (N)**
-button under them, the text and the date to the right.
+Drop PNG, JPG, GIF or WEBP files into `assets/banners/` to add header banners.
+
+An ad banner links to the board named by the part of its file name **before the
+first dash**: `c-chat.gif` goes to `/c/`, `a-anime.gif` to `/a/`,
+`b-random.gif` to `/b/`. Valid boards are `o m a g b c`; anything else falls
+back to `/home`. With either folder empty its slot is simply skipped.
+
+Posts run the full width: the picture on the left, `nysha4real` in green with
+the admin tag next to it, the date on the right, the text below and the file
+size and dimensions above the picture. Posts are not numbered.
 
 ### Comments
 
-Every post on `/thr/` has comments, folded behind a **Comments (N)** line.
+Every post on `/blog/` shows the **2 newest** comments straight away.
 
-- Opening shows the **5 newest**; with more than five a **Load all N comments**
-  button reveals the rest, and **Hide comments** folds everything back.
+- With more than two, **Show all N comments** reveals the rest. **Hide comments**
+  folds that post's comments and its comment form away behind a **Show comments**
+  link — each post is toggled on its own.
 - A comment is a name (empty means `Anonymous`), text and one optional
   attachment — **PNG, JPG or GIF up to 3 MB**, no video. There is no cooldown.
   The header carries the name and the local-time stamp, and an attachment gets
@@ -167,11 +177,26 @@ File: photo.jpg (162 KB, 954x954)
   becomes a countdown whose last five seconds shimmer through the rainbow. The
   signed-in admin has no cooldown.
 - Anyone can delete their own message or reply — ownership is checked by a salted
-  hash of the address, never the raw address. The admin can delete anything and
-  always posts as **nysha4real — Admin**.
+  hash of the address, never the raw address. The admin can delete anything.
+- The signed-in admin gets a **Post as admin** checkbox, ticked by default, which
+  posts as `nysha4real` with the admin tag. Unticking it frees the name field and
+  posts as an ordinary user with no tag — still with no cooldown, and without
+  logging out. `nysha4real` typed into that field falls back to `Anonymous`.
 - The page refreshes the list by itself every 9 seconds, unless a picture is open
   or a reply is being typed.
 - The newest 300 messages are kept; older ones drop off with their files.
+
+## The admin tag
+
+**Admin Tools → Admin tag** sets the label that sits next to `nysha4real` in the
+chat and on the blog.
+
+- Text up to **15 characters**, `Admin` by default.
+- **Rainbow (animated)** keeps the shimmering default. Unticking it opens a
+  colour swatch and a hex field — either one drives the other, and both accept
+  any colour. `rgb(r, g, b)` is accepted too and stored as hex.
+- The preview under the fields updates as you type; the choice is saved in
+  `api/data/admintag.json` and applies everywhere at once.
 
 ## Colours
 

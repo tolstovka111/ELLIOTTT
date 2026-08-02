@@ -86,9 +86,14 @@ if ($action === 'say' || $action === 'reply') {
         $errors[] = 'One message per minute. Wait ' . $left . ' s.';
     } else {
         $text = mb_substr(trim((string) ($_POST['text'] ?? '')), 0, MAX_CHAT_TEXT);
-        $name = $authed ? 'nysha4real' : clean_name((string) ($_POST['name'] ?? ''));
+        $asAdmin = $authed && (string) ($_POST['asadmin'] ?? '') === '1';
+        $name = $asAdmin ? 'nysha4real' : clean_name((string) ($_POST['name'] ?? ''));
 
         if ($name === '') {
+            $name = 'Anonymous';
+        }
+
+        if (!$asAdmin && strcasecmp($name, 'nysha4real') === 0) {
             $name = 'Anonymous';
         }
 
@@ -113,7 +118,7 @@ if ($action === 'say' || $action === 'reply') {
                 'name' => $name,
                 'text' => $text,
                 'ip' => visitor_hash(),
-                'admin' => $authed,
+                'admin' => $asAdmin,
             ];
 
             if ($action === 'say') {
@@ -222,7 +227,7 @@ function poster(array $item): string
     $line = '<span class="msg-name">' . e((string) $item['name']) . '</span>';
 
     if (!empty($item['admin'])) {
-        $line .= ' &mdash; <span class="msg-admin">Admin</span>';
+        $line .= ' &mdash; ' . admin_tag_html();
     }
 
     return $line . ' ' . stamp($item) . ' <span class="msg-no">No.' . (int) ($item['no'] ?? 0) . '</span>';
@@ -273,10 +278,9 @@ ob_start();
 				<input type="hidden" name="action" value="reply">
 				<input type="hidden" name="id" value="<?= e((string) $message['id']) ?>">
 <?php if ($authed): ?>
-				<span class="replyname">nysha4real &mdash; <span class="msg-admin">Admin</span></span>
-<?php else: ?>
-				<input type="text" name="name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous">
+				<label class="adminswitch"><input type="checkbox" name="asadmin" value="1" checked><span>Post as admin</span></label>
 <?php endif; ?>
+				<input type="text" name="name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous"<?= $authed ? ' hidden' : '' ?>>
 				<input type="text" name="text" maxlength="<?= MAX_CHAT_TEXT ?>" placeholder="Write a reply&hellip;" required>
 				<button type="submit">Reply</button>
 			</form>
@@ -317,12 +321,12 @@ if ($fragment) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/c/ - Chat - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=6">
+<link rel="stylesheet" href="/style.css?v=7">
 </head>
 <body class="blue">
 
 <div class="logo">
-	<a href="/home"><img src="/assets/4real-logo.png" alt="4real"></a>
+	<a href="/404.php"><img src="/assets/4real-logo.png" alt="4real"></a>
 </div>
 
 <div class="page">
@@ -346,10 +350,12 @@ if ($fragment) {
 
 			<div class="say-fields">
 <?php if ($authed): ?>
-				<div class="say-name-fixed">nysha4real &mdash; <span class="msg-admin">Admin</span></div>
-<?php else: ?>
-				<input type="text" name="name" class="say-name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous" autocomplete="off">
+				<div class="say-admin">
+					<label class="adminswitch"><input type="checkbox" name="asadmin" value="1" checked><span>Post as admin</span></label>
+					<span class="say-name-fixed">nysha4real &mdash; <?= admin_tag_html() ?></span>
+				</div>
 <?php endif; ?>
+				<input type="text" name="name" class="say-name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous" autocomplete="off"<?= $authed ? ' hidden' : '' ?>>
 				<div class="say-line">
 					<input type="text" name="text" class="say-text" maxlength="<?= MAX_CHAT_TEXT ?>" placeholder="Type text here" autocomplete="off">
 
@@ -394,6 +400,6 @@ if ($fragment) {
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=6"></script>
+<script src="/script.js?v=7"></script>
 </body>
 </html>

@@ -24,12 +24,12 @@ if ($authed) {
 <title>4real</title>
 <meta name="description" content="4real is a link-in-bio info-hub with every official profile in one place.">
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=6">
+<link rel="stylesheet" href="/style.css?v=7">
 </head>
 <body>
 
 <div class="logo">
-	<a href="/home"><img src="/assets/4real-logo.png" alt="4real"></a>
+	<a href="/404.php"><img src="/assets/4real-logo.png" alt="4real"></a>
 </div>
 
 <div class="page">
@@ -96,7 +96,7 @@ if ($authed) {
 	<div class="box" id="blog">
 		<div class="box-title">
 			Blog
-			<span class="corner"><a href="/thr/">all posts &#8250;</a></span>
+			<span class="corner"><a href="/blog/">all posts &#8250;</a></span>
 		</div>
 <?php if ($posts === []): ?>
 		<div class="empty">No Posts in my Blog yet.</div>
@@ -104,7 +104,7 @@ if ($authed) {
 		<div class="threads">
 <?php foreach ($posts as $post): ?>
 <?php $thumb = post_thumb($post); ?>
-			<a class="thread" href="/thr/#p<?= e((string) $post['id']) ?>">
+			<a class="thread" href="/blog/#p<?= e((string) $post['id']) ?>">
 <?php if ($thumb !== ''): ?>
 				<span class="thread-thumb"><img src="<?= e($thumb) ?>" alt=""></span>
 <?php endif; ?>
@@ -143,6 +143,6 @@ if ($authed) {
 
 </div>
 
-<script src="/script.js?v=6"></script>
+<script src="/script.js?v=7"></script>
 </body>
 </html>

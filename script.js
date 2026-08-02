@@ -119,6 +119,82 @@
 		});
 	}
 
+	Array.prototype.forEach.call(document.querySelectorAll(".adminswitch input[type=checkbox]"), function (box) {
+		var form = box.closest ? box.closest("form") : null;
+
+		if (!form || box.name !== "asadmin") {
+			return;
+		}
+
+		var field = form.querySelector('input[name="name"]');
+		var fixed = form.querySelector(".say-name-fixed");
+
+		var sync = function () {
+			if (field) {
+				field.hidden = box.checked;
+			}
+
+			if (fixed) {
+				fixed.hidden = !box.checked;
+			}
+		};
+
+		box.addEventListener("change", sync);
+		sync();
+	});
+
+	var tagText = document.getElementById("tag-text");
+	var tagColor = document.getElementById("tag-color");
+	var tagHex = document.getElementById("tag-color-hex");
+	var tagRainbow = document.getElementById("tag-rainbow");
+	var tagPreview = document.getElementById("tag-preview");
+	var tagColorRow = document.getElementById("tag-color-row");
+
+	if (tagText && tagColor && tagHex && tagRainbow && tagPreview && tagColorRow) {
+		var paintTag = function () {
+			tagPreview.textContent = tagText.value || "Admin";
+			tagColorRow.hidden = tagRainbow.checked;
+
+			if (tagRainbow.checked) {
+				tagPreview.style.color = "";
+				tagPreview.style.animation = "";
+			} else {
+				tagPreview.style.color = tagColor.value;
+				tagPreview.style.animation = "none";
+			}
+		};
+
+		tagText.addEventListener("input", paintTag);
+		tagRainbow.addEventListener("change", paintTag);
+		tagColor.addEventListener("input", function () {
+			tagHex.value = tagColor.value;
+			paintTag();
+		});
+		tagHex.addEventListener("input", function () {
+			if (/^#?[0-9a-fA-F]{6}$/.test(tagHex.value.trim())) {
+				tagColor.value = tagHex.value.trim().replace(/^#?/, "#");
+				paintTag();
+			}
+		});
+
+		paintTag();
+	}
+
+	var goPosts = document.querySelector(".goposts");
+
+	if (goPosts) {
+		goPosts.addEventListener("click", function (event) {
+			var posts = document.getElementById("posts");
+
+			if (!posts) {
+				return;
+			}
+
+			event.preventDefault();
+			posts.scrollIntoView({ behavior: "smooth", block: "start" });
+		});
+	}
+
 	var logoutLink = document.getElementById("logout-link");
 	var logoutForm = document.getElementById("logout-form");
 
@@ -255,42 +331,41 @@
 			return;
 		}
 
-		if (target.classList.contains("comments-toggle")) {
-			var owner = document.getElementById("c" + target.getAttribute("data-comments"));
-
-			if (owner) {
-				owner.querySelector(".comments-body").hidden = false;
-				target.parentNode.hidden = true;
-			}
-
-			return;
-		}
-
 		var block = target.closest ? target.closest(".comments") : null;
 
 		if (block && target.classList.contains("comments-all")) {
 			Array.prototype.forEach.call(block.querySelectorAll(".comment.folded"), function (node) {
 				node.classList.remove("folded");
 			});
-			var more = block.querySelector(".comments-more");
-
-			if (more) {
-				more.hidden = true;
-			}
+			target.hidden = true;
 
 			return;
 		}
 
 		if (block && target.classList.contains("comments-hide")) {
 			block.querySelector(".comments-body").hidden = true;
-			var post = block.closest(".thread-post");
+			target.hidden = true;
 
-			if (post) {
-				var bar = post.querySelector(".post-side .comments-bar");
+			var all = block.querySelector(".comments-all");
 
-				if (bar) {
-					bar.hidden = false;
-				}
+			if (all) {
+				all.hidden = true;
+			}
+
+			block.querySelector(".comments-show").hidden = false;
+
+			return;
+		}
+
+		if (block && target.classList.contains("comments-show")) {
+			block.querySelector(".comments-body").hidden = false;
+			target.hidden = true;
+			block.querySelector(".comments-hide").hidden = false;
+
+			var hiddenAll = block.querySelector(".comments-all");
+
+			if (hiddenAll && block.querySelector(".comment.folded")) {
+				hiddenAll.hidden = false;
 			}
 
 			return;

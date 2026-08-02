@@ -1145,7 +1145,7 @@ a:hover {
 
 .boardhead {
 	text-align: center;
-	padding: 10px 0 6px;
+	padding: 10px 0 0;
 }
 
 .boardbanner,
@@ -1160,11 +1160,53 @@ a:hover {
 }
 
 .boardtitle {
-	margin: 8px 0;
+	margin: 6px 0 10px;
 	font-family: "4chanFont", Tahoma, Verdana, Arial, sans-serif;
-	font-size: 20pt;
+	font-size: 22pt;
 	font-weight: bold;
 	color: #af0a0f;
+}
+
+.boardrule {
+	margin: 0 0 10px;
+	border: 0;
+	border-top: 1px solid #b7c5d9;
+	height: 0;
+}
+
+.boardrule.thin {
+	width: 60%;
+	margin: 10px auto;
+}
+
+.boardgo {
+	text-align: center;
+	font-family: "4chanFont", Tahoma, Verdana, Arial, sans-serif;
+	font-size: 15pt;
+	font-weight: bold;
+}
+
+.boardgo a,
+.boardgo a:visited {
+	color: #34345c;
+	text-decoration: none;
+}
+
+.boardgo a:hover {
+	color: #dd0000;
+}
+
+.adbanner {
+	text-align: center;
+	padding: 4px 0 10px;
+}
+
+.adbanner img {
+	display: inline-block;
+	max-width: 468px;
+	width: auto;
+	height: auto;
+	border: 1px solid #34345c;
 }
 
 .board {
@@ -1172,34 +1214,128 @@ a:hover {
 }
 
 .thread-post {
-	padding: 8px 0 12px;
+	padding: 6px 0 14px;
 	border-bottom: 1px solid #b7c5d9;
 }
 
 .thread-post .post {
-	display: flex;
-	align-items: flex-start;
-	gap: 14px;
 	padding: 8px 10px;
+	overflow: hidden;
 }
 
-.post-side {
-	flex: 0 0 auto;
-	max-width: 260px;
+.post-file {
+	font-size: 9pt;
+	margin-bottom: 3px;
+	word-wrap: break-word;
 }
 
-.post-main {
-	flex: 1 1 auto;
-	min-width: 0;
+.post-file a {
+	color: #34345c;
 }
 
-.post-side .post-images {
+.post-media {
+	float: left;
+	display: flex;
 	flex-direction: column;
-	margin-bottom: 6px;
+	gap: 8px;
+	margin: 0 14px 6px 0;
 }
 
-.post-side .comments-bar {
-	padding: 2px 0 0;
+.post-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	line-height: 1.6;
+}
+
+.post-poster {
+	font-weight: bold;
+}
+
+.post-date {
+	white-space: nowrap;
+}
+
+.thread-post .post-text {
+	margin: 4px 0 0;
+}
+
+.thread-post .comments {
+	clear: both;
+	padding: 0 10px 0;
+}
+
+.comments-bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 14px;
+	padding: 6px 0 0;
+}
+
+.comments-bar [hidden] {
+	display: none;
+}
+
+.adminswitch {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 9.5pt;
+	cursor: pointer;
+	user-select: none;
+}
+
+.adminswitch input {
+	margin: 0;
+	cursor: pointer;
+}
+
+.say-admin {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.say-name-fixed[hidden] {
+	display: none;
+}
+
+.tagcolor {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 6px;
+}
+
+.tagcolor[hidden] {
+	display: none;
+}
+
+.tagcolor input[type="color"] {
+	width: 46px;
+	height: 28px;
+	padding: 0;
+	border: 1px solid #aaaacc;
+	background: none;
+	cursor: pointer;
+}
+
+.tagcolor input[type="text"] {
+	width: 110px;
+	box-sizing: border-box;
+	border: 1px solid #aaaacc;
+	background-color: #ffffff;
+	color: #000000;
+	font-family: inherit;
+	font-size: 10pt;
+	padding: 4px 6px;
+}
+
+.tagform .formrow {
+	margin-bottom: 8px;
 }
 
 html:has(body.blue) {

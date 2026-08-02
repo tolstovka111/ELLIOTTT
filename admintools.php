@@ -22,6 +22,7 @@ unset($_SESSION['flash'], $_SESSION['form_errors']);
 
 $posts = live_posts();
 $emoji = emoji_map();
+$tag = admin_tag();
 $now = time();
 
 $checks = [
@@ -40,12 +41,12 @@ $broken = in_array(false, $checks, true);
 <meta name="robots" content="noindex, nofollow">
 <title>Admin Tools - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=6">
+<link rel="stylesheet" href="/style.css?v=7">
 </head>
 <body class="blue">
 
 <div class="logo">
-	<a href="/home"><img src="/assets/4real-logo.png" alt="4real"></a>
+	<a href="/404.php"><img src="/assets/4real-logo.png" alt="4real"></a>
 </div>
 
 <div class="page">
@@ -131,6 +132,50 @@ $broken = in_array(false, $checks, true);
 		</form>
 	</div>
 
+	<div class="box">
+		<div class="box-title">Admin tag</div>
+		<div class="box-body">
+			<p>This is the label next to your name in the chat and on the blog. Up to <?= MAX_ADMIN_TAG ?> characters.</p>
+			<form method="post" action="/admin.php" class="tagform" id="tagform">
+				<input type="hidden" name="csrf" value="<?= e($csrf) ?>">
+				<input type="hidden" name="action" value="tag">
+
+				<div class="formrow">
+					<div class="formlabel">Text</div>
+					<div class="formfield">
+						<input type="text" name="tag" id="tag-text" maxlength="<?= MAX_ADMIN_TAG ?>" value="<?= e((string) $tag['text']) ?>" required>
+					</div>
+				</div>
+
+				<div class="formrow">
+					<div class="formlabel">Colour</div>
+					<div class="formfield">
+						<label class="adminswitch">
+							<input type="checkbox" name="rainbow" id="tag-rainbow" value="1"<?= $tag['color'] === '' ? ' checked' : '' ?>>
+							<span>Rainbow (animated)</span>
+						</label>
+						<div class="tagcolor" id="tag-color-row">
+							<input type="color" name="color" id="tag-color" value="<?= e($tag['color'] === '' ? '#117743' : (string) $tag['color']) ?>">
+							<input type="text" id="tag-color-hex" maxlength="7" value="<?= e($tag['color'] === '' ? '#117743' : (string) $tag['color']) ?>" placeholder="#117743">
+						</div>
+					</div>
+				</div>
+
+				<div class="formrow">
+					<div class="formlabel">Preview</div>
+					<div class="formfield">
+						<span class="msg-name">nysha4real</span> &mdash; <span class="msg-admin" id="tag-preview"<?= $tag['color'] === '' ? '' : ' style="color: ' . e((string) $tag['color']) . '; animation: none;"' ?>><?= e((string) $tag['text']) ?></span>
+					</div>
+				</div>
+
+				<div class="formrow">
+					<div class="formlabel"></div>
+					<div class="formfield"><button type="submit">Save tag</button></div>
+				</div>
+			</form>
+		</div>
+	</div>
+
 	<form method="post" action="/admin.php" id="logout-form">
 		<input type="hidden" name="csrf" value="<?= e($csrf) ?>">
 		<input type="hidden" name="action" value="logout">
@@ -184,6 +229,6 @@ $broken = in_array(false, $checks, true);
 
 </div>
 
-<script src="/script.js?v=6"></script>
+<script src="/script.js?v=7"></script>
 </body>
 </html>

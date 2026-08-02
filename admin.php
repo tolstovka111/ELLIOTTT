@@ -307,7 +307,12 @@ if ($action === 'create' && $authed) {
 
         @chmod($dir . '/' . $name, 0644);
         $saved[] = $dir . '/' . $name;
-        $media[] = ['file' => $name, 'link' => $link, 'type' => $kind];
+        $media[] = [
+            'file' => $name,
+            'fname' => clean_filename((string) ($_FILES['image']['name'][$i] ?? '')),
+            'link' => $link,
+            'type' => $kind,
+        ];
     }
 
     if ($errors === [] && $text === '' && $media === []) {
@@ -342,6 +347,33 @@ if ($action === 'create' && $authed) {
     }
 
     flash('Posted.');
+    go('/admintools.php');
+}
+
+if ($action === 'tag' && $authed) {
+    $text = clean_admin_tag((string) ($_POST['tag'] ?? ''));
+    $rainbow = (string) ($_POST['rainbow'] ?? '') === '1';
+    $color = $rainbow ? '' : clean_hex_color((string) ($_POST['color'] ?? ''));
+
+    if ($text === '') {
+        $errors[] = 'The tag cannot be empty.';
+    }
+
+    if (!$rainbow && $color === '') {
+        $errors[] = 'Pick a colour, or switch the rainbow back on.';
+    }
+
+    if ($errors !== []) {
+        $_SESSION['form_errors'] = $errors;
+        go('/admintools.php');
+    }
+
+    if (!save_admin_tag($text, $color)) {
+        $_SESSION['form_errors'] = ['Could not write api/data/admintag.json. Check permissions.'];
+        go('/admintools.php');
+    }
+
+    flash('Tag saved.');
     go('/admintools.php');
 }
 
@@ -380,12 +412,12 @@ $suggestedKey = $config === null ? bin2hex(random_bytes(12)) : '';
 <meta name="robots" content="noindex, nofollow">
 <title>Admin - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=6">
+<link rel="stylesheet" href="/style.css?v=7">
 </head>
 <body class="blue">
 
 <div class="logo">
-	<a href="/home"><img src="/assets/4real-logo.png" alt="4real"></a>
+	<a href="/404.php"><img src="/assets/4real-logo.png" alt="4real"></a>
 </div>
 
 <div class="page">

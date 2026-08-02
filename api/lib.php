@@ -13,8 +13,10 @@ const CHAT_KEEP = 300;
 const FRONT_POSTS = 8;
 const PREVIEW_CHARS = 110;
 const COMMENTS_OPEN = 5;
+const BLOG_COMMENTS_OPEN = 2;
 const ONLINE_WINDOW = 180;
 const MAX_NAME = 32;
+const MAX_ADMIN_TAG = 15;
 const MAX_CHAT_TEXT = 600;
 const LOGIN_MAX_ATTEMPTS = 5;
 const LOGIN_LOCK_SECONDS = 900;
@@ -653,6 +655,172 @@ function online_count(bool $touch): int
     fclose($handle);
 
     return count($seen);
+}
+
+function admin_tag_path(): string
+{
+    $dir = data_dir();
+
+    return $dir === '' ? '' : $dir . '/admintag.json';
+}
+
+function admin_tag(): array
+{
+    $fallback = ['text' => 'Admin', 'color' => ''];
+    $path = admin_tag_path();
+
+    if ($path === '' || !is_file($path)) {
+        return $fallback;
+    }
+
+    $raw = @file_get_contents($path);
+    $data = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+
+    if (!is_array($data)) {
+        return $fallback;
+    }
+
+    $text = clean_admin_tag((string) ($data['text'] ?? ''));
+    $color = clean_hex_color((string) ($data['color'] ?? ''));
+
+    return [
+        'text' => $text === '' ? 'Admin' : $text,
+        'color' => $color,
+    ];
+}
+
+function save_admin_tag(string $text, string $color): bool
+{
+    $path = admin_tag_path();
+
+    if ($path === '') {
+        return false;
+    }
+
+    $body = (string) json_encode([
+        'text' => $text,
+        'color' => $color,
+    ]);
+
+    return @file_put_contents($path, $body, LOCK_EX) !== false;
+}
+
+function clean_admin_tag(string $text): string
+{
+    $text = trim(preg_replace('/\s+/u', ' ', $text) ?? '');
+    $text = str_replace(["\0", "\r", "\n"], '', $text);
+
+    return mb_substr($text, 0, MAX_ADMIN_TAG);
+}
+
+function clean_hex_color(string $color): string
+{
+    $color = trim($color);
+
+    if ($color === '') {
+        return '';
+    }
+
+    if (preg_match('/^#?([0-9a-fA-F]{6})$/', $color, $match) === 1) {
+        return '#' . strtolower($match[1]);
+    }
+
+    if (preg_match('/^#?([0-9a-fA-F]{3})$/', $color, $match) === 1) {
+        $short = strtolower($match[1]);
+
+        return '#' . $short[0] . $short[0] . $short[1] . $short[1] . $short[2] . $short[2];
+    }
+
+    if (preg_match('/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i', $color, $match) === 1) {
+        $parts = [];
+
+        for ($i = 1; $i <= 3; $i++) {
+            $value = (int) $match[$i];
+
+            if ($value < 0 || $value > 255) {
+                return '';
+            }
+
+            $parts[] = str_pad(dechex($value), 2, '0', STR_PAD_LEFT);
+        }
+
+        return '#' . implode('', $parts);
+    }
+
+    return '';
+}
+
+function admin_tag_html(): string
+{
+    $tag = admin_tag();
+    $color = (string) $tag['color'];
+    $style = $color === '' ? '' : ' style="color: ' . e($color) . '; animation: none;"';
+
+    return '<span class="msg-admin"' . $style . '>' . e((string) $tag['text']) . '</span>';
+}
+
+function ad_banners(): array
+{
+    $dir = project_root() . '/assets/adbanners';
+
+    if (!is_dir($dir)) {
+        return [];
+    }
+
+    $boards = ['o', 'm', 'a', 'g', 'b', 'c'];
+    $found = [];
+
+    foreach ((array) scandir($dir) as $file) {
+        if (!is_string($file) || $file === '' || $file[0] === '.') {
+            continue;
+        }
+
+        $extension = strtolower((string) pathinfo($file, PATHINFO_EXTENSION));
+
+        if (!in_array($extension, ['gif', 'png', 'jpg', 'jpeg', 'webp'], true)) {
+            continue;
+        }
+
+        $name = (string) pathinfo($file, PATHINFO_FILENAME);
+        $board = strtolower(explode('-', $name)[0]);
+
+        $found[] = [
+            'src' => '/assets/adbanners/' . $file,
+            'href' => in_array($board, $boards, true) ? '/' . $board . '/' : '/home',
+        ];
+    }
+
+    return $found;
+}
+
+function random_ad_banner(): array
+{
+    $banners = ad_banners();
+
+    if ($banners === []) {
+        return [];
+    }
+
+    return $banners[random_int(0, count($banners) - 1)];
+}
+
+function media_info(string $file, string $folder): array
+{
+    $name = basename($file);
+    $path = project_root() . '/assets/' . $folder . '/' . $name;
+
+    if ($name === '' || !is_file($path)) {
+        return [];
+    }
+
+    $size = (int) @filesize($path);
+    $info = @getimagesize($path);
+
+    return [
+        'size' => $size,
+        'w' => $info === false ? 0 : (int) $info[0],
+        'h' => $info === false ? 0 : (int) $info[1],
+    ];
 }
 
 function random_asset(string $folder, array $extensions): string

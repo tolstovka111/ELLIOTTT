@@ -82,7 +82,7 @@ function comment_head(array $item): string
     $line = '<span class="msg-name">' . e((string) $item['name']) . '</span>';
 
     if (!empty($item['admin'])) {
-        $line .= ' &mdash; <span class="msg-admin">Admin</span>';
+        $line .= ' &mdash; ' . admin_tag_html();
     }
 
     return $line . ' ' . comment_stamp($item);
@@ -113,6 +113,47 @@ function comment_drop_file(array $comment): void
     if ($dir !== '' && $file !== '' && is_file($dir . '/' . $file)) {
         @unlink($dir . '/' . $file);
     }
+}
+
+function post_file_line(array $post): string
+{
+    $parts = [];
+
+    foreach ((array) ($post['images'] ?? []) as $media) {
+        $file = basename((string) ($media['file'] ?? ''));
+
+        if ($file === '') {
+            continue;
+        }
+
+        $src = '/assets/blog/' . $file;
+        $label = (string) ($media['fname'] ?? '');
+        $label = $label === '' ? $file : $label;
+        $info = media_info($file, 'blog');
+        $meta = [];
+
+        if (($info['size'] ?? 0) > 0) {
+            $meta[] = format_size((int) $info['size']);
+        }
+
+        if (($info['w'] ?? 0) > 0 && ($info['h'] ?? 0) > 0) {
+            $meta[] = (int) $info['w'] . 'x' . (int) $info['h'];
+        }
+
+        $line = '<a href="' . e($src) . '" target="_blank" rel="noopener">' . e($label) . '</a>';
+
+        if ($meta !== []) {
+            $line .= ' (' . e(implode(', ', $meta)) . ')';
+        }
+
+        $parts[] = $line;
+    }
+
+    if ($parts === []) {
+        return '';
+    }
+
+    return '<div class="post-file">File: ' . implode(' &middot; ', $parts) . '</div>';
 }
 
 $action = (string) ($_POST['action'] ?? '');
@@ -198,7 +239,7 @@ if ($action === 'comment' || $action === 'answer') {
             if (!write_store($store)) {
                 $errors[] = 'Could not save the comment: the server cannot write to api/data. Check the folder permissions.';
             } else {
-                header('Location: /thr/#p' . preg_replace('/[^a-f0-9]/', '', $postId));
+                header('Location: /blog/#p' . preg_replace('/[^a-f0-9]/', '', $postId));
                 exit;
             }
         }
@@ -261,13 +302,13 @@ if ($action === 'uncomment') {
     }
 
     write_store($store);
-    header('Location: /thr/#p' . preg_replace('/[^a-f0-9]/', '', $postId));
+    header('Location: /blog/#p' . preg_replace('/[^a-f0-9]/', '', $postId));
     exit;
 }
 
 $posts = all_posts();
 $banner = random_asset('banners', ['png', 'jpg', 'jpeg', 'gif', 'webp']);
-$clip = random_asset('videos', ['mp4', 'webm']);
+$ad = random_ad_banner();
 $me = visitor_hash();
 $now = time();
 $token = public_token();
@@ -277,9 +318,9 @@ $token = public_token();
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>/thr/ - Blog - 4real</title>
+<title>/blog/ - Nysh4real Blog - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=6">
+<link rel="stylesheet" href="/style.css?v=7">
 </head>
 <body class="blue">
 
@@ -287,17 +328,28 @@ $token = public_token();
 
 	<div class="boardhead">
 <?php if ($banner !== ''): ?>
-		<a href="/home"><img class="boardbanner" src="<?= e($banner) ?>" alt="4real"></a>
+		<a href="/404.php"><img class="boardbanner" src="<?= e($banner) ?>" alt="4real"></a>
 <?php endif; ?>
-		<h1 class="boardtitle">/thr/ - Blog</h1>
-<?php if ($clip !== ''): ?>
-		<video class="boardclip" src="<?= e($clip) ?>" autoplay loop muted playsinline></video>
-<?php endif; ?>
+		<h1 class="boardtitle">/blog/ - Nysh4real Blog</h1>
 	</div>
+
+	<hr class="boardrule">
+
+	<div class="boardgo">[<a href="#posts" class="goposts">Go to the posts</a>]</div>
+
+	<hr class="boardrule thin">
+
+<?php if ($ad !== []): ?>
+	<div class="adbanner">
+		<a href="<?= e((string) $ad['href']) ?>"><img src="<?= e((string) $ad['src']) ?>" alt="banner"></a>
+	</div>
+
+	<hr class="boardrule">
+<?php endif; ?>
 
 	<div class="nav">[<a href="/home">Return to Home</a>]</div>
 
-	<div class="board">
+	<div class="board" id="posts">
 
 <?php if ($errors !== []): ?>
 		<div class="box-body error">
@@ -318,43 +370,39 @@ $background = in_array((string) ($post['bg'] ?? 'default'), post_backgrounds(), 
     : 'default';
 $comments = (array) ($post['comments'] ?? []);
 $total = count($comments);
-$recent = array_slice($comments, -COMMENTS_OPEN);
 ?>
 		<div class="thread-post" id="p<?= e((string) $post['id']) ?>">
 			<div class="post bg-<?= e($background) ?>">
-				<div class="post-side">
+<?= post_file_line($post) ?>
 <?php if (($post['images'] ?? []) !== []): ?>
-					<div class="post-images">
+				<div class="post-media">
 <?php foreach ((array) $post['images'] as $media): ?>
 <?php $src = '/assets/blog/' . basename((string) $media['file']); ?>
 <?php if ((string) ($media['type'] ?? 'image') === 'video'): ?>
-						<span class="post-image"><video src="<?= e($src) ?>" controls preload="metadata"></video></span>
+					<span class="post-image"><video src="<?= e($src) ?>" controls preload="metadata"></video></span>
 <?php elseif ((string) ($media['link'] ?? '') !== ''): ?>
-						<a class="post-image linked" href="<?= e((string) $media['link']) ?>" target="_blank" rel="noopener noreferrer"><img src="<?= e($src) ?>" alt=""><span class="click">Click</span></a>
+					<a class="post-image linked" href="<?= e((string) $media['link']) ?>" target="_blank" rel="noopener noreferrer"><img src="<?= e($src) ?>" alt=""><span class="click">Click</span></a>
 <?php else: ?>
-						<span class="post-image"><img src="<?= e($src) ?>" alt=""></span>
+					<span class="post-image"><img src="<?= e($src) ?>" alt="" data-full="<?= e($src) ?>" data-kind="image"></span>
 <?php endif; ?>
 <?php endforeach; ?>
-					</div>
-<?php endif; ?>
-					<div class="comments-bar">
-						<span class="comments-toggle" data-comments="<?= e((string) $post['id']) ?>">Comments (<?= $total ?>)</span>
-					</div>
 				</div>
-				<div class="post-main">
+<?php endif; ?>
+				<div class="post-head">
+					<span class="post-poster"><span class="msg-name">nysha4real</span> &mdash; <?= admin_tag_html() ?></span>
+					<span class="post-date msg-date" data-ts="<?= (int) $post['created'] ?>"><?= e(gmdate('m/d/y(D)H:i', (int) $post['created'])) ?></span>
+				</div>
 <?php if ((string) $post['text'] !== ''): ?>
-					<p class="post-text"><?= render_post_text((string) $post['text']) ?></p>
+				<div class="post-text"><?= render_post_text((string) $post['text']) ?></div>
 <?php endif; ?>
-					<div class="date"><?= e(chat_age($now - (int) $post['created'])) ?></div>
-				</div>
 			</div>
 
 			<div class="comments" id="c<?= e((string) $post['id']) ?>" data-total="<?= $total ?>">
-				<div class="comments-body" hidden>
+				<div class="comments-body">
 <?php foreach ($comments as $index => $comment): ?>
 <?php
 $mine = hash_equals((string) ($comment['ip'] ?? ''), $me);
-$hidden = $total > COMMENTS_OPEN && $index < $total - COMMENTS_OPEN;
+$hidden = $total > BLOG_COMMENTS_OPEN && $index < $total - BLOG_COMMENTS_OPEN;
 ?>
 					<div class="comment<?= $hidden ? ' folded' : '' ?>">
 						<div class="msg-head"><?= comment_head($comment) ?></div>
@@ -367,7 +415,7 @@ $hidden = $total > COMMENTS_OPEN && $index < $total - COMMENTS_OPEN;
 							<span class="msg-reply" data-target="<?= e((string) $comment['id']) ?>">Reply</span>
 <?php endif; ?>
 <?php if ($authed || $mine): ?>
-							<form method="post" action="/thr/" class="msg-remove">
+							<form method="post" action="/blog/" class="msg-remove">
 								<input type="hidden" name="token" value="<?= e($token) ?>">
 								<input type="hidden" name="action" value="uncomment">
 								<input type="hidden" name="post" value="<?= e((string) $post['id']) ?>">
@@ -377,7 +425,7 @@ $hidden = $total > COMMENTS_OPEN && $index < $total - COMMENTS_OPEN;
 <?php endif; ?>
 						</div>
 <?php if ($authed || !$mine): ?>
-						<form method="post" action="/thr/" class="replyform" id="r<?= e((string) $comment['id']) ?>">
+						<form method="post" action="/blog/" class="replyform" id="r<?= e((string) $comment['id']) ?>">
 							<input type="hidden" name="token" value="<?= e($token) ?>">
 							<input type="hidden" name="action" value="answer">
 							<input type="hidden" name="post" value="<?= e((string) $post['id']) ?>">
@@ -393,7 +441,7 @@ $hidden = $total > COMMENTS_OPEN && $index < $total - COMMENTS_OPEN;
 							<div class="msg-head"><?= comment_head($answer) ?></div>
 							<div class="msg-text"><?= render_post_text((string) $answer['text']) ?></div>
 <?php if ($authed || $ownAnswer): ?>
-							<form method="post" action="/thr/" class="msg-remove">
+							<form method="post" action="/blog/" class="msg-remove">
 								<input type="hidden" name="token" value="<?= e($token) ?>">
 								<input type="hidden" name="action" value="uncomment">
 								<input type="hidden" name="post" value="<?= e((string) $post['id']) ?>">
@@ -407,11 +455,7 @@ $hidden = $total > COMMENTS_OPEN && $index < $total - COMMENTS_OPEN;
 					</div>
 <?php endforeach; ?>
 
-<?php if ($total > COMMENTS_OPEN): ?>
-					<div class="comments-more"><span class="comments-all">Load all <?= $total ?> comments</span></div>
-<?php endif; ?>
-
-					<form method="post" action="/thr/" enctype="multipart/form-data" class="commentform">
+					<form method="post" action="/blog/" enctype="multipart/form-data" class="commentform">
 						<input type="hidden" name="token" value="<?= e($token) ?>">
 						<input type="hidden" name="action" value="comment">
 						<input type="hidden" name="post" value="<?= e((string) $post['id']) ?>">
@@ -424,8 +468,14 @@ $hidden = $total > COMMENTS_OPEN && $index < $total - COMMENTS_OPEN;
 						</label>
 						<button type="submit">Send</button>
 					</form>
+				</div>
 
-					<div class="comments-bar"><span class="comments-hide">Hide comments</span></div>
+				<div class="comments-bar">
+<?php if ($total > BLOG_COMMENTS_OPEN): ?>
+					<span class="comments-all">Show all <?= $total ?> comments</span>
+<?php endif; ?>
+					<span class="comments-hide">Hide comments</span>
+					<span class="comments-show" hidden>Show comments (<?= $total ?>)</span>
 				</div>
 			</div>
 		</div>
@@ -456,6 +506,6 @@ $hidden = $total > COMMENTS_OPEN && $index < $total - COMMENTS_OPEN;
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=6"></script>
+<script src="/script.js?v=7"></script>
 </body>
 </html>
