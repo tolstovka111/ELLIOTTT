@@ -810,7 +810,7 @@ a:hover {
 
 .msg-text {
 	margin-top: 4px;
-	max-width: 900px;
+	max-width: 450px;
 	line-height: 1.45;
 	white-space: pre-wrap;
 	word-wrap: break-word;
@@ -1335,7 +1335,7 @@ a:hover {
 
 .thread-post .post-text {
 	margin: 2px 0 0;
-	max-width: 900px;
+	max-width: 450px;
 	overflow-wrap: anywhere;
 }
 
@@ -1600,12 +1600,16 @@ body.blue .notfound-fallback {
 }
 
 .quotelink a,
-.quotelink a:visited {
-	color: #a03030;
+.quotelink a:visited,
+body.blue .quotelink a,
+body.blue .quotelink a:visited,
+.quotepop .quotelink a {
+	color: #8b1a1a;
 	text-decoration: underline;
 }
 
-.quotelink a:hover {
+.quotelink a:hover,
+body.blue .quotelink a:hover {
 	color: #dd0000;
 }
 
@@ -1693,7 +1697,8 @@ body.blue .notfound-fallback {
 	position: absolute;
 	z-index: 60;
 	max-width: 560px;
-	padding: 6px 22px 8px 8px;
+	padding: 6px 8px 8px;
+	pointer-events: none;
 	border: 1px solid #34345c;
 	background-color: #d6daf0;
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -1702,10 +1707,18 @@ body.blue .notfound-fallback {
 }
 
 .quotepop .msg-media img,
-.quotepop img {
+.quotepop .post-image img,
+.quotepop .post-image video {
 	max-width: 220px;
 	max-height: 220px;
 	height: auto;
+}
+
+.quotepop .emoji {
+	height: 22px;
+	max-height: 22px;
+	width: auto;
+	max-width: none;
 }
 
 .quotepop .msg-act,
@@ -1714,20 +1727,6 @@ body.blue .notfound-fallback {
 	display: none;
 }
 
-.quotepop-close {
-	position: absolute;
-	right: 5px;
-	top: 3px;
-	font-size: 9pt;
-	font-weight: bold;
-	color: #34345c;
-	cursor: pointer;
-	user-select: none;
-}
-
-.quotepop-close:hover {
-	color: #dd0000;
-}
 
 /* ---- Admin stats ---------------------------------------------------- */
 

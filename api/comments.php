@@ -4,35 +4,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/lib.php';
 
-/**
- * Comments left under the standalone board pages, kept apart from the blog.
- */
-function page_store_read(): array
-{
-    $dir = data_dir();
-    $path = $dir === '' ? '' : $dir . '/pages.json';
-
-    if ($path === '' || !is_file($path)) {
-        return [];
-    }
-
-    $raw = @file_get_contents($path);
-    $data = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
-
-    return is_array($data) ? $data : [];
-}
-
-function page_store_write(array $store): bool
-{
-    $dir = data_dir();
-
-    if ($dir === '') {
-        return false;
-    }
-
-    return @file_put_contents($dir . '/pages.json', (string) json_encode($store), LOCK_EX) !== false;
-}
-
 function comment_upload(array &$errors): array
 {
     $error = (int) ($_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE);

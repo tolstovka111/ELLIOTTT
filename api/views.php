@@ -33,7 +33,7 @@ if ($clientIp === '') {
 }
 
 $fingerprint = hash('sha256', $salt . '|' . $clientIp);
-$country = visitor_country();
+$place = visitor_place();
 $handle = @fopen($dir . '/views.json', 'c+');
 
 if ($handle === false) {
@@ -56,7 +56,9 @@ $entry = $store['visitors'][$fingerprint] ?? null;
 if (!is_array($entry)) {
     $store['visitors'][$fingerprint] = [
         'ip' => $clientIp,
-        'country' => $country,
+        'country' => (string) $place['code'],
+        'name' => (string) $place['country'],
+        'city' => (string) $place['city'],
         'first' => $now,
         'last' => $now,
         'hits' => 1,
@@ -67,8 +69,10 @@ if (!is_array($entry)) {
     $entry['last'] = $now;
     $entry['hits'] = (int) ($entry['hits'] ?? 0) + 1;
 
-    if ($country !== '') {
-        $entry['country'] = $country;
+    if ((string) $place['code'] !== '') {
+        $entry['country'] = (string) $place['code'];
+        $entry['name'] = (string) $place['country'];
+        $entry['city'] = (string) $place['city'];
     }
 
     $store['visitors'][$fingerprint] = $entry;

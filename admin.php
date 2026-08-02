@@ -309,8 +309,8 @@ if ($action === 'create' && $authed) {
         ];
     }
 
-    if ($errors === [] && $media === []) {
-        $errors[] = 'A post needs a picture or a video. Text on its own cannot be published.';
+    if ($errors === [] && $text === '' && $media === []) {
+        $errors[] = 'Add some text, a picture or a video.';
     }
 
     if ($errors !== []) {
@@ -433,16 +433,18 @@ if ($action === 'comments' && $authed) {
     $id = (string) ($_POST['id'] ?? '');
     $open = (string) ($_POST['open'] ?? '') === '1';
     $store = read_store();
+    $anchor = 0;
 
     foreach ($store['posts'] as $index => $post) {
         if ((string) ($post['id'] ?? '') === $id) {
             $store['posts'][$index]['comments_open'] = $open;
+            $anchor = (int) ($post['no'] ?? 0);
             break;
         }
     }
 
     write_store($store);
-    go('/blog/#p' . preg_replace('/[^a-f0-9]/', '', $id));
+    go('/blog/#p' . $anchor);
 }
 
 if ($action === 'delete' && $authed) {
@@ -482,7 +484,7 @@ $suggestedKey = $config === null ? bin2hex(random_bytes(12)) : '';
 <meta name="robots" content="noindex, nofollow">
 <title>Admin - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=12">
+<link rel="stylesheet" href="/style.css?v=13">
 </head>
 <body class="blue">
 

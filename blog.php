@@ -112,7 +112,7 @@ if ($action === 'comment') {
             if (!write_store($store)) {
                 $errors[] = 'Could not save the comment: the server cannot write to api/data. Check the folder permissions.';
             } else {
-                header('Location: /blog/#p' . preg_replace('/[^a-f0-9]/', '', $postId));
+                header('Location: /blog/#p' . (int) ($post['no'] ?? 0));
                 exit;
             }
         }
@@ -130,12 +130,14 @@ if ($action === 'comment') {
 if ($action === 'uncomment') {
     $postId = (string) ($_POST['post'] ?? '');
     $store = read_store();
+    $anchor = 0;
 
     foreach ($store['posts'] as $index => $post) {
         if ((string) ($post['id'] ?? '') !== $postId) {
             continue;
         }
 
+        $anchor = (int) ($post['no'] ?? 0);
         $store['posts'][$index]['comments'] = remove_comment(
             (array) ($post['comments'] ?? []),
             (string) ($_POST['comment'] ?? ''),
@@ -145,7 +147,7 @@ if ($action === 'uncomment') {
     }
 
     write_store($store);
-    header('Location: /blog/#p' . preg_replace('/[^a-f0-9]/', '', $postId));
+    header('Location: /blog/#p' . $anchor);
     exit;
 }
 
@@ -166,7 +168,7 @@ $boardTitle = '/n/ - posts by nysha4real';
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($boardTitle) ?> - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=12">
+<link rel="stylesheet" href="/style.css?v=13">
 </head>
 <body class="blue">
 
@@ -268,6 +270,6 @@ $open = !empty($post['comments_open']);
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=12"></script>
+<script src="/script.js?v=13"></script>
 </body>
 </html>

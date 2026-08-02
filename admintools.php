@@ -49,7 +49,7 @@ $broken = in_array(false, $checks, true);
 <meta name="robots" content="noindex, nofollow">
 <title>Admin Tools - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=12">
+<link rel="stylesheet" href="/style.css?v=13">
 </head>
 <body class="blue">
 
@@ -95,7 +95,7 @@ $broken = in_array(false, $checks, true);
 			<input type="hidden" name="csrf" value="<?= e($csrf) ?>">
 			<input type="hidden" name="action" value="create">
 
-			<div class="box-body notice">A post needs at least one picture or video. Text on its own cannot be published.</div>
+			<div class="box-body notice">A post without a picture or a video is published, but it stays off the front page and only shows on /n/.</div>
 
 <?php for ($i = 0; $i < MAX_IMAGES; $i++): ?>
 			<div class="formrow">
@@ -258,13 +258,14 @@ foreach ($series as $date => $hits) {
 		<div class="tablewrap">
 			<table class="datatable">
 				<thead>
-					<tr><th>Address</th><th>Country</th><th>Views</th><th>First seen</th><th>Last seen</th></tr>
+					<tr><th>Address</th><th>Location</th><th>Views</th><th>First seen</th><th>Last seen</th></tr>
 				</thead>
 				<tbody>
 <?php foreach ($visitors as $visitor): ?>
 					<tr>
 						<td><?= $visitor['ip'] === '' ? '<span class="muted">hidden</span>' : e((string) $visitor['ip']) ?></td>
-						<td><?= $visitor['country'] === '' ? '<span class="muted">&mdash;</span>' : country_flag_html((string) $visitor['country']) . ' ' . e((string) $visitor['country']) ?></td>
+	<?php $where = place_label($visitor); ?>
+						<td><?= $visitor['country'] === '' ? '<span class="muted">&mdash;</span>' : country_flag_html((string) $visitor['country']) . ' ' . e($where === '' ? (string) $visitor['country'] : $where) ?></td>
 						<td><?= number_format((int) $visitor['hits']) ?></td>
 						<td><span class="msg-date" data-ts="<?= (int) $visitor['first'] ?>"><?= e(gmdate('m/d/y(D)H:i:s', (int) $visitor['first'])) ?></span></td>
 						<td><span class="msg-date" data-ts="<?= (int) $visitor['last'] ?>"><?= e(gmdate('m/d/y(D)H:i:s', (int) $visitor['last'])) ?></span></td>
@@ -325,6 +326,6 @@ foreach ($series as $date => $hits) {
 
 </div>
 
-<script src="/script.js?v=12"></script>
+<script src="/script.js?v=13"></script>
 </body>
 </html>

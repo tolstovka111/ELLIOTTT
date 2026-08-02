@@ -228,15 +228,25 @@ function all_posts(): array
     return $posts;
 }
 
+/**
+ * The front page previews: recent posts that actually carry a picture, since a
+ * text-only post has nothing to show there.
+ */
 function live_posts(): array
 {
     $now = time();
     $fresh = [];
 
     foreach (all_posts() as $post) {
-        if ($now - (int) $post['created'] < POST_TTL) {
-            $fresh[] = $post;
+        if ($now - (int) $post['created'] >= POST_TTL) {
+            continue;
         }
+
+        if (post_thumb($post) === '') {
+            continue;
+        }
+
+        $fresh[] = $post;
     }
 
     return array_slice($fresh, 0, FRONT_POSTS);
@@ -827,6 +837,8 @@ function views_normalise(array $store): array
             $fixed[$key] = [
                 'ip' => (string) ($entry['ip'] ?? ''),
                 'country' => (string) ($entry['country'] ?? ''),
+                'name' => (string) ($entry['name'] ?? ''),
+                'city' => (string) ($entry['city'] ?? ''),
                 'first' => (int) ($entry['first'] ?? 0),
                 'last' => (int) ($entry['last'] ?? 0),
                 'hits' => (int) ($entry['hits'] ?? 1),
@@ -837,6 +849,8 @@ function views_normalise(array $store): array
         $fixed[$key] = [
             'ip' => '',
             'country' => '',
+            'name' => '',
+            'city' => '',
             'first' => (int) $entry,
             'last' => (int) $entry,
             'hits' => 1,
@@ -1060,9 +1074,13 @@ function geo_path(): string
     return $dir === '' ? '' : $dir . '/geo.json';
 }
 
-function geo_lookup(string $ip): string
+/**
+ * Country code, country name and city for an address, as far as the service
+ * can tell. Everything is optional; a blank field just does not show up.
+ */
+function geo_lookup(string $ip): array
 {
-    $url = 'http://ip-api.com/json/' . rawurlencode($ip) . '?fields=countryCode';
+    $url = 'http://ip-api.com/json/' . rawurlencode($ip) . '?fields=status,countryCode,country,city';
     $body = '';
 
     if (function_exists('curl_init')) {
@@ -1085,39 +1103,63 @@ function geo_lookup(string $ip): string
     }
 
     if ($body === '') {
-        return '';
+        return [];
     }
 
     $data = json_decode($body, true);
-    $code = is_array($data) ? strtoupper((string) ($data['countryCode'] ?? '')) : '';
 
-    return preg_match('/^[A-Z]{2}$/', $code) === 1 ? $code : '';
-}
-
-function visitor_country(): string
-{
-    $header = strtoupper(trim((string) ($_SERVER['HTTP_CF_IPCOUNTRY'] ?? '')));
-
-    if (preg_match('/^[A-Z]{2}$/', $header) === 1 && $header !== 'XX' && $header !== 'T1') {
-        return $header;
+    if (!is_array($data) || (string) ($data['status'] ?? '') !== 'success') {
+        return [];
     }
 
+    $code = strtoupper((string) ($data['countryCode'] ?? ''));
+
+    if (preg_match('/^[A-Z]{2}$/', $code) !== 1) {
+        return [];
+    }
+
+    return [
+        'code' => $code,
+        'country' => clean_place((string) ($data['country'] ?? '')),
+        'city' => clean_place((string) ($data['city'] ?? '')),
+    ];
+}
+
+function clean_place(string $name): string
+{
+    $name = trim(preg_replace('/\s+/u', ' ', $name) ?? '');
+    $name = str_replace(["\0", "\r", "\n", '<', '>'], '', $name);
+
+    return mb_substr($name, 0, 60);
+}
+
+/**
+ * Where the visitor is, cached per address. Returns code, country and city;
+ * any of them can be empty when the address cannot be placed.
+ */
+function visitor_place(): array
+{
+    $blank = ['code' => '', 'country' => '', 'city' => ''];
     $ip = client_ip();
 
     if ($ip === '') {
-        return '';
+        return $blank;
     }
 
     $public = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+    $header = strtoupper(trim((string) ($_SERVER['HTTP_CF_IPCOUNTRY'] ?? '')));
+    $fromHeader = preg_match('/^[A-Z]{2}$/', $header) === 1 && $header !== 'XX' && $header !== 'T1'
+        ? ['code' => $header, 'country' => '', 'city' => '']
+        : $blank;
 
     if ($public === false) {
-        return '';
+        return $fromHeader;
     }
 
     $path = geo_path();
 
     if ($path === '') {
-        return '';
+        return $fromHeader;
     }
 
     $key = secret_hash('geo', $ip);
@@ -1126,11 +1168,19 @@ function visitor_country(): string
     $cache = is_array($cache) ? $cache : [];
     $now = time();
 
-    if (isset($cache[$key]['code'], $cache[$key]['seen']) && $now - (int) $cache[$key]['seen'] < GEO_TTL) {
-        return (string) $cache[$key]['code'];
+    if (isset($cache[$key]['seen']) && $now - (int) $cache[$key]['seen'] < GEO_TTL) {
+        return [
+            'code' => (string) ($cache[$key]['code'] ?? ''),
+            'country' => (string) ($cache[$key]['country'] ?? ''),
+            'city' => (string) ($cache[$key]['city'] ?? ''),
+        ];
     }
 
-    $code = geo_lookup($ip);
+    $place = geo_lookup($ip);
+
+    if ($place === []) {
+        $place = $fromHeader;
+    }
 
     foreach ($cache as $entry => $row) {
         if ($now - (int) ($row['seen'] ?? 0) > GEO_TTL) {
@@ -1138,10 +1188,42 @@ function visitor_country(): string
         }
     }
 
-    $cache[$key] = ['code' => $code, 'seen' => $now];
+    $cache[$key] = [
+        'code' => (string) ($place['code'] ?? ''),
+        'country' => (string) ($place['country'] ?? ''),
+        'city' => (string) ($place['city'] ?? ''),
+        'seen' => $now,
+    ];
     @file_put_contents($path, (string) json_encode($cache), LOCK_EX);
 
-    return $code;
+    return [
+        'code' => (string) ($place['code'] ?? ''),
+        'country' => (string) ($place['country'] ?? ''),
+        'city' => (string) ($place['city'] ?? ''),
+    ];
+}
+
+function visitor_country(): string
+{
+    return (string) visitor_place()['code'];
+}
+
+/**
+ * "Finland, Helsinki" when both are known, otherwise whichever part there is.
+ */
+function place_label(array $entry): string
+{
+    // A stored visitor keeps the code in 'country' and the name in 'name';
+    // a fresh lookup has only 'country', already the full name.
+    $country = (string) ($entry['name'] ?? '');
+    $country = $country === '' ? (string) ($entry['country'] ?? '') : $country;
+    $city = (string) ($entry['city'] ?? '');
+
+    if ($country !== '' && $city !== '') {
+        return $country . ', ' . $city;
+    }
+
+    return $country !== '' ? $country : $city;
 }
 
 function country_flag_html(string $code): string

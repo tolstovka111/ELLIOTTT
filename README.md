@@ -109,8 +109,9 @@ form, and a 15 minute lockout after five wrong logins.
 Posts are written in **Admin Tools**.
 
 - Up to **3 files** per post, each either a picture (JPG, PNG, GIF, WEBP, 5 MB)
-  or an **MP4** video (15 MB). **At least one is required** — text on its own
-  cannot be published, a picture on its own can.
+  or an **MP4** video (15 MB). A post with no file at all is published too, but
+  it never reaches the front page — there is nothing to preview — and shows only
+  on `/n/`.
 - A picture can carry a link; it then shows a semi-transparent **Click** badge in
   its bottom left corner.
 - Text up to 1000 characters, with `:emoji:` shortcodes.
@@ -161,8 +162,8 @@ just the box.
   the same **File:** line as in the chat. Comments are not numbered.
 - Every comment opens with a dark red **>>N**: by default the number of the post
   it sits under, or the number of the comment it answers when **[reply]** was
-  used. Hovering a **>>N** opens the quoted entry over the page; the **×** in its
-  corner or a click anywhere else closes it again.
+  used. Hovering a **>>N** opens the quoted entry over the page and moving the
+  pointer away closes it.
 - Anyone can delete their own comment, the admin can delete any.
 - The signed-in admin gets the name field prefilled with the admin nickname;
   leaving it posts in yellow, changing it posts under that plain name instead.
@@ -171,14 +172,12 @@ just the box.
 
 `/o/` `/m/` `/a/` `/i/` `/b/` `/faq` `/rules` all run through `board.php` and
 share the layout of the blog: the board bar, a random banner, the board title, a
-**[Go to the comments]** link and a random ad banner.
+**[Go to the page]** link and a random ad banner. They carry information only —
+there is nothing to post there.
 
 The middle of the page is yours to fill: drop an HTML fragment into `pages/`
-named after the board — `o.html`, `faq.html` and so on — and it is pasted in
-above the comments. Without one the page reads *Nothing here yet.*
-
-Under it sits the same comment box as on the blog, so every page can be talked
-about. Those comments live in `api/data/pages.json`.
+named after the board — `o.html`, `faq.html` and so on — and it is pasted in.
+Without one the page reads *Nothing here yet.*
 
 ## Chat
 
@@ -260,9 +259,12 @@ hovering a point shows that day and its exact count. Above it sit the unique
 visitor total, the page views on record and how many people are online now.
 
 **Visitors** lists every address that has ever loaded the site, newest first,
-with its country flag, how many views it accounts for and when it was first and
-last seen. Addresses are read the same way as everywhere else, so behind a proxy
-`VIEWS_TRUST_PROXY=1` is what makes them real rather than the proxy's own.
+with its flag and place — `Finland, Helsinki` where the city is known, the
+country alone where it is not — how many views it accounts for and when it was
+first and last seen. Addresses are read the same way as everywhere else, so
+behind a proxy `VIEWS_TRUST_PROXY=1` is what makes them real rather than the
+proxy's own. The place comes from one lookup per address, cached 30 days in
+`api/data/geo.json`, so the server needs outbound HTTP for it to fill in.
 
 Both live in `api/data/views.json`, which keeps 120 days of daily counts and the
 4000 most recent visitors. Rows recorded before this feature existed show no

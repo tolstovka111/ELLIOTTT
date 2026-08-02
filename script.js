@@ -341,7 +341,7 @@
 
 		quotePop = document.createElement("div");
 		quotePop.className = "quotepop";
-		quotePop.innerHTML = '<span class="quotepop-close">&#10005;</span>' + (body || source).innerHTML;
+		quotePop.innerHTML = (body || source).innerHTML;
 
 		document.body.appendChild(quotePop);
 
@@ -366,21 +366,15 @@
 		}
 	});
 
-	document.addEventListener("click", function (event) {
-		if (!quotePop) {
-			return;
-		}
+	document.addEventListener("mouseout", function (event) {
+		var link = event.target.closest ? event.target.closest(".quotelink a") : null;
 
-		if (event.target.classList.contains("quotepop-close")) {
-			closeQuotePop();
-
-			return;
-		}
-
-		if (!quotePop.contains(event.target) && !(event.target.closest && event.target.closest(".quotelink"))) {
+		if (link) {
 			closeQuotePop();
 		}
 	});
+
+	window.addEventListener("scroll", closeQuotePop, { passive: true });
 
 	var chatList = document.getElementById("chat-list");
 	var lightbox = document.getElementById("lightbox");
