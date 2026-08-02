@@ -1,6 +1,6 @@
 Drop an HTML fragment named after the board here to fill its page in:
 
-  o.html  m.html  a.html  g.html  b.html  faq.html  rules.html
+  o.html  m.html  a.html  i.html  b.html  faq.html  rules.html
 
 The file is pasted straight into the page above the comments, so write plain
 markup only - no <html>, <head> or <body>. A gallery of pictures looks like:

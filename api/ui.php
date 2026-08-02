@@ -13,8 +13,8 @@ function board_list(): array
         'o' => ['url' => '/o/', 'label' => 'o', 'title' => '/o/ - Roblox'],
         'm' => ['url' => '/m/', 'label' => 'm', 'title' => '/m/ - Minecraft'],
         'a' => ['url' => '/a/', 'label' => 'a', 'title' => '/a/ - Anime'],
-        'g' => ['url' => '/g/', 'label' => 'g', 'title' => '/g/ - Games'],
-        'b' => ['url' => '/b/', 'label' => 'b', 'title' => '/b/ - Random'],
+        'i' => ['url' => '/i/', 'label' => 'i', 'title' => '/i/ - Internet'],
+        'b' => ['url' => '/b/', 'label' => 'b', 'title' => '/b/ - Random Pictures'],
         'c' => ['url' => '/c/', 'label' => 'c', 'title' => '/c/ - Chat'],
         'n' => ['url' => '/n/', 'label' => 'n', 'title' => '/n/ - Blog'],
     ];

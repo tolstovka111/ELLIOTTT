@@ -139,7 +139,23 @@
 			}
 		};
 
-		box.addEventListener("change", sync);
+		try {
+			if (localStorage.getItem("postAsAdmin") === "0") {
+				box.checked = false;
+			}
+		} catch (e) {
+			box.checked = box.checked;
+		}
+
+		box.addEventListener("change", function () {
+			try {
+				localStorage.setItem("postAsAdmin", box.checked ? "1" : "0");
+			} catch (e) {
+				sync();
+			}
+
+			sync();
+		});
 		sync();
 	});
 
@@ -253,6 +269,73 @@
 	}
 
 	paintStamps(document);
+
+	var quotePop = null;
+
+	function closeQuotePop() {
+		if (quotePop && quotePop.parentNode) {
+			quotePop.parentNode.removeChild(quotePop);
+		}
+
+		quotePop = null;
+	}
+
+	function openQuotePop(link) {
+		var id = (link.getAttribute("href") || "").replace(/^#/, "");
+		var source = id ? document.getElementById(id) : null;
+
+		if (!source) {
+			return;
+		}
+
+		closeQuotePop();
+
+		var body = source.classList.contains("thread-post")
+			? source.querySelector(".post")
+			: source;
+
+		quotePop = document.createElement("div");
+		quotePop.className = "quotepop";
+		quotePop.innerHTML = '<span class="quotepop-close">&#10005;</span>' + (body || source).innerHTML;
+
+		document.body.appendChild(quotePop);
+
+		var box = link.getBoundingClientRect();
+		var top = box.bottom + window.pageYOffset + 4;
+		var left = box.left + window.pageXOffset;
+		var width = quotePop.offsetWidth;
+
+		if (left + width > document.documentElement.clientWidth - 10) {
+			left = Math.max(6, document.documentElement.clientWidth - width - 10);
+		}
+
+		quotePop.style.top = top + "px";
+		quotePop.style.left = left + "px";
+	}
+
+	document.addEventListener("mouseover", function (event) {
+		var link = event.target.closest ? event.target.closest(".quotelink a") : null;
+
+		if (link) {
+			openQuotePop(link);
+		}
+	});
+
+	document.addEventListener("click", function (event) {
+		if (!quotePop) {
+			return;
+		}
+
+		if (event.target.classList.contains("quotepop-close")) {
+			closeQuotePop();
+
+			return;
+		}
+
+		if (!quotePop.contains(event.target) && !(event.target.closest && event.target.closest(".quotelink"))) {
+			closeQuotePop();
+		}
+	});
 
 	var chatList = document.getElementById("chat-list");
 	var lightbox = document.getElementById("lightbox");

@@ -42,7 +42,7 @@ $broken = in_array(false, $checks, true);
 <meta name="robots" content="noindex, nofollow">
 <title>Admin Tools - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=10">
+<link rel="stylesheet" href="/style.css?v=11">
 </head>
 <body class="blue">
 
@@ -242,6 +242,6 @@ $broken = in_array(false, $checks, true);
 
 </div>
 
-<script src="/script.js?v=10"></script>
+<script src="/script.js?v=11"></script>
 </body>
 </html>

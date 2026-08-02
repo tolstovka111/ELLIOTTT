@@ -24,12 +24,12 @@ if ($authed) {
 <title>4real</title>
 <meta name="description" content="4real is a link-in-bio info-hub with every official profile in one place.">
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=10">
+<link rel="stylesheet" href="/style.css?v=11">
 </head>
 <body>
 
 <div class="logo">
-	<a href="/404.php"><img src="/assets/4real-logo.png" alt="4real"></a>
+	<a href="/404"><img src="/assets/4real-logo.png" alt="4real"></a>
 </div>
 
 <div class="page">
@@ -78,7 +78,7 @@ if ($authed) {
 				<h2><span>Fav Characters</span></h2>
 				<ul>
 					<li><a href="/a/">Anime</a></li>
-					<li><a href="/g/">Games</a></li>
+					<li><a href="/i/">Internet</a></li>
 				</ul>
 			</div>
 
@@ -143,6 +143,6 @@ if ($authed) {
 
 </div>
 
-<script src="/script.js?v=10"></script>
+<script src="/script.js?v=11"></script>
 </body>
 </html>

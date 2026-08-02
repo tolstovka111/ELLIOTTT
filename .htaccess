@@ -16,6 +16,7 @@ ErrorDocument 404 /404.php
 	RewriteEngine On
 
 	RewriteRule ^home/?$ /index.php [L]
+	RewriteRule ^404/?$ /404.php [L]
 	RewriteRule ^c/?$ /chat.php [L]
 	RewriteRule ^blog/?$ /blog.php [L]
 	RewriteRule ^n/?$ /blog.php [L]
@@ -23,7 +24,7 @@ ErrorDocument 404 /404.php
 	RewriteRule ^o/?$ /board.php?b=o [L,QSA]
 	RewriteRule ^m/?$ /board.php?b=m [L,QSA]
 	RewriteRule ^a/?$ /board.php?b=a [L,QSA]
-	RewriteRule ^g/?$ /board.php?b=g [L,QSA]
+	RewriteRule ^i/?$ /board.php?b=i [L,QSA]
 	RewriteRule ^b/?$ /board.php?b=b [L,QSA]
 	RewriteRule ^faq/?$ /board.php?b=faq [L,QSA]
 	RewriteRule ^rules/?$ /board.php?b=rules [L,QSA]

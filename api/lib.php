@@ -1074,7 +1074,7 @@ function ad_banners(): array
         return [];
     }
 
-    $boards = ['o', 'm', 'a', 'g', 'b', 'c'];
+    $boards = ['o', 'm', 'a', 'i', 'b', 'c'];
     $found = [];
 
     foreach ((array) scandir($dir) as $file) {

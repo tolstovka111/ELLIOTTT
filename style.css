@@ -810,9 +810,11 @@ a:hover {
 
 .msg-text {
 	margin-top: 4px;
+	max-width: 900px;
 	line-height: 1.45;
 	white-space: pre-wrap;
 	word-wrap: break-word;
+	overflow-wrap: anywhere;
 }
 
 .msg-actions {
@@ -827,7 +829,7 @@ a:hover {
 
 .msg-reply {
 	font-size: 8.5pt;
-	color: #0000ee;
+	color: #1b6ec2;
 	text-decoration: underline;
 	cursor: pointer;
 	user-select: none;
@@ -835,7 +837,7 @@ a:hover {
 
 .msg-act {
 	font-size: 9pt;
-	color: #34345c;
+	color: #000000;
 	white-space: nowrap;
 }
 
@@ -852,7 +854,7 @@ a:hover {
 	background: none;
 	font-family: inherit;
 	font-size: inherit;
-	color: #34345c;
+	color: #1b6ec2;
 	text-decoration: underline;
 	cursor: pointer;
 }
@@ -1273,8 +1275,8 @@ a:hover {
 
 .adbanner img {
 	display: inline-block;
-	max-width: 540px;
-	width: auto;
+	width: 540px;
+	max-width: 100%;
 	height: auto;
 	border: 1px solid #34345c;
 }
@@ -1333,6 +1335,8 @@ a:hover {
 
 .thread-post .post-text {
 	margin: 2px 0 0;
+	max-width: 900px;
+	overflow-wrap: anywhere;
 }
 
 .thread-post .comments {
@@ -1473,7 +1477,7 @@ body.blue .adminpost {
 
 body.blue .msg-no,
 body.blue .msg-date {
-	color: #34345c;
+	color: #000000;
 }
 
 body.blue .empty,
@@ -1561,10 +1565,14 @@ body.blue .msg-file a,
 body.blue .comments-toggle,
 body.blue .comments-hide,
 body.blue .comments-show,
-body.blue .comments-all,
+body.blue .comments-all {
+	color: #34345c;
+	text-decoration: underline;
+}
+
 body.blue .msg-reply,
 body.blue .msg-remove button {
-	color: #34345c;
+	color: #1b6ec2;
 	text-decoration: underline;
 }
 
@@ -1603,7 +1611,7 @@ body.blue .notfound-fallback {
 
 .quotelink a,
 .quotelink a:visited {
-	color: #789922;
+	color: #a03030;
 	text-decoration: underline;
 }
 
@@ -1688,5 +1696,45 @@ body.blue .notfound-fallback {
 }
 
 .emojicard button:hover {
+	color: #dd0000;
+}
+
+.quotepop {
+	position: absolute;
+	z-index: 60;
+	max-width: 560px;
+	padding: 6px 22px 8px 8px;
+	border: 1px solid #34345c;
+	background-color: #d6daf0;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+	font-size: 9.5pt;
+	line-height: 1.45;
+}
+
+.quotepop .msg-media img,
+.quotepop img {
+	max-width: 220px;
+	max-height: 220px;
+	height: auto;
+}
+
+.quotepop .msg-act,
+.quotepop .commentform,
+.quotepop .replyform {
+	display: none;
+}
+
+.quotepop-close {
+	position: absolute;
+	right: 5px;
+	top: 3px;
+	font-size: 9pt;
+	font-weight: bold;
+	color: #34345c;
+	cursor: pointer;
+	user-select: none;
+}
+
+.quotepop-close:hover {
 	color: #dd0000;
 }

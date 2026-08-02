@@ -13,7 +13,7 @@ a public chat.
 | `admintools.php` | Admin only: the blog editor |
 | `admin.php` | Setup, sign in, and the handler for publish / delete / log out |
 | `404.php` | Not-found page, shows a random picture from `assets/404/` |
-| `board.php` | `/o/` `/m/` `/a/` `/g/` `/b/` `/faq` `/rules` — the standalone pages |
+| `board.php` | `/o/` `/m/` `/a/` `/i/` `/b/` `/faq` `/rules` — the standalone pages |
 | `pages/` | Optional HTML fragment that fills a page in |
 | `.htaccess` | Short URLs, directory index, 404 document |
 | `style.css`, `script.js` | Theme and front-end logic |
@@ -62,7 +62,7 @@ sudo chmod -R 755 /var/www/html/api /var/www/html/assets
 | --- | --- |
 | `/` or `/home` | front page |
 | `/o/` `/m/` | Roblox, Minecraft avatars |
-| `/a/` `/g/` | anime, game characters |
+| `/a/` `/i/` | anime characters, internet |
 | `/b/` | random pictures |
 | `/c/` | chat |
 | `/blog/` `/n/` | all blog posts |
@@ -133,8 +133,9 @@ Drop PNG, JPG, GIF or WEBP files into `assets/banners/` to add header banners.
 
 An ad banner links to the board named by the part of its file name **before the
 first dash**: `c-chat.gif` goes to `/c/`, `a-anime.gif` to `/a/`,
-`b-random.gif` to `/b/`. Valid boards are `o m a g b c`; anything else falls
-back to `/home`. With either folder empty its slot is simply skipped.
+`m-minecraft.gif` to `/m/`. Valid boards are `o m a i b c`; anything else falls
+back to `/home`. They are all drawn at the same width, so a banner of any size
+lines up with the rest. With either folder empty its slot is simply skipped.
 
 Posts run the full width of the window with only a small margin on each side.
 The header line reads name, country flag, date with seconds, running number and
@@ -158,15 +159,17 @@ just the box.
   attachment — **PNG, JPG or GIF up to 3 MB**, no video. There is no cooldown.
   The header carries the name and the local-time stamp, and an attachment gets
   the same **File:** line as in the chat. Comments are not numbered.
-- **[reply]** does not nest anything: the answer is posted as an ordinary
-  comment that opens with a green **>>N** pointing back at what it answers.
+- Every comment opens with a dark red **>>N**: by default the number of the post
+  it sits under, or the number of the comment it answers when **[reply]** was
+  used. Hovering a **>>N** opens the quoted entry over the page; the **×** in its
+  corner or a click anywhere else closes it again.
 - Anyone can delete their own comment, the admin can delete any.
 - The signed-in admin gets the name field prefilled with the admin nickname;
   leaving it posts in yellow, changing it posts under that plain name instead.
 
 ## The standalone pages
 
-`/o/` `/m/` `/a/` `/g/` `/b/` `/faq` `/rules` all run through `board.php` and
+`/o/` `/m/` `/a/` `/i/` `/b/` `/faq` `/rules` all run through `board.php` and
 share the layout of the blog: the board bar, a random banner, the board title, a
 **[Go to the comments]** link and a random ad banner.
 

@@ -91,12 +91,18 @@ if ($action === 'comment') {
                 break;
             }
 
+            $quoted = (int) ($_POST['to'] ?? 0);
+
+            if ($quoted <= 0) {
+                $quoted = (int) ($post['no'] ?? 0);
+            }
+
             $store['posts'][$index]['comments'] = apply_comment((array) ($post['comments'] ?? []), [
                 'name' => $author['name'],
                 'text' => $text,
                 'admin' => $author['admin'],
                 'upload' => $upload,
-                'to' => (int) ($_POST['to'] ?? 0),
+                'to' => $quoted,
             ]);
             $done = true;
             break;
@@ -160,7 +166,7 @@ $boardTitle = '/n/ - posts by nysha4real';
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($boardTitle) ?> - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=10">
+<link rel="stylesheet" href="/style.css?v=11">
 </head>
 <body class="blue">
 
@@ -262,6 +268,6 @@ $open = !empty($post['comments_open']);
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=10"></script>
+<script src="/script.js?v=11"></script>
 </body>
 </html>
