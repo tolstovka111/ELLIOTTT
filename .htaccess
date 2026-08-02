@@ -16,14 +16,15 @@ ErrorDocument 404 /404.php
 	RewriteEngine On
 
 	RewriteRule ^home/?$ /index.php [L]
-	RewriteRule ^faq/?$ /faq.html [L]
-	RewriteRule ^rules/?$ /rules.html [L]
-	RewriteRule ^o/?$ /roblox.html [L]
-	RewriteRule ^m/?$ /minecraft.html [L]
-	RewriteRule ^a/?$ /anime.html [L]
-	RewriteRule ^g/?$ /games.html [L]
-	RewriteRule ^b/?$ /random.html [L]
 	RewriteRule ^c/?$ /chat.php [L]
 	RewriteRule ^blog/?$ /blog.php [L]
 	RewriteRule ^n/?$ /blog.php [L]
+
+	RewriteRule ^o/?$ /board.php?b=o [L,QSA]
+	RewriteRule ^m/?$ /board.php?b=m [L,QSA]
+	RewriteRule ^a/?$ /board.php?b=a [L,QSA]
+	RewriteRule ^g/?$ /board.php?b=g [L,QSA]
+	RewriteRule ^b/?$ /board.php?b=b [L,QSA]
+	RewriteRule ^faq/?$ /board.php?b=faq [L,QSA]
+	RewriteRule ^rules/?$ /board.php?b=rules [L,QSA]
 </IfModule>

@@ -375,6 +375,22 @@ if ($action === 'nickname' && $authed) {
     go('/admintools.php');
 }
 
+if ($action === 'comments' && $authed) {
+    $id = (string) ($_POST['id'] ?? '');
+    $open = (string) ($_POST['open'] ?? '') === '1';
+    $store = read_store();
+
+    foreach ($store['posts'] as $index => $post) {
+        if ((string) ($post['id'] ?? '') === $id) {
+            $store['posts'][$index]['comments_open'] = $open;
+            break;
+        }
+    }
+
+    write_store($store);
+    go('/blog/#p' . preg_replace('/[^a-f0-9]/', '', $id));
+}
+
 if ($action === 'delete' && $authed) {
     $id = (string) ($_POST['id'] ?? '');
     $store = read_store();
@@ -412,12 +428,12 @@ $suggestedKey = $config === null ? bin2hex(random_bytes(12)) : '';
 <meta name="robots" content="noindex, nofollow">
 <title>Admin - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=8">
+<link rel="stylesheet" href="/style.css?v=9">
 </head>
 <body class="blue">
 
 <div class="logo">
-	<a href="/404.php"><img src="/assets/4real-logo.png" alt="4real"></a>
+	<a href="/home"><img src="/assets/4real-logo.png" alt="4real"></a>
 </div>
 
 <div class="page">

@@ -466,14 +466,18 @@ a:hover {
 	padding: 2px 0;
 }
 
+.notfound-page {
+	width: 1000px;
+}
+
 .notfound {
-	padding: 26px 12px 34px;
+	padding: 30px 12px 40px;
 	text-align: center;
 }
 
 .notfound img {
-	max-width: 90%;
-	max-height: 420px;
+	max-width: 96%;
+	max-height: 72vh;
 	height: auto;
 }
 
@@ -838,6 +842,35 @@ a:hover {
 	user-select: none;
 }
 
+.msg-act {
+	font-size: 9pt;
+	color: #34345c;
+	white-space: nowrap;
+}
+
+.msg-act .msg-remove,
+.msg-act .msg-reply {
+	display: inline;
+	font-size: inherit;
+}
+
+.msg-act .msg-remove button {
+	display: inline;
+	padding: 0;
+	border: 0;
+	background: none;
+	font-family: inherit;
+	font-size: inherit;
+	color: #34345c;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.msg-act .msg-remove button:hover,
+.msg-act .msg-reply:hover {
+	color: #dd0000;
+}
+
 .msg-remove {
 	display: inline-flex;
 	align-items: center;
@@ -1156,6 +1189,37 @@ a:hover {
 	}
 }
 
+.boardnav {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 8px;
+	padding: 3px 6px;
+	font-size: 9pt;
+	line-height: 1.5;
+	background-color: #d6daf0;
+	border-bottom: 1px solid #b7c5d9;
+}
+
+.boardnav a,
+.boardnav a:visited {
+	color: #34345c;
+	text-decoration: none;
+}
+
+.boardnav a:hover {
+	color: #dd0000;
+}
+
+.boardnav strong {
+	color: #000000;
+}
+
+.boardnav-home {
+	white-space: nowrap;
+}
+
 .boardhead {
 	text-align: center;
 	padding: 10px 0 0;
@@ -1281,6 +1345,42 @@ a:hover {
 .thread-post .comments {
 	clear: both;
 	padding: 0 8px 0;
+}
+
+.pagebody {
+	padding: 10px 8px 14px;
+	min-height: 120px;
+}
+
+.pagecomments {
+	padding: 4px 8px 10px;
+}
+
+.pagecomments .comments {
+	padding: 0;
+}
+
+.commentctl {
+	padding: 4px 8px 0;
+}
+
+.commentctl-form {
+	display: inline;
+}
+
+.commentctl-form button {
+	padding: 0;
+	border: 0;
+	background: none;
+	font-family: inherit;
+	font-size: 9pt;
+	color: #34345c;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.commentctl-form button:hover {
+	color: #dd0000;
 }
 
 .comments-body[hidden] {

@@ -41,12 +41,12 @@ $broken = in_array(false, $checks, true);
 <meta name="robots" content="noindex, nofollow">
 <title>Admin Tools - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=8">
+<link rel="stylesheet" href="/style.css?v=9">
 </head>
 <body class="blue">
 
 <div class="logo">
-	<a href="/404.php"><img src="/assets/4real-logo.png" alt="4real"></a>
+	<a href="/home"><img src="/assets/4real-logo.png" alt="4real"></a>
 </div>
 
 <div class="page">
@@ -215,6 +215,6 @@ $broken = in_array(false, $checks, true);
 
 </div>
 
-<script src="/script.js?v=8"></script>
+<script src="/script.js?v=9"></script>
 </body>
 </html>

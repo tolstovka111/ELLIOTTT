@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/api/lib.php';
+require_once __DIR__ . '/api/ui.php';
 
 if (isset($_COOKIE['realadmin'])) {
     admin_session_start();
@@ -236,6 +237,29 @@ function poster(array $item): string
     return $line . ' ' . stamp($item) . ' <span class="msg-no">No.' . (int) ($item['no'] ?? 0) . '</span>';
 }
 
+/**
+ * The bracketed [reply] and [delete] links that follow the timestamp.
+ */
+function chat_actions(string $id, string $reply, bool $canReply, bool $canDelete, string $token): string
+{
+    $out = '';
+
+    if ($canReply) {
+        $out .= ' <span class="msg-act">[<span class="msg-reply" data-target="' . e($id) . '">reply</span>]</span>';
+    }
+
+    if ($canDelete) {
+        $out .= ' <span class="msg-act">[<form method="post" action="/c/" class="msg-remove">'
+            . '<input type="hidden" name="token" value="' . e($token) . '">'
+            . '<input type="hidden" name="action" value="remove">'
+            . '<input type="hidden" name="id" value="' . e($id) . '">'
+            . ($reply === '' ? '' : '<input type="hidden" name="reply" value="' . e($reply) . '">')
+            . '<button type="submit">delete</button></form>]</span>';
+    }
+
+    return $out;
+}
+
 function chat_file_line(array $message): string
 {
     $file = (string) ($message['file'] ?? '');
@@ -260,22 +284,11 @@ ob_start();
 <?php foreach ($messages as $message): ?>
 <?php $mine = hash_equals((string) ($message['ip'] ?? ''), $me); ?>
 		<div class="msg" id="m<?= e((string) $message['id']) ?>">
-			<div class="msg-head"><?= poster($message) ?></div>
+			<div class="msg-head"><?= poster($message) ?><?= chat_actions((string) $message['id'], '', true, $authed || $mine, $token) ?></div>
 <?= chat_file_line($message) ?>
 <?php if ((string) $message['text'] !== ''): ?>
 			<div class="msg-text"><?= render_post_text((string) $message['text']) ?></div>
 <?php endif; ?>
-			<div class="msg-actions">
-				<span class="msg-reply" data-target="<?= e((string) $message['id']) ?>">Reply</span>
-<?php if ($authed || $mine): ?>
-				<form method="post" action="/c/" class="msg-remove">
-					<input type="hidden" name="token" value="<?= e($token) ?>">
-					<input type="hidden" name="action" value="remove">
-					<input type="hidden" name="id" value="<?= e((string) $message['id']) ?>">
-					<button type="submit">Delete</button>
-				</form>
-<?php endif; ?>
-			</div>
 			<form method="post" action="/c/" class="replyform" id="r<?= e((string) $message['id']) ?>">
 				<input type="hidden" name="token" value="<?= e($token) ?>">
 				<input type="hidden" name="action" value="reply">
@@ -290,19 +303,8 @@ ob_start();
 <?php foreach ((array) ($message['replies'] ?? []) as $reply): ?>
 <?php $ownReply = hash_equals((string) ($reply['ip'] ?? ''), $me); ?>
 			<div class="reply">
-				<div class="msg-head"><?= poster($reply) ?></div>
+				<div class="msg-head"><?= poster($reply) ?><?= chat_actions((string) $message['id'], (string) $reply['id'], false, $authed || $ownReply, $token) ?></div>
 				<div class="msg-text"><?= render_post_text((string) $reply['text']) ?></div>
-<?php if ($authed || $ownReply): ?>
-				<div class="msg-actions">
-					<form method="post" action="/c/" class="msg-remove">
-						<input type="hidden" name="token" value="<?= e($token) ?>">
-						<input type="hidden" name="action" value="remove">
-						<input type="hidden" name="id" value="<?= e((string) $message['id']) ?>">
-						<input type="hidden" name="reply" value="<?= e((string) $reply['id']) ?>">
-						<button type="submit">Delete</button>
-					</form>
-				</div>
-<?php endif; ?>
 			</div>
 <?php endforeach; ?>
 		</div>
@@ -322,22 +324,19 @@ if ($fragment) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>/c/ - Chat - 4real</title>
+<title>/c/ - chat - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=8">
+<link rel="stylesheet" href="/style.css?v=9">
 </head>
 <body class="blue">
 
-<div class="logo">
-	<a href="/404.php"><img src="/assets/4real-logo.png" alt="4real"></a>
-</div>
+<?= board_nav('c') ?>
 
-<div class="page">
+<div class="page wide">
 
-	<div class="nav">[<a href="/home">Return to Home</a>]</div>
+<?= board_header('/c/ - chat', 'Write message', '#sayform') ?>
 
-	<div class="box">
-		<div class="box-title">/c/ - Chat</div>
+	<div class="board">
 
 <?php if ($errors !== []): ?>
 		<div class="box-body error">
@@ -379,21 +378,7 @@ if ($fragment) {
 		<div id="chat-list"><?= $list ?></div>
 	</div>
 
-	<div class="pagelinks">
-		<a href="/home">Home</a>
-		<span class="dot">&#9679;</span>
-		<a href="/faq">FAQ</a>
-		<span class="dot">&#9679;</span>
-		<a href="/rules">Rules</a>
-<?php if ($authed): ?>
-		<span class="dot">&#9679;</span>
-		<a href="/admintools.php">Admin Tools</a>
-<?php endif; ?>
-	</div>
-
-	<div class="copyright">Copyright &copy; 2025-2026 4real community support. All rights reserved</div>
-
-	<div class="madeby">created by tolstovka (<a href="https://t.me/nysh4real" target="_blank" rel="noopener">@nysh4real</a> in telegram)</div>
+<?= page_footer($authed) ?>
 
 </div>
 
@@ -403,6 +388,6 @@ if ($fragment) {
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=8"></script>
+<script src="/script.js?v=9"></script>
 </body>
 </html>

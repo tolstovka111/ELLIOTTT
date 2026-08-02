@@ -13,13 +13,13 @@ a public chat.
 | `admintools.php` | Admin only: the blog editor |
 | `admin.php` | Setup, sign in, and the handler for publish / delete / log out |
 | `404.php` | Not-found page, shows a random picture from `assets/404/` |
-| `roblox.html`, `minecraft.html` | `/o/`, `/m/` — avatars |
-| `anime.html`, `games.html` | `/a/`, `/g/` — favourite characters |
-| `random.html` | `/b/` — random pictures |
-| `faq.html`, `rules.html` | `/faq`, `/rules` |
+| `board.php` | `/o/` `/m/` `/a/` `/g/` `/b/` `/faq` `/rules` — the standalone pages |
+| `pages/` | Optional HTML fragment that fills a page in |
 | `.htaccess` | Short URLs, directory index, 404 document |
 | `style.css`, `script.js` | Theme and front-end logic |
 | `api/lib.php` | Storage, posts, chat, emoji and hashing helpers |
+| `api/ui.php` | Board navigation, page header and footer |
+| `api/comments.php` | The comment engine shared by the blog and the pages |
 | `api/views.php` | Unique-visitor counter endpoint |
 | `api/online.php` | Marks the visitor present and returns the current online count |
 | `assets/emoji/` | Emoji pack |
@@ -69,8 +69,12 @@ sudo chmod -R 755 /var/www/html/api /var/www/html/assets
 | `/faq` `/rules` | FAQ, rules |
 
 Everything else falls through to the styled 404 page. Drop your own pictures into
-`assets/404/` — the page shows a random one on every visit. Clicking the **4real
-logo** in the header of any page also leads there.
+`assets/404/` — the page shows a random one on every visit. The **4real logo**
+leads there from the front page only; everywhere else it goes back home.
+
+Every page except the front page and the 404 carries the **board bar** along the
+top — `[o / m / a / g / b / c / n] [faq / rules]` on the left and `[Home]` on the
+right.
 
 ## First run
 
@@ -138,6 +142,13 @@ The header line reads name, country flag, date with seconds, running number and
 a **▶** link to the post; the **File:** line with size and pixel dimensions sits
 under it, and the picture floats to the left of the text.
 
+### Comments per post
+
+A new post starts with its comments **closed**. The signed-in admin sees
+**[Allow comments]** under it and opens them with one click; **[Close comments]**
+shuts them again. While a post is closed a visitor sees no comment box, no
+counter and no toggle — the post simply stands on its own.
+
 ### Comments
 
 Comments start **folded**: a post with comments shows only a **Show comments (N)**
@@ -156,9 +167,24 @@ link, and one without shows just the comment box.
 - The signed-in admin gets the name field prefilled with the admin nickname;
   leaving it posts in yellow, changing it posts under that plain name instead.
 
+## The standalone pages
+
+`/o/` `/m/` `/a/` `/g/` `/b/` `/faq` `/rules` all run through `board.php` and
+share the layout of the blog: the board bar, a random banner, the board title, a
+**[Go to the comments]** link and a random ad banner.
+
+The middle of the page is yours to fill: drop an HTML fragment into `pages/`
+named after the board — `o.html`, `faq.html` and so on — and it is pasted in
+above the comments. Without one the page reads *Nothing here yet.*
+
+Under it sits the same comment box as on the blog, so every page can be talked
+about. Those comments live in `api/data/pages.json`.
+
 ## Chat
 
-`/c/` is open to everyone, no registration. Posts read like 4chan:
+`/c/` carries the same header as the blog — banner, the title `/c/ - chat`, a
+**[Write message]** link down to the compose row, then a random ad banner. It is
+open to everyone, no registration, and posts read like 4chan:
 
 ```
 Anonymous 08/01/26(Sat)23:36 No.12
@@ -175,7 +201,8 @@ File: photo.jpg (162 KB, 954x954)
 - An attachment is announced by a **File:** line with the original name, size
   and pixel dimensions; the thumbnail floats left of the text and opens full
   size on click, with a download button.
-- **Reply** under a message opens a small form — name and text only.
+- **[reply]** and **[delete]** sit in brackets right after the timestamp, as on
+  4chan. Reply opens a small form — name and text only.
 - **One message per minute per address**, replies included. After sending, Send
   becomes a countdown whose last five seconds shimmer through the rainbow. The
   signed-in admin has no cooldown.
