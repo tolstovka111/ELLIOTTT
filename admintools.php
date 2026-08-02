@@ -25,6 +25,13 @@ $emoji = emoji_map();
 $adminName = admin_name();
 $adminColour = admin_color();
 $now = time();
+$views = views_read();
+$series = views_series($views['days'], 30);
+$peak = max(1, $series === [] ? 1 : max($series));
+$visitors = $views['visitors'];
+uasort($visitors, static function (array $a, array $b): int {
+    return (int) $b['last'] <=> (int) $a['last'];
+});
 
 $checks = [
     'api/data' => data_dir() !== '',
@@ -42,7 +49,7 @@ $broken = in_array(false, $checks, true);
 <meta name="robots" content="noindex, nofollow">
 <title>Admin Tools - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=11">
+<link rel="stylesheet" href="/style.css?v=12">
 </head>
 <body class="blue">
 
@@ -195,6 +202,82 @@ $broken = in_array(false, $checks, true);
 	</form>
 
 	<div class="box">
+		<div class="box-title">Site stats</div>
+		<div class="box-body stats-summary">
+			<span class="stat"><b><?= number_format((int) $views['total']) ?></b> unique visitors</span>
+			<span class="stat"><b><?= number_format(array_sum($views['days'])) ?></b> page views</span>
+			<span class="stat"><b><?= number_format(online_count(false)) ?></b> online now</span>
+		</div>
+		<div class="box-body">
+			<div class="chart" id="views-chart" data-peak="<?= $peak ?>">
+<?php
+$count = count($series);
+$width = 720;
+$height = 180;
+$padLeft = 34;
+$padBottom = 22;
+$padTop = 10;
+$step = $count > 1 ? ($width - $padLeft - 8) / ($count - 1) : 0;
+$points = [];
+$dots = [];
+$index = 0;
+
+foreach ($series as $date => $hits) {
+    $x = $padLeft + ($step * $index);
+    $y = $padTop + (($height - $padTop - $padBottom) * (1 - ($hits / $peak)));
+    $points[] = round($x, 1) . ',' . round($y, 1);
+    $dots[] = ['x' => round($x, 1), 'y' => round($y, 1), 'date' => $date, 'hits' => $hits];
+    $index++;
+}
+?>
+				<svg viewBox="0 0 <?= $width ?> <?= $height ?>" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Page views per day">
+<?php for ($line = 0; $line <= 4; $line++): ?>
+<?php $gy = $padTop + (($height - $padTop - $padBottom) / 4 * $line); ?>
+					<line class="chart-grid" x1="<?= $padLeft ?>" y1="<?= round($gy, 1) ?>" x2="<?= $width - 8 ?>" y2="<?= round($gy, 1) ?>"></line>
+					<text class="chart-axis" x="<?= $padLeft - 6 ?>" y="<?= round($gy + 3, 1) ?>" text-anchor="end"><?= (int) round($peak - ($peak / 4 * $line)) ?></text>
+<?php endfor; ?>
+					<polyline class="chart-line" points="<?= e(implode(' ', $points)) ?>"></polyline>
+<?php foreach ($dots as $spot => $dot): ?>
+					<circle class="chart-dot" cx="<?= $dot['x'] ?>" cy="<?= $dot['y'] ?>" r="3" data-date="<?= e((string) $dot['date']) ?>" data-hits="<?= (int) $dot['hits'] ?>"></circle>
+<?php if ($spot === 0 || $spot === (int) floor($count / 2) || $spot === $count - 1): ?>
+					<text class="chart-axis" x="<?= $dot['x'] ?>" y="<?= $height - 6 ?>" text-anchor="middle"><?= e(gmdate('d M', (int) strtotime((string) $dot['date']))) ?></text>
+<?php endif; ?>
+<?php endforeach; ?>
+				</svg>
+				<div class="chart-tip" id="chart-tip" hidden></div>
+			</div>
+			<div class="chart-note">Page views per day over the last 30 days.</div>
+		</div>
+	</div>
+
+	<div class="box">
+		<div class="box-title">Visitors</div>
+<?php if ($visitors === []): ?>
+		<div class="empty">Nobody has been here yet.</div>
+<?php else: ?>
+		<div class="tablewrap">
+			<table class="datatable">
+				<thead>
+					<tr><th>Address</th><th>Country</th><th>Views</th><th>First seen</th><th>Last seen</th></tr>
+				</thead>
+				<tbody>
+<?php foreach ($visitors as $visitor): ?>
+					<tr>
+						<td><?= $visitor['ip'] === '' ? '<span class="muted">hidden</span>' : e((string) $visitor['ip']) ?></td>
+						<td><?= $visitor['country'] === '' ? '<span class="muted">&mdash;</span>' : country_flag_html((string) $visitor['country']) . ' ' . e((string) $visitor['country']) ?></td>
+						<td><?= number_format((int) $visitor['hits']) ?></td>
+						<td><span class="msg-date" data-ts="<?= (int) $visitor['first'] ?>"><?= e(gmdate('m/d/y(D)H:i:s', (int) $visitor['first'])) ?></span></td>
+						<td><span class="msg-date" data-ts="<?= (int) $visitor['last'] ?>"><?= e(gmdate('m/d/y(D)H:i:s', (int) $visitor['last'])) ?></span></td>
+					</tr>
+<?php endforeach; ?>
+				</tbody>
+			</table>
+		</div>
+		<div class="chart-note">Addresses recorded from <?= count($visitors) ?> visitor<?= count($visitors) === 1 ? '' : 's' ?>. Rows added before this update show no address.</div>
+<?php endif; ?>
+	</div>
+
+	<div class="box">
 		<div class="box-title">All posts</div>
 <?php if ($posts === []): ?>
 		<div class="empty">No Posts in my Blog yet.</div>
@@ -242,6 +325,6 @@ $broken = in_array(false, $checks, true);
 
 </div>
 
-<script src="/script.js?v=11"></script>
+<script src="/script.js?v=12"></script>
 </body>
 </html>

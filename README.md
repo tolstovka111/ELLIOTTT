@@ -253,6 +253,29 @@ a PNG, GIF, WEBP or JPG up to 2 MB and give it a name, or leave the name empty
 to use the file name. Dropping files straight into `assets/emoji/` still works —
 the file name is the shortcode, so `konatacry.png` becomes `:konatacry:`.
 
+## Stats in Admin Tools
+
+**Site stats** draws page views per day over the last 30 days as a line chart;
+hovering a point shows that day and its exact count. Above it sit the unique
+visitor total, the page views on record and how many people are online now.
+
+**Visitors** lists every address that has ever loaded the site, newest first,
+with its country flag, how many views it accounts for and when it was first and
+last seen. Addresses are read the same way as everywhere else, so behind a proxy
+`VIEWS_TRUST_PROXY=1` is what makes them real rather than the proxy's own.
+
+Both live in `api/data/views.json`, which keeps 120 days of daily counts and the
+4000 most recent visitors. Rows recorded before this feature existed show no
+address, only the count they contributed.
+
+## Phones
+
+The layout folds at 760px and again at 460px: the picture in a post stops
+floating and the text takes the full width under it, every compose row becomes a
+stack of full-width fields, the admin forms drop their label column, the
+visitors table scrolls inside its own box and the banners shrink to fit. No page
+scrolls sideways.
+
 ## Counters
 
 The Stats box shows two numbers.

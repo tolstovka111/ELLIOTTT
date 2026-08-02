@@ -19,6 +19,8 @@ const MAX_NAME = 32;
 const MAX_CHAT_TEXT = 600;
 const GEO_TTL = 2592000;
 const EMOJI_BYTES = 2097152;
+const VIEWS_DAYS_KEPT = 120;
+const VIEWS_MAX_VISITORS = 4000;
 const LOGIN_MAX_ATTEMPTS = 5;
 const LOGIN_LOCK_SECONDS = 900;
 
@@ -809,6 +811,98 @@ function online_count(bool $touch): int
     fclose($handle);
 
     return count($seen);
+}
+
+/**
+ * Brings an older views.json - a bare hash => timestamp map - up to the shape
+ * the stats page reads, without losing the visitors already counted.
+ */
+function views_normalise(array $store): array
+{
+    $visitors = (array) ($store['visitors'] ?? []);
+    $fixed = [];
+
+    foreach ($visitors as $key => $entry) {
+        if (is_array($entry)) {
+            $fixed[$key] = [
+                'ip' => (string) ($entry['ip'] ?? ''),
+                'country' => (string) ($entry['country'] ?? ''),
+                'first' => (int) ($entry['first'] ?? 0),
+                'last' => (int) ($entry['last'] ?? 0),
+                'hits' => (int) ($entry['hits'] ?? 1),
+            ];
+            continue;
+        }
+
+        $fixed[$key] = [
+            'ip' => '',
+            'country' => '',
+            'first' => (int) $entry,
+            'last' => (int) $entry,
+            'hits' => 1,
+        ];
+    }
+
+    return [
+        'total' => (int) ($store['total'] ?? count($fixed)),
+        'visitors' => $fixed,
+        'days' => array_map('intval', (array) ($store['days'] ?? [])),
+    ];
+}
+
+function views_trim(array $store): array
+{
+    $days = (array) $store['days'];
+
+    if (count($days) > VIEWS_DAYS_KEPT) {
+        krsort($days);
+        $days = array_slice($days, 0, VIEWS_DAYS_KEPT, true);
+        ksort($days);
+        $store['days'] = $days;
+    }
+
+    $visitors = (array) $store['visitors'];
+
+    if (count($visitors) > VIEWS_MAX_VISITORS) {
+        uasort($visitors, static function (array $a, array $b): int {
+            return (int) $b['last'] <=> (int) $a['last'];
+        });
+        $store['visitors'] = array_slice($visitors, 0, VIEWS_MAX_VISITORS, true);
+    }
+
+    return $store;
+}
+
+function views_read(): array
+{
+    $dir = data_dir();
+    $path = $dir === '' ? '' : $dir . '/views.json';
+
+    if ($path === '' || !is_file($path)) {
+        return views_normalise([]);
+    }
+
+    $raw = @file_get_contents($path);
+    $store = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+
+    return views_normalise(is_array($store) ? $store : []);
+}
+
+/**
+ * The last N days as [date => hits], with the quiet days filled in as zero so
+ * the chart keeps an even step.
+ */
+function views_series(array $days, int $span): array
+{
+    $series = [];
+    $now = time();
+
+    for ($i = $span - 1; $i >= 0; $i--) {
+        $date = gmdate('Y-m-d', $now - ($i * 86400));
+        $series[$date] = (int) ($days[$date] ?? 0);
+    }
+
+    return $series;
 }
 
 function admin_name_path(): string

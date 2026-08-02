@@ -166,7 +166,7 @@ $boardTitle = '/n/ - posts by nysha4real';
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($boardTitle) ?> - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=11">
+<link rel="stylesheet" href="/style.css?v=12">
 </head>
 <body class="blue">
 
@@ -268,6 +268,6 @@ $open = !empty($post['comments_open']);
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=11"></script>
+<script src="/script.js?v=12"></script>
 </body>
 </html>

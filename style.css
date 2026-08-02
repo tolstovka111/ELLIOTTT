@@ -1594,16 +1594,6 @@ body.blue .notfound-fallback {
 	color: #9988ee;
 }
 
-@media (max-width: 620px) {
-	.thread-post .post {
-		flex-direction: column;
-	}
-
-	.post-side {
-		max-width: 100%;
-	}
-}
-
 .quotelink {
 	font-size: 9.5pt;
 	line-height: 1.5;
@@ -1737,4 +1727,319 @@ body.blue .notfound-fallback {
 
 .quotepop-close:hover {
 	color: #dd0000;
+}
+
+/* ---- Admin stats ---------------------------------------------------- */
+
+.stats-summary {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 22px;
+	border-bottom: 1px solid #b7c5d9;
+}
+
+.stats-summary .stat {
+	white-space: nowrap;
+}
+
+.chart {
+	position: relative;
+}
+
+.chart svg {
+	display: block;
+	width: 100%;
+	height: auto;
+	overflow: visible;
+}
+
+.chart-grid {
+	stroke: #b7c5d9;
+	stroke-width: 1;
+}
+
+.chart-line {
+	fill: none;
+	stroke: #34345c;
+	stroke-width: 2;
+	stroke-linejoin: round;
+	stroke-linecap: round;
+}
+
+.chart-dot {
+	fill: #ffffff;
+	stroke: #34345c;
+	stroke-width: 2;
+	cursor: pointer;
+}
+
+.chart-dot:hover,
+.chart-dot.on {
+	fill: #dd0000;
+	stroke: #dd0000;
+	r: 4;
+}
+
+.chart-axis {
+	fill: #555577;
+	font-family: Tahoma, Verdana, Arial, sans-serif;
+	font-size: 9px;
+}
+
+.chart-tip {
+	position: absolute;
+	z-index: 20;
+	padding: 4px 8px;
+	border: 1px solid #34345c;
+	background-color: #ffffff;
+	font-size: 9pt;
+	line-height: 1.35;
+	white-space: nowrap;
+	pointer-events: none;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.chart-tip[hidden] {
+	display: none;
+}
+
+.chart-note {
+	padding-top: 6px;
+	font-size: 8.5pt;
+	color: #555577;
+}
+
+.tablewrap {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+.datatable {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 9pt;
+}
+
+.datatable th,
+.datatable td {
+	padding: 4px 8px;
+	text-align: left;
+	white-space: nowrap;
+	border-bottom: 1px solid #b7c5d9;
+}
+
+.datatable th {
+	background-color: #c0c8f0;
+	font-weight: bold;
+}
+
+.datatable tr:last-child td {
+	border-bottom: 0;
+}
+
+.datatable .muted {
+	color: #777799;
+}
+
+/* ---- Phones --------------------------------------------------------- */
+
+@media (max-width: 760px) {
+	body {
+		padding: 0 6px 30px;
+	}
+
+	.page.wide {
+		padding: 0 4px;
+	}
+
+	.boardnav {
+		font-size: 8.5pt;
+		padding: 4px 2px 2px;
+	}
+
+	.boardbanner,
+	.boardclip {
+		width: 100%;
+		max-width: 320px;
+		max-height: none;
+	}
+
+	.boardtitle {
+		font-size: 16pt;
+		margin: 6px 0 8px;
+	}
+
+	.boardgo {
+		font-size: 12pt;
+	}
+
+	.adbanner img {
+		width: 100%;
+	}
+
+	.logo img {
+		width: 240px;
+	}
+
+	/* the picture stops floating so the text keeps its own full line */
+	.post-media {
+		float: none;
+		margin: 0 0 8px 0;
+	}
+
+	.post-image img,
+	.post-image video {
+		max-width: 100%;
+		max-height: 300px;
+	}
+
+	.thread-post .post-text,
+	.msg-text {
+		max-width: 100%;
+	}
+
+	.post-head {
+		font-size: 9.5pt;
+	}
+
+	.msg-media {
+		float: none;
+		margin: 4px 0 6px;
+	}
+
+	.msg-media img {
+		max-width: 100%;
+	}
+
+	/* every compose row becomes a stack instead of one squeezed line */
+	.sayform .say-line,
+	.commentform,
+	.replyform,
+	.emojiform {
+		display: block;
+	}
+
+	.sayform .say-text,
+	.commentform input[type="text"],
+	.replyform input[type="text"],
+	.emojiform input[type="text"],
+	.emojiform input[type="file"],
+	.say-name {
+		display: block;
+		width: 100%;
+		box-sizing: border-box;
+		margin-bottom: 6px;
+	}
+
+	.commentform button,
+	.replyform button,
+	.emojiform button,
+	.say-send {
+		display: block;
+		width: 100%;
+		margin-top: 6px;
+	}
+
+	.say-clip {
+		display: flex;
+		justify-content: center;
+		width: 100%;
+		box-sizing: border-box;
+	}
+
+	.say-timer {
+		display: block;
+		margin: 6px auto 0;
+	}
+
+	.formrow {
+		display: block;
+	}
+
+	.formlabel {
+		width: auto;
+		display: block;
+	}
+
+	.formfield input[type="text"],
+	.formfield input[type="url"],
+	.formfield textarea,
+	.adminform input,
+	.adminform textarea {
+		width: 100%;
+		box-sizing: border-box;
+	}
+
+	.quotepop {
+		max-width: calc(100vw - 20px);
+	}
+
+	.notfound-page {
+		width: 100%;
+	}
+
+	.notfound img {
+		max-height: 50vh;
+	}
+
+	.emojibar img {
+		height: 28px;
+	}
+
+	.emojicard {
+		width: 74px;
+	}
+
+	.gallery figure,
+	.gallery img {
+		width: 45%;
+		min-width: 130px;
+	}
+
+	.gallery img {
+		height: auto;
+		aspect-ratio: 1 / 1;
+	}
+
+	.stats-summary {
+		flex-direction: column;
+		gap: 3px;
+	}
+
+	.chart-tip {
+		font-size: 8.5pt;
+	}
+}
+
+@media (max-width: 460px) {
+	.boardnav {
+		font-size: 8pt;
+	}
+
+	.boardtitle {
+		font-size: 13.5pt;
+	}
+
+	.msg-head,
+	.post-head {
+		font-size: 9pt;
+		line-height: 1.7;
+	}
+
+	.threads {
+		grid-template-columns: 1fr;
+	}
+
+	.board-col {
+		flex: 1 1 100%;
+	}
+
+	.pagelinks a {
+		margin: 0 2px;
+	}
+}
+
+/* A display rule further up must never bring a hidden element back. */
+[hidden] {
+	display: none !important;
 }

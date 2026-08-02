@@ -33,6 +33,7 @@ if ($clientIp === '') {
 }
 
 $fingerprint = hash('sha256', $salt . '|' . $clientIp);
+$country = visitor_country();
 $handle = @fopen($dir . '/views.json', 'c+');
 
 if ($handle === false) {
@@ -46,21 +47,40 @@ if (!flock($handle, LOCK_EX)) {
 
 $raw = stream_get_contents($handle);
 $store = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+$store = views_normalise(is_array($store) ? $store : []);
 
-if (!is_array($store) || !isset($store['total'], $store['visitors']) || !is_array($store['visitors'])) {
-    $store = ['total' => 0, 'visitors' => []];
-}
+$now = time();
+$today = gmdate('Y-m-d', $now);
+$entry = $store['visitors'][$fingerprint] ?? null;
 
-if (!isset($store['visitors'][$fingerprint])) {
-    $store['visitors'][$fingerprint] = time();
+if (!is_array($entry)) {
+    $store['visitors'][$fingerprint] = [
+        'ip' => $clientIp,
+        'country' => $country,
+        'first' => $now,
+        'last' => $now,
+        'hits' => 1,
+    ];
     $store['total'] = (int) $store['total'] + 1;
+} else {
+    $entry['ip'] = $clientIp;
+    $entry['last'] = $now;
+    $entry['hits'] = (int) ($entry['hits'] ?? 0) + 1;
 
-    rewind($handle);
-    ftruncate($handle, 0);
-    fwrite($handle, (string) json_encode($store));
-    fflush($handle);
+    if ($country !== '') {
+        $entry['country'] = $country;
+    }
+
+    $store['visitors'][$fingerprint] = $entry;
 }
 
+$store['days'][$today] = (int) ($store['days'][$today] ?? 0) + 1;
+$store = views_trim($store);
+
+rewind($handle);
+ftruncate($handle, 0);
+fwrite($handle, (string) json_encode($store));
+fflush($handle);
 flock($handle, LOCK_UN);
 fclose($handle);
 

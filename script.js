@@ -270,6 +270,51 @@
 
 	paintStamps(document);
 
+	var chart = document.getElementById("views-chart");
+	var chartTip = document.getElementById("chart-tip");
+
+	if (chart && chartTip) {
+		var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+		var showTip = function (dot) {
+			var parts = (dot.getAttribute("data-date") || "").split("-");
+			var hits = dot.getAttribute("data-hits") || "0";
+			var label = parts.length === 3
+				? parseInt(parts[2], 10) + " " + months[parseInt(parts[1], 10) - 1] + " " + parts[0]
+				: dot.getAttribute("data-date");
+
+			chartTip.innerHTML = "<b>" + hits + "</b> view" + (hits === "1" ? "" : "s") + "<br>" + label;
+			chartTip.hidden = false;
+
+			var box = dot.getBoundingClientRect();
+			var frame = chart.getBoundingClientRect();
+			var left = box.left - frame.left + (box.width / 2) - (chartTip.offsetWidth / 2);
+
+			chartTip.style.left = Math.max(0, Math.min(left, frame.width - chartTip.offsetWidth)) + "px";
+			chartTip.style.top = (box.top - frame.top - chartTip.offsetHeight - 8) + "px";
+		};
+
+		chart.addEventListener("mouseover", function (event) {
+			if (event.target.classList.contains("chart-dot")) {
+				event.target.classList.add("on");
+				showTip(event.target);
+			}
+		});
+
+		chart.addEventListener("mouseout", function (event) {
+			if (event.target.classList.contains("chart-dot")) {
+				event.target.classList.remove("on");
+				chartTip.hidden = true;
+			}
+		});
+
+		chart.addEventListener("touchstart", function (event) {
+			if (event.target.classList.contains("chart-dot")) {
+				showTip(event.target);
+			}
+		}, { passive: true });
+	}
+
 	var quotePop = null;
 
 	function closeQuotePop() {
