@@ -50,6 +50,12 @@ a:hover {
 	margin: 0 auto;
 }
 
+.page.wide {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 0 10px;
+}
+
 .box {
 	border: 2px solid #bb8866;
 	background-color: #ffffff;
@@ -780,6 +786,16 @@ a:hover {
 	font-weight: bold;
 }
 
+.msg-name.admin {
+	color: #d4a017;
+}
+
+.msg-flag {
+	font-size: 10pt;
+	line-height: 1;
+	vertical-align: baseline;
+}
+
 .msg-no {
 	color: #800000;
 }
@@ -795,11 +811,6 @@ a:hover {
 
 .msg-file a {
 	color: #0000ee;
-}
-
-.msg-admin {
-	font-weight: bold;
-	animation: rgbtext 2.4s linear infinite;
 }
 
 .msg-text {
@@ -1067,6 +1078,7 @@ a:hover {
 
 .comments-toggle,
 .comments-hide,
+.comments-show,
 .comments-all {
 	font-size: 9pt;
 	color: #0000ee;
@@ -1077,6 +1089,7 @@ a:hover {
 
 .comments-toggle:hover,
 .comments-hide:hover,
+.comments-show:hover,
 .comments-all:hover {
 	color: #f00000;
 }
@@ -1219,13 +1232,13 @@ a:hover {
 }
 
 .thread-post .post {
-	padding: 8px 10px;
+	padding: 6px 8px 10px;
 	overflow: hidden;
 }
 
 .post-file {
 	font-size: 9pt;
-	margin-bottom: 3px;
+	margin-bottom: 4px;
 	word-wrap: break-word;
 }
 
@@ -1238,33 +1251,40 @@ a:hover {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	margin: 0 14px 6px 0;
+	margin: 0 16px 6px 0;
 }
 
 .post-head {
-	display: flex;
-	align-items: baseline;
-	justify-content: space-between;
-	gap: 12px;
-	flex-wrap: wrap;
 	line-height: 1.6;
+	word-wrap: break-word;
 }
 
-.post-poster {
-	font-weight: bold;
-}
-
-.post-date {
+.post-head .post-date {
 	white-space: nowrap;
 }
 
+.post-anchor,
+.post-anchor:visited {
+	color: #34345c;
+	text-decoration: none;
+	font-size: 8pt;
+}
+
+.post-anchor:hover {
+	color: #dd0000;
+}
+
 .thread-post .post-text {
-	margin: 4px 0 0;
+	margin: 2px 0 0;
 }
 
 .thread-post .comments {
 	clear: both;
-	padding: 0 10px 0;
+	padding: 0 8px 0;
+}
+
+.comments-body[hidden] {
+	display: none;
 }
 
 .comments-bar {
@@ -1301,37 +1321,6 @@ a:hover {
 
 .say-name-fixed[hidden] {
 	display: none;
-}
-
-.tagcolor {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin-top: 6px;
-}
-
-.tagcolor[hidden] {
-	display: none;
-}
-
-.tagcolor input[type="color"] {
-	width: 46px;
-	height: 28px;
-	padding: 0;
-	border: 1px solid #aaaacc;
-	background: none;
-	cursor: pointer;
-}
-
-.tagcolor input[type="text"] {
-	width: 110px;
-	box-sizing: border-box;
-	border: 1px solid #aaaacc;
-	background-color: #ffffff;
-	color: #000000;
-	font-family: inherit;
-	font-size: 10pt;
-	padding: 4px 6px;
 }
 
 .tagform .formrow {
@@ -1476,16 +1465,19 @@ body.blue .say-timer {
 body.blue .msg-file a,
 body.blue .comments-toggle,
 body.blue .comments-hide,
+body.blue .comments-show,
 body.blue .comments-all,
 body.blue .msg-reply,
 body.blue .msg-remove button {
 	color: #34345c;
+	text-decoration: underline;
 }
 
 body.blue .msg-reply:hover,
 body.blue .msg-remove button:hover,
 body.blue .comments-toggle:hover,
 body.blue .comments-hide:hover,
+body.blue .comments-show:hover,
 body.blue .comments-all:hover {
 	color: #dd0000;
 }

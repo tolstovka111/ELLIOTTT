@@ -86,14 +86,15 @@ if ($action === 'say' || $action === 'reply') {
         $errors[] = 'One message per minute. Wait ' . $left . ' s.';
     } else {
         $text = mb_substr(trim((string) ($_POST['text'] ?? '')), 0, MAX_CHAT_TEXT);
+        $adminName = admin_name();
         $asAdmin = $authed && (string) ($_POST['asadmin'] ?? '') === '1';
-        $name = $asAdmin ? 'nysha4real' : clean_name((string) ($_POST['name'] ?? ''));
+        $name = $asAdmin ? $adminName : clean_name((string) ($_POST['name'] ?? ''));
 
         if ($name === '') {
             $name = 'Anonymous';
         }
 
-        if (!$asAdmin && strcasecmp($name, 'nysha4real') === 0) {
+        if (!$asAdmin && strcasecmp($name, $adminName) === 0) {
             $name = 'Anonymous';
         }
 
@@ -118,6 +119,7 @@ if ($action === 'say' || $action === 'reply') {
                 'name' => $name,
                 'text' => $text,
                 'ip' => visitor_hash(),
+                'country' => visitor_country(),
                 'admin' => $asAdmin,
             ];
 
@@ -224,10 +226,11 @@ function stamp(array $item): string
 
 function poster(array $item): string
 {
-    $line = '<span class="msg-name">' . e((string) $item['name']) . '</span>';
+    $line = poster_name_html((string) $item['name'], !empty($item['admin']));
+    $flag = country_flag_html((string) ($item['country'] ?? ''));
 
-    if (!empty($item['admin'])) {
-        $line .= ' &mdash; ' . admin_tag_html();
+    if ($flag !== '') {
+        $line .= ' ' . $flag;
     }
 
     return $line . ' ' . stamp($item) . ' <span class="msg-no">No.' . (int) ($item['no'] ?? 0) . '</span>';
@@ -321,7 +324,7 @@ if ($fragment) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/c/ - Chat - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=7">
+<link rel="stylesheet" href="/style.css?v=8">
 </head>
 <body class="blue">
 
@@ -352,7 +355,7 @@ if ($fragment) {
 <?php if ($authed): ?>
 				<div class="say-admin">
 					<label class="adminswitch"><input type="checkbox" name="asadmin" value="1" checked><span>Post as admin</span></label>
-					<span class="say-name-fixed">nysha4real &mdash; <?= admin_tag_html() ?></span>
+					<span class="say-name-fixed"><?= poster_name_html(admin_name(), true) ?></span>
 				</div>
 <?php endif; ?>
 				<input type="text" name="name" class="say-name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous" autocomplete="off"<?= $authed ? ' hidden' : '' ?>>
@@ -400,6 +403,6 @@ if ($fragment) {
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=7"></script>
+<script src="/script.js?v=8"></script>
 </body>
 </html>

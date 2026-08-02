@@ -20,9 +20,9 @@ $flash = $_SESSION['flash'] ?? null;
 $formErrors = (array) ($_SESSION['form_errors'] ?? []);
 unset($_SESSION['flash'], $_SESSION['form_errors']);
 
-$posts = live_posts();
+$posts = all_posts();
 $emoji = emoji_map();
-$tag = admin_tag();
+$adminName = admin_name();
 $now = time();
 
 $checks = [
@@ -41,7 +41,7 @@ $broken = in_array(false, $checks, true);
 <meta name="robots" content="noindex, nofollow">
 <title>Admin Tools - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=7">
+<link rel="stylesheet" href="/style.css?v=8">
 </head>
 <body class="blue">
 
@@ -133,44 +133,30 @@ $broken = in_array(false, $checks, true);
 	</div>
 
 	<div class="box">
-		<div class="box-title">Admin tag</div>
+		<div class="box-title">Admin nickname</div>
 		<div class="box-body">
-			<p>This is the label next to your name in the chat and on the blog. Up to <?= MAX_ADMIN_TAG ?> characters.</p>
+			<p>This is the name your posts, comments and chat messages are signed with. Up to <?= MAX_NAME ?> characters. It always shows in yellow; everyone else is green.</p>
 			<form method="post" action="/admin.php" class="tagform" id="tagform">
 				<input type="hidden" name="csrf" value="<?= e($csrf) ?>">
-				<input type="hidden" name="action" value="tag">
+				<input type="hidden" name="action" value="nickname">
 
 				<div class="formrow">
-					<div class="formlabel">Text</div>
+					<div class="formlabel">Nickname</div>
 					<div class="formfield">
-						<input type="text" name="tag" id="tag-text" maxlength="<?= MAX_ADMIN_TAG ?>" value="<?= e((string) $tag['text']) ?>" required>
-					</div>
-				</div>
-
-				<div class="formrow">
-					<div class="formlabel">Colour</div>
-					<div class="formfield">
-						<label class="adminswitch">
-							<input type="checkbox" name="rainbow" id="tag-rainbow" value="1"<?= $tag['color'] === '' ? ' checked' : '' ?>>
-							<span>Rainbow (animated)</span>
-						</label>
-						<div class="tagcolor" id="tag-color-row">
-							<input type="color" name="color" id="tag-color" value="<?= e($tag['color'] === '' ? '#117743' : (string) $tag['color']) ?>">
-							<input type="text" id="tag-color-hex" maxlength="7" value="<?= e($tag['color'] === '' ? '#117743' : (string) $tag['color']) ?>" placeholder="#117743">
-						</div>
+						<input type="text" name="nickname" id="tag-text" maxlength="<?= MAX_NAME ?>" value="<?= e($adminName) ?>" required>
 					</div>
 				</div>
 
 				<div class="formrow">
 					<div class="formlabel">Preview</div>
 					<div class="formfield">
-						<span class="msg-name">nysha4real</span> &mdash; <span class="msg-admin" id="tag-preview"<?= $tag['color'] === '' ? '' : ' style="color: ' . e((string) $tag['color']) . '; animation: none;"' ?>><?= e((string) $tag['text']) ?></span>
+						<span class="msg-name admin" id="tag-preview"><?= e($adminName) ?></span>
 					</div>
 				</div>
 
 				<div class="formrow">
 					<div class="formlabel"></div>
-					<div class="formfield"><button type="submit">Save tag</button></div>
+					<div class="formfield"><button type="submit">Save nickname</button></div>
 				</div>
 			</form>
 		</div>
@@ -182,7 +168,7 @@ $broken = in_array(false, $checks, true);
 	</form>
 
 	<div class="box">
-		<div class="box-title">Live posts</div>
+		<div class="box-title">All posts</div>
 <?php if ($posts === []): ?>
 		<div class="empty">No Posts in my Blog yet.</div>
 <?php else: ?>
@@ -229,6 +215,6 @@ $broken = in_array(false, $checks, true);
 
 </div>
 
-<script src="/script.js?v=7"></script>
+<script src="/script.js?v=8"></script>
 </body>
 </html>

@@ -25,4 +25,5 @@ ErrorDocument 404 /404.php
 	RewriteRule ^b/?$ /random.html [L]
 	RewriteRule ^c/?$ /chat.php [L]
 	RewriteRule ^blog/?$ /blog.php [L]
+	RewriteRule ^n/?$ /blog.php [L]
 </IfModule>

@@ -16,8 +16,8 @@ const COMMENTS_OPEN = 5;
 const BLOG_COMMENTS_OPEN = 2;
 const ONLINE_WINDOW = 180;
 const MAX_NAME = 32;
-const MAX_ADMIN_TAG = 15;
 const MAX_CHAT_TEXT = 600;
+const GEO_TTL = 2592000;
 const LOGIN_MAX_ATTEMPTS = 5;
 const LOGIN_LOCK_SECONDS = 900;
 
@@ -237,6 +237,36 @@ function live_posts(): array
     }
 
     return array_slice($fresh, 0, FRONT_POSTS);
+}
+
+function number_posts(array $store): array
+{
+    $posts = (array) ($store['posts'] ?? []);
+    $seq = (int) ($store['pseq'] ?? 0);
+
+    if ($seq > 0) {
+        return $store;
+    }
+
+    $order = array_keys($posts);
+    usort($order, static function ($a, $b) use ($posts): int {
+        return (int) ($posts[$a]['created'] ?? 0) <=> (int) ($posts[$b]['created'] ?? 0);
+    });
+
+    foreach ($order as $index) {
+        if ((int) ($posts[$index]['no'] ?? 0) > 0) {
+            $seq = max($seq, (int) $posts[$index]['no']);
+            continue;
+        }
+
+        $seq++;
+        $posts[$index]['no'] = $seq;
+    }
+
+    $store['posts'] = $posts;
+    $store['pseq'] = $seq;
+
+    return $store;
 }
 
 function post_thumb(array $post): string
@@ -657,106 +687,154 @@ function online_count(bool $touch): int
     return count($seen);
 }
 
-function admin_tag_path(): string
+function admin_name_path(): string
 {
     $dir = data_dir();
 
-    return $dir === '' ? '' : $dir . '/admintag.json';
+    return $dir === '' ? '' : $dir . '/adminname.json';
 }
 
-function admin_tag(): array
+function admin_name(): string
 {
-    $fallback = ['text' => 'Admin', 'color' => ''];
-    $path = admin_tag_path();
+    $path = admin_name_path();
 
     if ($path === '' || !is_file($path)) {
-        return $fallback;
+        return 'nysha4real';
     }
 
     $raw = @file_get_contents($path);
     $data = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
 
     if (!is_array($data)) {
-        return $fallback;
+        return 'nysha4real';
     }
 
-    $text = clean_admin_tag((string) ($data['text'] ?? ''));
-    $color = clean_hex_color((string) ($data['color'] ?? ''));
+    $name = clean_name((string) ($data['name'] ?? ''));
 
-    return [
-        'text' => $text === '' ? 'Admin' : $text,
-        'color' => $color,
-    ];
+    return $name === '' ? 'nysha4real' : $name;
 }
 
-function save_admin_tag(string $text, string $color): bool
+function save_admin_name(string $name): bool
 {
-    $path = admin_tag_path();
+    $path = admin_name_path();
 
     if ($path === '') {
         return false;
     }
 
-    $body = (string) json_encode([
-        'text' => $text,
-        'color' => $color,
-    ]);
-
-    return @file_put_contents($path, $body, LOCK_EX) !== false;
+    return @file_put_contents($path, (string) json_encode(['name' => $name]), LOCK_EX) !== false;
 }
 
-function clean_admin_tag(string $text): string
+function poster_name_html(string $name, bool $isAdmin): string
 {
-    $text = trim(preg_replace('/\s+/u', ' ', $text) ?? '');
-    $text = str_replace(["\0", "\r", "\n"], '', $text);
-
-    return mb_substr($text, 0, MAX_ADMIN_TAG);
+    return '<span class="msg-name' . ($isAdmin ? ' admin' : '') . '">' . e($name) . '</span>';
 }
 
-function clean_hex_color(string $color): string
+function geo_path(): string
 {
-    $color = trim($color);
+    $dir = data_dir();
 
-    if ($color === '') {
+    return $dir === '' ? '' : $dir . '/geo.json';
+}
+
+function geo_lookup(string $ip): string
+{
+    $url = 'http://ip-api.com/json/' . rawurlencode($ip) . '?fields=countryCode';
+    $body = '';
+
+    if (function_exists('curl_init')) {
+        $handle = curl_init($url);
+
+        if ($handle !== false) {
+            curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($handle, CURLOPT_TIMEOUT, 2);
+            curl_setopt($handle, CURLOPT_CONNECTTIMEOUT, 2);
+            $result = curl_exec($handle);
+            curl_close($handle);
+            $body = is_string($result) ? $result : '';
+        }
+    }
+
+    if ($body === '' && ini_get('allow_url_fopen')) {
+        $context = stream_context_create(['http' => ['timeout' => 2, 'ignore_errors' => true]]);
+        $result = @file_get_contents($url, false, $context);
+        $body = is_string($result) ? $result : '';
+    }
+
+    if ($body === '') {
         return '';
     }
 
-    if (preg_match('/^#?([0-9a-fA-F]{6})$/', $color, $match) === 1) {
-        return '#' . strtolower($match[1]);
-    }
+    $data = json_decode($body, true);
+    $code = is_array($data) ? strtoupper((string) ($data['countryCode'] ?? '')) : '';
 
-    if (preg_match('/^#?([0-9a-fA-F]{3})$/', $color, $match) === 1) {
-        $short = strtolower($match[1]);
-
-        return '#' . $short[0] . $short[0] . $short[1] . $short[1] . $short[2] . $short[2];
-    }
-
-    if (preg_match('/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i', $color, $match) === 1) {
-        $parts = [];
-
-        for ($i = 1; $i <= 3; $i++) {
-            $value = (int) $match[$i];
-
-            if ($value < 0 || $value > 255) {
-                return '';
-            }
-
-            $parts[] = str_pad(dechex($value), 2, '0', STR_PAD_LEFT);
-        }
-
-        return '#' . implode('', $parts);
-    }
-
-    return '';
+    return preg_match('/^[A-Z]{2}$/', $code) === 1 ? $code : '';
 }
 
-function admin_tag_html(): string
+function visitor_country(): string
 {
-    $tag = admin_tag();
-    $color = (string) $tag['color'];
-    $style = $color === '' ? '' : ' style="color: ' . e($color) . '; animation: none;"';
+    $header = strtoupper(trim((string) ($_SERVER['HTTP_CF_IPCOUNTRY'] ?? '')));
 
-    return '<span class="msg-admin"' . $style . '>' . e((string) $tag['text']) . '</span>';
+    if (preg_match('/^[A-Z]{2}$/', $header) === 1 && $header !== 'XX' && $header !== 'T1') {
+        return $header;
+    }
+
+    $ip = client_ip();
+
+    if ($ip === '') {
+        return '';
+    }
+
+    $public = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+
+    if ($public === false) {
+        return '';
+    }
+
+    $path = geo_path();
+
+    if ($path === '') {
+        return '';
+    }
+
+    $key = secret_hash('geo', $ip);
+    $raw = @file_get_contents($path);
+    $cache = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+    $cache = is_array($cache) ? $cache : [];
+    $now = time();
+
+    if (isset($cache[$key]['code'], $cache[$key]['seen']) && $now - (int) $cache[$key]['seen'] < GEO_TTL) {
+        return (string) $cache[$key]['code'];
+    }
+
+    $code = geo_lookup($ip);
+
+    foreach ($cache as $entry => $row) {
+        if ($now - (int) ($row['seen'] ?? 0) > GEO_TTL) {
+            unset($cache[$entry]);
+        }
+    }
+
+    $cache[$key] = ['code' => $code, 'seen' => $now];
+    @file_put_contents($path, (string) json_encode($cache), LOCK_EX);
+
+    return $code;
+}
+
+function country_flag_html(string $code): string
+{
+    if (preg_match('/^[A-Za-z]{2}$/', $code) !== 1) {
+        return '';
+    }
+
+    $code = strtoupper($code);
+    $flag = '';
+
+    for ($i = 0; $i < 2; $i++) {
+        $flag .= mb_chr(0x1F1E6 + (ord($code[$i]) - 65), 'UTF-8');
+    }
+
+    return '<span class="msg-flag" title="' . e($code) . '">' . $flag . '</span>';
 }
 
 function ad_banners(): array

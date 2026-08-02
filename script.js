@@ -144,40 +144,12 @@
 	});
 
 	var tagText = document.getElementById("tag-text");
-	var tagColor = document.getElementById("tag-color");
-	var tagHex = document.getElementById("tag-color-hex");
-	var tagRainbow = document.getElementById("tag-rainbow");
 	var tagPreview = document.getElementById("tag-preview");
-	var tagColorRow = document.getElementById("tag-color-row");
 
-	if (tagText && tagColor && tagHex && tagRainbow && tagPreview && tagColorRow) {
-		var paintTag = function () {
-			tagPreview.textContent = tagText.value || "Admin";
-			tagColorRow.hidden = tagRainbow.checked;
-
-			if (tagRainbow.checked) {
-				tagPreview.style.color = "";
-				tagPreview.style.animation = "";
-			} else {
-				tagPreview.style.color = tagColor.value;
-				tagPreview.style.animation = "none";
-			}
-		};
-
-		tagText.addEventListener("input", paintTag);
-		tagRainbow.addEventListener("change", paintTag);
-		tagColor.addEventListener("input", function () {
-			tagHex.value = tagColor.value;
-			paintTag();
+	if (tagText && tagPreview) {
+		tagText.addEventListener("input", function () {
+			tagPreview.textContent = tagText.value || "nysha4real";
 		});
-		tagHex.addEventListener("input", function () {
-			if (/^#?[0-9a-fA-F]{6}$/.test(tagHex.value.trim())) {
-				tagColor.value = tagHex.value.trim().replace(/^#?/, "#");
-				paintTag();
-			}
-		});
-
-		paintTag();
 	}
 
 	var goPosts = document.querySelector(".goposts");
@@ -250,11 +222,12 @@
 		return value < 10 ? "0" + value : String(value);
 	}
 
-	function localStamp(seconds) {
+	function localStamp(seconds, withSeconds) {
 		var when = new Date(seconds * 1000);
-
-		return pad(when.getMonth() + 1) + "/" + pad(when.getDate()) + "/" + pad(when.getFullYear() % 100)
+		var stamp = pad(when.getMonth() + 1) + "/" + pad(when.getDate()) + "/" + pad(when.getFullYear() % 100)
 			+ "(" + weekdays[when.getDay()] + ")" + pad(when.getHours()) + ":" + pad(when.getMinutes());
+
+		return withSeconds ? stamp + ":" + pad(when.getSeconds()) : stamp;
 	}
 
 	function paintStamps(root) {
@@ -262,7 +235,7 @@
 			var seconds = parseInt(node.getAttribute("data-ts"), 10);
 
 			if (seconds) {
-				node.textContent = localStamp(seconds);
+				node.textContent = localStamp(seconds, node.classList.contains("post-date"));
 			}
 		});
 	}

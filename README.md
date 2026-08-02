@@ -65,7 +65,7 @@ sudo chmod -R 755 /var/www/html/api /var/www/html/assets
 | `/a/` `/g/` | anime, game characters |
 | `/b/` | random pictures |
 | `/c/` | chat |
-| `/blog/` | all blog posts |
+| `/blog/` `/n/` | all blog posts |
 | `/faq` `/rules` | FAQ, rules |
 
 Everything else falls through to the styled 404 page. Drop your own pictures into
@@ -121,9 +121,10 @@ their pictures, videos, text and date.
 ### The /blog/ header
 
 The page opens with a random banner from `assets/banners/` (one of four) and the
-board title `/blog/ - Nysh4real Blog` under it, then a rule, a
+board title `/n/ - posts by <admin nickname>` under it, then a rule, a
 **[Go to the posts]** link that scrolls smoothly down to the first post, and a
-random clickable banner from `assets/adbanners/`.
+random clickable banner from `assets/adbanners/`. The page answers on both
+`/blog/` and `/n/`.
 
 Drop PNG, JPG, GIF or WEBP files into `assets/banners/` to add header banners.
 
@@ -132,17 +133,19 @@ first dash**: `c-chat.gif` goes to `/c/`, `a-anime.gif` to `/a/`,
 `b-random.gif` to `/b/`. Valid boards are `o m a g b c`; anything else falls
 back to `/home`. With either folder empty its slot is simply skipped.
 
-Posts run the full width: the picture on the left, `nysha4real` in green with
-the admin tag next to it, the date on the right, the text below and the file
-size and dimensions above the picture. Posts are not numbered.
+Posts run the full width of the window with only a small margin on each side.
+The header line reads name, country flag, date with seconds, running number and
+a **▶** link to the post; the **File:** line with size and pixel dimensions sits
+under it, and the picture floats to the left of the text.
 
 ### Comments
 
-Every post on `/blog/` shows the **2 newest** comments straight away.
+Comments start **folded**: a post with comments shows only a **Show comments (N)**
+link, and one without shows just the comment box.
 
-- With more than two, **Show all N comments** reveals the rest. **Hide comments**
-  folds that post's comments and its comment form away behind a **Show comments**
-  link — each post is toggled on its own.
+- **Show comments** opens the **2 newest**; with more than two, **Show all N
+  comments** reveals the rest, and **Hide comments** folds them back. Each post
+  is toggled on its own.
 - A comment is a name (empty means `Anonymous`), text and one optional
   attachment — **PNG, JPG or GIF up to 3 MB**, no video. There is no cooldown.
   The header carries the name and the local-time stamp, and an attachment gets
@@ -150,8 +153,8 @@ Every post on `/blog/` shows the **2 newest** comments straight away.
 - **Answer** appears under other people's comments only; you cannot answer your
   own, which is checked by the same salted address hash as everywhere else.
 - Anyone can delete their own comment or answer, the admin can delete any.
-- The signed-in admin gets the name field prefilled with `nysha4real`; leaving it
-  posts with the **Admin** tag, changing it posts under that plain name instead.
+- The signed-in admin gets the name field prefilled with the admin nickname;
+  leaving it posts in yellow, changing it posts under that plain name instead.
 
 ## Chat
 
@@ -179,24 +182,28 @@ File: photo.jpg (162 KB, 954x954)
 - Anyone can delete their own message or reply — ownership is checked by a salted
   hash of the address, never the raw address. The admin can delete anything.
 - The signed-in admin gets a **Post as admin** checkbox, ticked by default, which
-  posts as `nysha4real` with the admin tag. Unticking it frees the name field and
-  posts as an ordinary user with no tag — still with no cooldown, and without
-  logging out. `nysha4real` typed into that field falls back to `Anonymous`.
+  posts under the admin nickname in yellow. Unticking it frees the name field and
+  posts as an ordinary user in green — still with no cooldown, and without logging
+  out. The admin nickname typed into that field falls back to `Anonymous`.
 - The page refreshes the list by itself every 9 seconds, unless a picture is open
   or a reply is being typed.
 - The newest 300 messages are kept; older ones drop off with their files.
 
-## The admin tag
+## Names and flags
 
-**Admin Tools → Admin tag** sets the label that sits next to `nysha4real` in the
-chat and on the blog.
+Every name is **green**; the admin's is **yellow**. There are no tags or badges.
 
-- Text up to **15 characters**, `Admin` by default.
-- **Rainbow (animated)** keeps the shimmering default. Unticking it opens a
-  colour swatch and a hex field — either one drives the other, and both accept
-  any colour. `rgb(r, g, b)` is accepted too and stored as hex.
-- The preview under the fields updates as you type; the choice is saved in
-  `api/data/admintag.json` and applies everywhere at once.
+**Admin Tools → Admin nickname** sets the name the admin signs posts, comments
+and chat messages with — up to 32 characters, `nysha4real` by default, saved in
+`api/data/adminname.json` and applied everywhere at once, including the board
+title. Nobody else can post under it: typed into a name field it falls back to
+`Anonymous`.
+
+A **country flag** sits between the name and the date on posts and comments. The
+country comes from the `CF-IPCountry` header behind Cloudflare, otherwise from a
+one-off lookup cached per address for 30 days in `api/data/geo.json`. Addresses
+that cannot be placed simply get no flag. Windows renders flag emoji as the two
+letter code rather than a picture.
 
 ## Colours
 

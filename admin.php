@@ -328,16 +328,19 @@ if ($action === 'create' && $authed) {
         go('/admintools.php');
     }
 
-    $posts = live_posts();
-    array_unshift($posts, [
+    $store = number_posts(read_store());
+    $store['pseq'] = (int) ($store['pseq'] ?? 0) + 1;
+    array_unshift($store['posts'], [
         'id' => bin2hex(random_bytes(8)),
+        'no' => $store['pseq'],
         'created' => time(),
         'text' => $text,
         'images' => $media,
         'bg' => $background,
+        'country' => visitor_country(),
     ]);
 
-    if (!write_store(['posts' => $posts])) {
+    if (!write_store($store)) {
         foreach ($saved as $file) {
             @unlink($file);
         }
@@ -350,38 +353,34 @@ if ($action === 'create' && $authed) {
     go('/admintools.php');
 }
 
-if ($action === 'tag' && $authed) {
-    $text = clean_admin_tag((string) ($_POST['tag'] ?? ''));
-    $rainbow = (string) ($_POST['rainbow'] ?? '') === '1';
-    $color = $rainbow ? '' : clean_hex_color((string) ($_POST['color'] ?? ''));
+if ($action === 'nickname' && $authed) {
+    $name = clean_name((string) ($_POST['nickname'] ?? ''));
 
-    if ($text === '') {
-        $errors[] = 'The tag cannot be empty.';
-    }
-
-    if (!$rainbow && $color === '') {
-        $errors[] = 'Pick a colour, or switch the rainbow back on.';
-    }
-
-    if ($errors !== []) {
-        $_SESSION['form_errors'] = $errors;
+    if ($name === '') {
+        $_SESSION['form_errors'] = ['The nickname cannot be empty.'];
         go('/admintools.php');
     }
 
-    if (!save_admin_tag($text, $color)) {
-        $_SESSION['form_errors'] = ['Could not write api/data/admintag.json. Check permissions.'];
+    if (strcasecmp($name, 'Anonymous') === 0) {
+        $_SESSION['form_errors'] = ['That nickname is reserved.'];
         go('/admintools.php');
     }
 
-    flash('Tag saved.');
+    if (!save_admin_name($name)) {
+        $_SESSION['form_errors'] = ['Could not write api/data/adminname.json. Check permissions.'];
+        go('/admintools.php');
+    }
+
+    flash('Nickname saved.');
     go('/admintools.php');
 }
 
 if ($action === 'delete' && $authed) {
     $id = (string) ($_POST['id'] ?? '');
+    $store = read_store();
     $kept = [];
 
-    foreach (live_posts() as $post) {
+    foreach ((array) $store['posts'] as $post) {
         if ((string) ($post['id'] ?? '') === $id) {
             drop_files($post);
             continue;
@@ -390,7 +389,8 @@ if ($action === 'delete' && $authed) {
         $kept[] = $post;
     }
 
-    write_store(['posts' => $kept]);
+    $store['posts'] = $kept;
+    write_store($store);
     flash('Post deleted.');
     go('/admintools.php');
 }
@@ -412,7 +412,7 @@ $suggestedKey = $config === null ? bin2hex(random_bytes(12)) : '';
 <meta name="robots" content="noindex, nofollow">
 <title>Admin - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=7">
+<link rel="stylesheet" href="/style.css?v=8">
 </head>
 <body class="blue">
 

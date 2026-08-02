@@ -79,10 +79,11 @@ function comment_stamp(array $item): string
 
 function comment_head(array $item): string
 {
-    $line = '<span class="msg-name">' . e((string) $item['name']) . '</span>';
+    $line = poster_name_html((string) $item['name'], !empty($item['admin']));
+    $flag = country_flag_html((string) ($item['country'] ?? ''));
 
-    if (!empty($item['admin'])) {
-        $line .= ' &mdash; ' . admin_tag_html();
+    if ($flag !== '') {
+        $line .= ' ' . $flag;
     }
 
     return $line . ' ' . comment_stamp($item);
@@ -167,14 +168,15 @@ if ($action === 'comment' || $action === 'answer') {
     $postId = (string) ($_POST['post'] ?? '');
     $text = mb_substr(trim((string) ($_POST['text'] ?? '')), 0, MAX_CHAT_TEXT);
     $name = clean_name((string) ($_POST['name'] ?? ''));
+    $adminName = admin_name();
 
     if ($name === '') {
-        $name = $authed ? 'nysha4real' : 'Anonymous';
+        $name = $authed ? $adminName : 'Anonymous';
     }
 
-    $asAdmin = $authed && $name === 'nysha4real';
+    $asAdmin = $authed && $name === $adminName;
 
-    if (!$authed && strcasecmp($name, 'nysha4real') === 0) {
+    if (!$authed && strcasecmp($name, $adminName) === 0) {
         $name = 'Anonymous';
     }
 
@@ -201,6 +203,7 @@ if ($action === 'comment' || $action === 'answer') {
                     'name' => $name,
                     'text' => $text,
                     'ip' => $me,
+                    'country' => visitor_country(),
                     'admin' => $asAdmin,
                     'answers' => [],
                 ], $upload);
@@ -226,6 +229,7 @@ if ($action === 'comment' || $action === 'answer') {
                     'name' => $name,
                     'text' => $text,
                     'ip' => $me,
+                    'country' => visitor_country(),
                     'admin' => $asAdmin,
                 ];
                 $done = true;
@@ -312,25 +316,27 @@ $ad = random_ad_banner();
 $me = visitor_hash();
 $now = time();
 $token = public_token();
+$adminName = admin_name();
+$boardTitle = '/n/ - posts by ' . $adminName;
 
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>/blog/ - Nysh4real Blog - 4real</title>
+<title><?= e($boardTitle) ?> - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=7">
+<link rel="stylesheet" href="/style.css?v=8">
 </head>
 <body class="blue">
 
-<div class="page">
+<div class="page wide">
 
 	<div class="boardhead">
 <?php if ($banner !== ''): ?>
 		<a href="/404.php"><img class="boardbanner" src="<?= e($banner) ?>" alt="4real"></a>
 <?php endif; ?>
-		<h1 class="boardtitle">/blog/ - Nysh4real Blog</h1>
+		<h1 class="boardtitle"><?= e($boardTitle) ?></h1>
 	</div>
 
 	<hr class="boardrule">
@@ -373,6 +379,18 @@ $total = count($comments);
 ?>
 		<div class="thread-post" id="p<?= e((string) $post['id']) ?>">
 			<div class="post bg-<?= e($background) ?>">
+				<div class="post-head">
+					<?= poster_name_html($adminName, true) ?>
+<?php $flag = country_flag_html((string) ($post['country'] ?? '')); ?>
+<?php if ($flag !== ''): ?>
+					<?= $flag ?>
+<?php endif; ?>
+					<span class="post-date msg-date" data-ts="<?= (int) $post['created'] ?>"><?= e(gmdate('m/d/y(D)H:i:s', (int) $post['created'])) ?></span>
+<?php if ((int) ($post['no'] ?? 0) > 0): ?>
+					<span class="msg-no">No.<?= (int) $post['no'] ?></span>
+<?php endif; ?>
+					<a class="post-anchor" href="#p<?= e((string) $post['id']) ?>" title="Link to this post">&#9654;</a>
+				</div>
 <?= post_file_line($post) ?>
 <?php if (($post['images'] ?? []) !== []): ?>
 				<div class="post-media">
@@ -388,17 +406,13 @@ $total = count($comments);
 <?php endforeach; ?>
 				</div>
 <?php endif; ?>
-				<div class="post-head">
-					<span class="post-poster"><span class="msg-name">nysha4real</span> &mdash; <?= admin_tag_html() ?></span>
-					<span class="post-date msg-date" data-ts="<?= (int) $post['created'] ?>"><?= e(gmdate('m/d/y(D)H:i', (int) $post['created'])) ?></span>
-				</div>
 <?php if ((string) $post['text'] !== ''): ?>
 				<div class="post-text"><?= render_post_text((string) $post['text']) ?></div>
 <?php endif; ?>
 			</div>
 
 			<div class="comments" id="c<?= e((string) $post['id']) ?>" data-total="<?= $total ?>">
-				<div class="comments-body">
+				<div class="comments-body"<?= $total > 0 ? ' hidden' : '' ?>>
 <?php foreach ($comments as $index => $comment): ?>
 <?php
 $mine = hash_equals((string) ($comment['ip'] ?? ''), $me);
@@ -430,7 +444,7 @@ $hidden = $total > BLOG_COMMENTS_OPEN && $index < $total - BLOG_COMMENTS_OPEN;
 							<input type="hidden" name="action" value="answer">
 							<input type="hidden" name="post" value="<?= e((string) $post['id']) ?>">
 							<input type="hidden" name="comment" value="<?= e((string) $comment['id']) ?>">
-							<input type="text" name="name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous"<?= $authed ? ' value="nysha4real"' : '' ?>>
+							<input type="text" name="name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous"<?= $authed ? ' value="' . e($adminName) . '"' : '' ?>>
 							<input type="text" name="text" maxlength="<?= MAX_CHAT_TEXT ?>" placeholder="Write an answer&hellip;" required>
 							<button type="submit">Answer</button>
 						</form>
@@ -459,7 +473,7 @@ $hidden = $total > BLOG_COMMENTS_OPEN && $index < $total - BLOG_COMMENTS_OPEN;
 						<input type="hidden" name="token" value="<?= e($token) ?>">
 						<input type="hidden" name="action" value="comment">
 						<input type="hidden" name="post" value="<?= e((string) $post['id']) ?>">
-						<input type="text" name="name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous"<?= $authed ? ' value="nysha4real"' : '' ?>>
+						<input type="text" name="name" maxlength="<?= MAX_NAME ?>" placeholder="Anonymous"<?= $authed ? ' value="' . e($adminName) . '"' : '' ?>>
 						<input type="text" name="text" maxlength="<?= MAX_CHAT_TEXT ?>" placeholder="Write a comment&hellip;">
 						<label class="say-clip" title="Attach PNG / JPG / GIF, up to 3 MB">
 							<input type="file" name="file" accept="image/png,image/jpeg,image/gif">
@@ -470,13 +484,15 @@ $hidden = $total > BLOG_COMMENTS_OPEN && $index < $total - BLOG_COMMENTS_OPEN;
 					</form>
 				</div>
 
+<?php if ($total > 0): ?>
 				<div class="comments-bar">
 <?php if ($total > BLOG_COMMENTS_OPEN): ?>
-					<span class="comments-all">Show all <?= $total ?> comments</span>
+					<span class="comments-all" hidden>Show all <?= $total ?> comments</span>
 <?php endif; ?>
-					<span class="comments-hide">Hide comments</span>
-					<span class="comments-show" hidden>Show comments (<?= $total ?>)</span>
+					<span class="comments-hide" hidden>Hide comments</span>
+					<span class="comments-show">Show comments (<?= $total ?>)</span>
 				</div>
+<?php endif; ?>
 			</div>
 		</div>
 <?php endforeach; ?>
@@ -506,6 +522,6 @@ $hidden = $total > BLOG_COMMENTS_OPEN && $index < $total - BLOG_COMMENTS_OPEN;
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=7"></script>
+<script src="/script.js?v=8"></script>
 </body>
 </html>
