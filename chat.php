@@ -135,9 +135,15 @@ if ($action === 'say' || $action === 'reply') {
                 }
             }
 
-            if ($errors === []) {
-                chat_write($store);
+            if ($errors === [] && !chat_write($store)) {
+                if ($upload !== []) {
+                    chat_drop_file($upload);
+                }
 
+                $errors[] = 'Could not save the message: the server cannot write to api/data. Check the folder permissions.';
+            }
+
+            if ($errors === []) {
                 if (!$authed) {
                     chat_touch_cooldown();
                 }
@@ -189,9 +195,13 @@ if ($action === 'remove') {
 
     if ($errors === []) {
         $store['messages'] = $kept;
-        chat_write($store);
-        header('Location: /c/');
-        exit;
+
+        if (!chat_write($store)) {
+            $errors[] = 'Could not save: the server cannot write to api/data.';
+        } else {
+            header('Location: /c/');
+            exit;
+        }
     }
 }
 
@@ -307,7 +317,7 @@ if ($fragment) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/c/ - Chat - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=5">
+<link rel="stylesheet" href="/style.css?v=6">
 </head>
 <body class="blue">
 
@@ -384,6 +394,6 @@ if ($fragment) {
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=5"></script>
+<script src="/script.js?v=6"></script>
 </body>
 </html>

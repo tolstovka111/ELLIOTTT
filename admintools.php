@@ -24,6 +24,14 @@ $posts = live_posts();
 $emoji = emoji_map();
 $now = time();
 
+$checks = [
+    'api/data' => data_dir() !== '',
+    'assets/blog' => uploads_dir() !== '',
+    'assets/chat' => chat_dir() !== '',
+    'assets/comments' => comments_dir() !== '',
+];
+$broken = in_array(false, $checks, true);
+
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -32,7 +40,7 @@ $now = time();
 <meta name="robots" content="noindex, nofollow">
 <title>Admin Tools - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=5">
+<link rel="stylesheet" href="/style.css?v=6">
 </head>
 <body class="blue">
 
@@ -43,6 +51,21 @@ $now = time();
 <div class="page">
 
 	<div class="nav">[<a href="/home">Return to Home</a>]</div>
+
+<?php if ($broken): ?>
+	<div class="box">
+		<div class="box-title">Server check</div>
+		<div class="box-body error">
+			<div>The web server cannot write to these folders, so nothing can be saved:</div>
+<?php foreach ($checks as $folder => $ok): ?>
+<?php if (!$ok): ?>
+			<div>&mdash; <?= e($folder) ?></div>
+<?php endif; ?>
+<?php endforeach; ?>
+			<div>Run on the server: chown -R www-data /var/www/html/api /var/www/html/assets</div>
+		</div>
+	</div>
+<?php endif; ?>
 
 	<div class="box">
 		<div class="box-title">
@@ -161,6 +184,6 @@ $now = time();
 
 </div>
 
-<script src="/script.js?v=5"></script>
+<script src="/script.js?v=6"></script>
 </body>
 </html>

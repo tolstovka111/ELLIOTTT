@@ -195,9 +195,12 @@ if ($action === 'comment' || $action === 'answer') {
         }
 
         if ($done && $errors === []) {
-            write_store($store);
-            header('Location: /thr/#p' . preg_replace('/[^a-f0-9]/', '', $postId));
-            exit;
+            if (!write_store($store)) {
+                $errors[] = 'Could not save the comment: the server cannot write to api/data. Check the folder permissions.';
+            } else {
+                header('Location: /thr/#p' . preg_replace('/[^a-f0-9]/', '', $postId));
+                exit;
+            }
         }
 
         if ($errors === []) {
@@ -276,7 +279,7 @@ $token = public_token();
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/thr/ - Blog - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=5">
+<link rel="stylesheet" href="/style.css?v=6">
 </head>
 <body class="blue">
 
@@ -453,6 +456,6 @@ $hidden = $total > COMMENTS_OPEN && $index < $total - COMMENTS_OPEN;
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=5"></script>
+<script src="/script.js?v=6"></script>
 </body>
 </html>
