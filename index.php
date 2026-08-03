@@ -24,7 +24,7 @@ if ($authed) {
 <title>4real</title>
 <meta name="description" content="4real is a link-in-bio info-hub with every official profile in one place.">
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=14">
+<link rel="stylesheet" href="/style.css?v=15">
 </head>
 <body>
 
@@ -129,9 +129,9 @@ if ($authed) {
 	<div class="pagelinks">
 		<a href="/home">Home</a>
 		<span class="dot">&#9679;</span>
-		<a href="/faq">FAQ</a>
+		<a href="/faq/">FAQ</a>
 		<span class="dot">&#9679;</span>
-		<a href="/rules">Rules</a>
+		<a href="/rules/">Rules</a>
 <?php if ($authed): ?>
 		<span class="dot">&#9679;</span>
 		<a href="/admintools.php">Admin Tools</a>
@@ -144,6 +144,6 @@ if ($authed) {
 
 </div>
 
-<script src="/script.js?v=14"></script>
+<script src="/script.js?v=15"></script>
 </body>
 </html>

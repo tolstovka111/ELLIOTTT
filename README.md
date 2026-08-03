@@ -15,7 +15,8 @@ a public chat.
 | `404.php` | Not-found page, shows a random picture from `assets/404/` |
 | `board.php` | `/o/` `/m/` `/a/` `/i/` `/b/` `/faq` `/rules` — the standalone pages |
 | `pages/` | The picture list, and any HTML, that fills a board page in |
-| `.htaccess` | Short URLs, directory index, 404 document |
+| `.htaccess` | 404 document, upload limits, and the short URLs as a shortcut |
+| `o/` `m/` `a/` `i/` `b/` `c/` `n/` `blog/` `faq/` `rules/` | One-line folders so every short URL works without mod_rewrite |
 | `style.css`, `script.js` | Theme and front-end logic |
 | `api/lib.php` | Storage, posts, chat, emoji and hashing helpers |
 | `api/ui.php` | Board navigation, page header and footer |
@@ -69,7 +70,10 @@ sudo chmod -R 755 /var/www/html/api /var/www/html/assets
 | `/blog/` `/n/` | all blog posts |
 | `/faq` `/rules` | FAQ, rules |
 
-Everything else falls through to the styled 404 page. Drop your own pictures into
+Each of these is a real folder holding a one-line `index.php`, so they answer
+even where `mod_rewrite` is off or `.htaccess` is ignored; the rewrite rules
+only save a directory lookup. Everything else falls through to the styled 404
+page. Drop your own pictures into
 `assets/404/` — the page shows a random one on every visit. The **4real logo**
 leads there from the front page only; everywhere else it goes back home.
 

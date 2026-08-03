@@ -23,8 +23,8 @@ function board_list(): array
 function page_list(): array
 {
     return [
-        'faq' => ['url' => '/faq', 'label' => 'faq', 'title' => '/faq/ - FAQ'],
-        'rules' => ['url' => '/rules', 'label' => 'rules', 'title' => '/rules/ - Rules'],
+        'faq' => ['url' => '/faq/', 'label' => 'faq', 'title' => '/faq/ - FAQ'],
+        'rules' => ['url' => '/rules/', 'label' => 'rules', 'title' => '/rules/ - Rules'],
     ];
 }
 
@@ -172,8 +172,8 @@ function site_logo(bool $linkTo404): string
 function page_footer(bool $authed): string
 {
     $out = '<div class="pagelinks"><a href="/home">Home</a>'
-        . '<span class="dot">&#9679;</span><a href="/faq">FAQ</a>'
-        . '<span class="dot">&#9679;</span><a href="/rules">Rules</a>';
+        . '<span class="dot">&#9679;</span><a href="/faq/">FAQ</a>'
+        . '<span class="dot">&#9679;</span><a href="/rules/">Rules</a>';
 
     if ($authed) {
         $out .= '<span class="dot">&#9679;</span><a href="/admintools.php">Admin Tools</a>';
