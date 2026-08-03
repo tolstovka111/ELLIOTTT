@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#FFFFFF">
+    <!-- Delta glyph: a triangle over a shield-ish base. -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,2L2,21h20L12,2zM12,7.2L17.6,18H6.4L12,7.2z" />
+</vector>

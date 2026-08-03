@@ -1,0 +1,25 @@
+# Android / Gradle
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/captures/
+*.iml
+
+# Native VPN core — fetched with scripts/fetch-vpn-core.sh, never committed
+android/app/libs/*.aar
+android/app/libs/*.jar
+android/app/src/main/jniLibs/
+
+# Signing material
+*.jks
+*.keystore
+
+# Node / wrangler
+node_modules/
+serverless/worker/.wrangler/
+serverless/worker/package-lock.json
+
+# OS noise
+.DS_Store
