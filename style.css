@@ -2212,20 +2212,54 @@ body.blue .quotelink a:hover {
 /* ---- /rules/ -------------------------------------------------------- */
 
 .rulesheet {
-	padding: 14px 10px 20px;
+	padding: 16px 10px 24px;
+	text-align: center;
 }
 
 .rulelist {
-	margin: 0;
-	padding-left: 26px;
-	max-width: 620px;
+	display: inline-table;
+	margin: 0 auto;
+	border-collapse: collapse;
+	border: 1px solid #b7c5d9;
+	background-color: #d6daf0;
+	text-align: left;
 	font-size: 11pt;
-	line-height: 1.9;
+	max-width: 640px;
 }
 
-.rulelist li {
-	padding: 1px 0;
+.rulelist th {
+	background-color: #9988ee;
+	border-bottom: 1px solid #b7c5d9;
+	padding: 5px 12px;
+	font-size: 12pt;
+	font-weight: bold;
+	text-align: center;
+	color: #000000;
+}
+
+.rulelist td {
+	padding: 6px 12px;
+	border-top: 1px solid #b7c5d9;
+	vertical-align: top;
+	line-height: 1.5;
 	word-wrap: break-word;
+}
+
+.rulelist tbody tr:nth-child(even) {
+	background-color: #eef2ff;
+}
+
+.rulelist .ruleno {
+	width: 1%;
+	white-space: nowrap;
+	font-weight: bold;
+	color: #800000;
+}
+
+.rulenote {
+	margin-top: 10px;
+	font-size: 9pt;
+	color: #707070;
 }
 
 @media (max-width: 760px) {
