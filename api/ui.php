@@ -104,6 +104,14 @@ function board_staggered(): array
 }
 
 /**
+ * Boards whose pictures simply run on in rows, and drop in one by one.
+ */
+function board_flowing(): array
+{
+    return ['b'];
+}
+
+/**
  * The line under the jump link, half its size and not a link itself.
  */
 function board_subtitle(string $key): string
@@ -161,13 +169,21 @@ function board_gallery(string $key): string
         return '';
     }
 
-    $stagger = in_array($key, board_staggered(), true);
+    $classes = 'boardgrid';
+
+    if (in_array($key, board_staggered(), true)) {
+        $classes .= ' staggered';
+    }
+
+    if (in_array($key, board_flowing(), true)) {
+        $classes .= ' flowing staged';
+    }
 
     if (in_array($key, board_shuffled(), true)) {
         shuffle($pictures);
     }
 
-    $out = '<div class="boardgrid' . ($stagger ? ' staggered' : '') . '">';
+    $out = '<div class="' . $classes . '">';
 
     foreach ($pictures as $picture) {
         $src = e((string) $picture['src']);

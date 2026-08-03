@@ -270,6 +270,73 @@
 
 	paintStamps(document);
 
+	// /b/ : hold the pictures back for a second, then drop them in one by one
+	// in a different order every visit.
+	var staged = document.querySelector(".boardgrid.staged");
+
+	if (staged) {
+		var pics = Array.prototype.slice.call(staged.querySelectorAll(".boardpic"));
+		var order = pics.map(function (node, i) { return i; });
+
+		for (var i = order.length - 1; i > 0; i--) {
+			var j = Math.floor(Math.random() * (i + 1));
+			var swap = order[i];
+			order[i] = order[j];
+			order[j] = swap;
+		}
+
+		window.setTimeout(function () {
+			order.forEach(function (index, step) {
+				window.setTimeout(function () {
+					pics[index].classList.add("on");
+				}, step * 100);
+			});
+		}, 1000);
+	}
+
+	// /faq/ : the banner flies in from far away and lands with a crack.
+	var faqDrop = document.getElementById("faqdrop");
+
+	if (faqDrop) {
+		var crack = null;
+		var src = faqDrop.getAttribute("data-sound");
+
+		if (src) {
+			crack = new Audio(src);
+			crack.preload = "auto";
+		}
+
+		var land = function () {
+			if (!crack) {
+				return;
+			}
+
+			var played = crack.play();
+
+			if (played && played.catch) {
+				played.catch(function () {
+					// The browser wants a gesture first: play on the next one.
+					var once = function () {
+						crack.play().catch(function () { return null; });
+						document.removeEventListener("click", once);
+						document.removeEventListener("keydown", once);
+						document.removeEventListener("touchstart", once);
+					};
+
+					document.addEventListener("click", once, { once: true });
+					document.addEventListener("keydown", once, { once: true });
+					document.addEventListener("touchstart", once, { once: true });
+				});
+			}
+		};
+
+		window.setTimeout(function () {
+			faqDrop.classList.add("fly");
+			// the landing is the tail of the 2s flight
+			window.setTimeout(land, 1620);
+		}, 250);
+	}
+
 	var chart = document.getElementById("views-chart");
 	var chartTip = document.getElementById("chart-tip");
 

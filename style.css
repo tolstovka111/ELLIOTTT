@@ -2127,3 +2127,122 @@ body.blue .quotelink a:hover {
 	font-weight: bold;
 	color: #34345c;
 }
+
+/* ---- /b/ : pictures simply run on in rows and drop in one by one ----- */
+
+.boardgrid.flowing {
+	justify-content: flex-start;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 4px 24px;
+}
+
+.boardgrid.flowing .boardpic {
+	width: auto;
+}
+
+.boardgrid.flowing .boardpic img {
+	width: auto;
+	height: 170px;
+	max-width: 300px;
+	object-fit: contain;
+	background-color: #ffffff;
+}
+
+/* The space is held from the start, so nothing shifts as they arrive. */
+.boardgrid.staged .boardpic {
+	visibility: hidden;
+	opacity: 0;
+}
+
+.boardgrid.staged .boardpic.on {
+	visibility: visible;
+	animation: picdrop 0.42s cubic-bezier(0.2, 1.4, 0.5, 1) forwards;
+}
+
+@keyframes picdrop {
+	from { opacity: 0; transform: scale(0.55) rotate(-6deg); }
+	60%  { opacity: 1; transform: scale(1.06) rotate(2deg); }
+	to   { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.boardgrid.staged .boardpic.on {
+		animation: none;
+		opacity: 1;
+	}
+}
+
+/* ---- /faq/ : the banner flies in from far away ----------------------- */
+
+.faqdrop {
+	text-align: center;
+	padding: 26px 4px 30px;
+	perspective: 900px;
+}
+
+.faqdrop img {
+	display: inline-block;
+	max-width: 92%;
+	height: auto;
+	opacity: 0;
+	transform: translateZ(-2600px) scale(0.04) rotate(-24deg);
+}
+
+.faqdrop.fly img {
+	animation: faqfly 2s cubic-bezier(0.5, 0, 0.35, 1) forwards;
+}
+
+@keyframes faqfly {
+	0%   { opacity: 0;    transform: translateZ(-2600px) scale(0.04) rotate(-24deg); }
+	12%  { opacity: 1; }
+	82%  { opacity: 1;    transform: translateZ(0) scale(1.14) rotate(3deg); }
+	91%  { transform: translateZ(0) scale(0.95) rotate(-1deg); }
+	100% { opacity: 1;    transform: translateZ(0) scale(1) rotate(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.faqdrop.fly img {
+		animation: none;
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* ---- /rules/ -------------------------------------------------------- */
+
+.rulesheet {
+	padding: 14px 10px 20px;
+}
+
+.rulelist {
+	margin: 0;
+	padding-left: 26px;
+	max-width: 620px;
+	font-size: 11pt;
+	line-height: 1.9;
+}
+
+.rulelist li {
+	padding: 1px 0;
+	word-wrap: break-word;
+}
+
+@media (max-width: 760px) {
+	.boardgrid.flowing {
+		gap: 10px;
+	}
+
+	.boardgrid.flowing .boardpic {
+		width: auto;
+	}
+
+	.boardgrid.flowing .boardpic img {
+		height: 120px;
+		max-width: 46vw;
+	}
+
+	.faqdrop {
+		padding: 18px 2px 22px;
+	}
+}
