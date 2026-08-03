@@ -192,8 +192,13 @@ function render_comments(array $comments, array $ctx): string
         . '<input type="hidden" name="to" value="" class="reply-to">'
         . '<span class="reply-note" hidden>replying to <span class="reply-note-no"></span> '
         . '<span class="reply-clear">[x]</span></span>'
+        . ($authed
+            ? '<label class="adminswitch"><input type="checkbox" name="asadmin" value="1" checked>'
+                . '<span>Post as admin</span></label>'
+                . '<span class="say-name-fixed">' . poster_name_html((string) $ctx['admin_name'], true) . '</span>'
+            : '')
         . '<input type="text" name="name" maxlength="' . MAX_NAME . '" placeholder="Anonymous"'
-        . ($authed ? ' value="' . e((string) $ctx['admin_name']) . '"' : '') . '>'
+        . ($authed ? ' hidden' : '') . '>'
         . '<input type="text" name="text" maxlength="' . MAX_CHAT_TEXT . '" placeholder="Write a comment&hellip;">'
         . '<label class="say-clip" title="Attach PNG / JPG / GIF, up to 3 MB">'
         . '<input type="file" name="file" accept="image/png,image/jpeg,image/gif">'
@@ -249,20 +254,25 @@ function remove_comment(array $comments, string $target, bool $authed): array
 /**
  * Name and admin flag for a comment, shared by every page that takes them.
  */
+/**
+ * Who a comment is signed by. The admin posts under their own name while the
+ * box is ticked; unticking it frees the field, so they can sign as Anonymous or
+ * anything else, but never under the admin nickname while unticked.
+ */
 function comment_author(bool $authed): array
 {
     $adminName = admin_name();
-    $name = clean_name((string) ($_POST['name'] ?? ''));
+    $asAdmin = $authed && (string) ($_POST['asadmin'] ?? '') === '1';
 
-    if ($name === '') {
-        $name = $authed ? $adminName : 'Anonymous';
+    if ($asAdmin) {
+        return ['name' => $adminName, 'admin' => true];
     }
 
-    $asAdmin = $authed && $name === $adminName;
+    $name = clean_name((string) ($_POST['name'] ?? ''));
 
-    if (!$authed && strcasecmp($name, $adminName) === 0) {
+    if ($name === '' || strcasecmp($name, $adminName) === 0) {
         $name = 'Anonymous';
     }
 
-    return ['name' => $name, 'admin' => $asAdmin];
+    return ['name' => $name, 'admin' => false];
 }

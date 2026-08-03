@@ -21,23 +21,10 @@ function csrf_valid(): bool
     return $sent !== '' && hash_equals((string) $_SESSION['csrf'], $sent);
 }
 
-function throttle_path(): string
-{
-    $dir = data_dir();
-
-    return $dir === '' ? '' : $dir . '/logins.json';
-}
-
 function throttle_read(): array
 {
-    $path = throttle_path();
-
-    if ($path === '' || !is_file($path)) {
-        return [];
-    }
-
-    $raw = @file_get_contents($path);
-    $data = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+    $raw = data_read('logins.json');
+    $data = $raw === '' ? null : json_decode($raw, true);
 
     return is_array($data) ? $data : [];
 }
@@ -61,12 +48,6 @@ function throttle_blocked_for(): int
 
 function throttle_fail(): void
 {
-    $path = throttle_path();
-
-    if ($path === '') {
-        return;
-    }
-
     $data = throttle_read();
     $key = throttle_key();
     $now = time();
@@ -93,20 +74,14 @@ function throttle_fail(): void
         }
     }
 
-    @file_put_contents($path, (string) json_encode($data), LOCK_EX);
+    data_write('logins.json', (string) json_encode($data));
 }
 
 function throttle_clear(): void
 {
-    $path = throttle_path();
-
-    if ($path === '') {
-        return;
-    }
-
     $data = throttle_read();
     unset($data[throttle_key()]);
-    @file_put_contents($path, (string) json_encode($data), LOCK_EX);
+    data_write('logins.json', (string) json_encode($data));
 }
 
 function go(string $url): void
@@ -484,7 +459,7 @@ $suggestedKey = $config === null ? bin2hex(random_bytes(12)) : '';
 <meta name="robots" content="noindex, nofollow">
 <title>Admin - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=15">
+<link rel="stylesheet" href="/style.css?v=16">
 </head>
 <body class="blue">
 

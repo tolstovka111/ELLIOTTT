@@ -1,6 +1,14 @@
 DirectoryIndex index.php index.html
+Options -Indexes
 
 ErrorDocument 404 /404.php
+
+<FilesMatch "\.(json|log|bak|sql)$">
+	Require all denied
+</FilesMatch>
+
+RedirectMatch 404 ^/api/data/
+RedirectMatch 404 ^/deploy/
 
 <IfModule php_module>
 	php_value upload_max_filesize 20M

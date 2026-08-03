@@ -58,7 +58,7 @@ function board_nav(string $current = ''): string
 /**
  * The banner, the board title, the jump link and the random ad banner.
  */
-function board_header(string $title, string $goLabel, string $goTarget): string
+function board_header(string $title, string $goLabel, string $goTarget, string $subtitle = ''): string
 {
     $banner = random_asset('banners', ['png', 'jpg', 'jpeg', 'gif', 'webp']);
     $ad = random_ad_banner();
@@ -70,8 +70,13 @@ function board_header(string $title, string $goLabel, string $goTarget): string
 
     $out .= '<h1 class="boardtitle">' . e($title) . '</h1></div>'
         . '<hr class="boardrule">'
-        . '<div class="boardgo">[<a href="' . e($goTarget) . '" class="goposts">' . e($goLabel) . '</a>]</div>'
-        . '<hr class="boardrule thin">';
+        . '<div class="boardgo">[<a href="' . e($goTarget) . '" class="goposts">' . e($goLabel) . '</a>]</div>';
+
+    if ($subtitle !== '') {
+        $out .= '<div class="boardsub">' . e($subtitle) . '</div>';
+    }
+
+    $out .= '<hr class="boardrule thin">';
 
     if ($ad !== []) {
         $out .= '<div class="adbanner"><a href="' . e((string) $ad['href']) . '">'
@@ -83,11 +88,32 @@ function board_header(string $title, string $goLabel, string $goTarget): string
 }
 
 /**
- * Boards whose pictures are shuffled and staggered on every visit.
+ * Boards whose pictures come out in a different order on every visit.
  */
 function board_shuffled(): array
 {
+    return ['a', 'i'];
+}
+
+/**
+ * Boards laid out staggered rather than in a plain grid.
+ */
+function board_staggered(): array
+{
     return ['i'];
+}
+
+/**
+ * The line under the jump link, half its size and not a link itself.
+ */
+function board_subtitle(string $key): string
+{
+    $lines = [
+        'a' => 'my fav anime characters',
+        'i' => 'my fav characters from internet O.O',
+    ];
+
+    return (string) ($lines[$key] ?? '');
 }
 
 function board_pictures(string $key): array
@@ -135,9 +161,9 @@ function board_gallery(string $key): string
         return '';
     }
 
-    $stagger = in_array($key, board_shuffled(), true);
+    $stagger = in_array($key, board_staggered(), true);
 
-    if ($stagger) {
+    if (in_array($key, board_shuffled(), true)) {
         shuffle($pictures);
     }
 

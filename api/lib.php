@@ -21,8 +21,165 @@ const GEO_TTL = 2592000;
 const EMOJI_BYTES = 2097152;
 const VIEWS_DAYS_KEPT = 120;
 const VIEWS_MAX_VISITORS = 4000;
+const GEO_MAX = 20000;
 const LOGIN_MAX_ATTEMPTS = 5;
 const LOGIN_LOCK_SECONDS = 900;
+
+/**
+ * Every file under api/data is written as PHP that exits at once, so fetching
+ * one over HTTP returns nothing even where .htaccess is ignored.
+ */
+const DATA_GUARD = "<?php exit; ?>\n";
+
+function data_path(string $name): string
+{
+    $dir = data_dir();
+
+    return $dir === '' ? '' : $dir . '/' . $name . '.php';
+}
+
+/**
+ * Moves a file written before the guard existed over to the guarded name.
+ */
+function data_migrate(string $name): void
+{
+    $dir = data_dir();
+    $old = $dir === '' ? '' : $dir . '/' . $name;
+
+    if ($old === '' || !is_file($old)) {
+        return;
+    }
+
+    $body = (string) @file_get_contents($old);
+
+    if (@file_put_contents(data_path($name), DATA_GUARD . $body, LOCK_EX) !== false) {
+        @unlink($old);
+    }
+}
+
+function data_strip(string $raw): string
+{
+    if (strncmp($raw, '<?php', 5) !== 0) {
+        return $raw;
+    }
+
+    $stop = strpos($raw, '?>');
+
+    return $stop === false ? '' : ltrim(substr($raw, $stop + 2), "\r\n");
+}
+
+function data_read(string $name): string
+{
+    $path = data_path($name);
+
+    if ($path === '') {
+        return '';
+    }
+
+    if (!is_file($path)) {
+        data_migrate($name);
+    }
+
+    return is_file($path) ? data_strip((string) @file_get_contents($path)) : '';
+}
+
+function data_write(string $name, string $body): bool
+{
+    $path = data_path($name);
+
+    if ($path === '') {
+        return false;
+    }
+
+    if (@file_put_contents($path, DATA_GUARD . $body, LOCK_EX) === false) {
+        return false;
+    }
+
+    data_drop_legacy($name);
+
+    return true;
+}
+
+/**
+ * Clears the unguarded file a previous version left behind, so nothing stays
+ * readable over HTTP once the guarded copy exists.
+ */
+function data_drop_legacy(string $name): void
+{
+    $dir = data_dir();
+    $old = $dir === '' ? '' : $dir . '/' . $name;
+
+    if ($old !== '' && is_file($old)) {
+        @unlink($old);
+    }
+}
+
+/**
+ * Opens a guarded file for the read-modify-write cycle the counters need.
+ * Returns the handle and the payload with the guard already stripped.
+ */
+function data_open(string $name): array
+{
+    $path = data_path($name);
+
+    if ($path === '') {
+        return [null, ''];
+    }
+
+    if (!is_file($path)) {
+        data_migrate($name);
+    }
+
+    $handle = @fopen($path, 'c+');
+
+    if ($handle === false) {
+        return [null, ''];
+    }
+
+    if (!flock($handle, LOCK_EX)) {
+        fclose($handle);
+
+        return [null, ''];
+    }
+
+    return [$handle, data_strip((string) stream_get_contents($handle))];
+}
+
+function data_close($handle, ?string $body = null): void
+{
+    if ($handle === null) {
+        return;
+    }
+
+    if ($body !== null) {
+        rewind($handle);
+        ftruncate($handle, 0);
+        fwrite($handle, DATA_GUARD . $body);
+        fflush($handle);
+    }
+
+    flock($handle, LOCK_UN);
+    fclose($handle);
+}
+
+/**
+ * Sweeps away anything an older version left unguarded in api/data.
+ */
+function data_sweep_legacy(): void
+{
+    $dir = data_dir();
+
+    if ($dir === '') {
+        return;
+    }
+
+    foreach (['posts.json', 'chat.json', 'pages.json', 'views.json', 'online.json',
+        'chatrate.json', 'logins.json', 'seq.json', 'geo.json', 'adminname.json', 'salt'] as $name) {
+        if (is_file($dir . '/' . $name) && is_file($dir . '/' . $name . '.php')) {
+            @unlink($dir . '/' . $name);
+        }
+    }
+}
 
 function project_root(): string
 {
@@ -33,11 +190,15 @@ function data_dir(): string
 {
     $dir = __DIR__ . '/data';
 
-    if (!is_dir($dir)) {
-        if (!@mkdir($dir, 0770, true) && !is_dir($dir)) {
-            return '';
-        }
+    if (!is_dir($dir) && !@mkdir($dir, 0770, true) && !is_dir($dir)) {
+        return '';
+    }
+
+    if (!is_file($dir . '/.htaccess')) {
         @file_put_contents($dir . '/.htaccess', "Require all denied\nDeny from all\n");
+    }
+
+    if (!is_file($dir . '/index.html')) {
         @file_put_contents($dir . '/index.html', '');
     }
 
@@ -110,23 +271,10 @@ function save_config(string $userHash, string $passHash, string $keyHash): bool
     return true;
 }
 
-function store_path(): string
-{
-    $dir = data_dir();
-
-    return $dir === '' ? '' : $dir . '/posts.json';
-}
-
 function read_store(): array
 {
-    $path = store_path();
-
-    if ($path === '' || !is_file($path)) {
-        return ['posts' => []];
-    }
-
-    $raw = @file_get_contents($path);
-    $store = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+    $raw = data_read('posts.json');
+    $store = $raw === '' ? null : json_decode($raw, true);
 
     if (!is_array($store) || !isset($store['posts']) || !is_array($store['posts'])) {
         return ['posts' => []];
@@ -137,13 +285,7 @@ function read_store(): array
 
 function write_store(array $store): bool
 {
-    $path = store_path();
-
-    if ($path === '') {
-        return false;
-    }
-
-    return @file_put_contents($path, (string) json_encode($store), LOCK_EX) !== false;
+    return data_write('posts.json', (string) json_encode($store));
 }
 
 function chat_dir(): string
@@ -260,21 +402,17 @@ function live_posts(): array
 function migrate_numbers(): void
 {
     $dir = data_dir();
+    data_sweep_legacy();
 
-    if ($dir === '' || is_file($dir . '/seq.json')) {
+    if ($dir === '' || is_file(data_path('seq.json'))) {
         return;
     }
 
     $chat = chat_read();
     $posts = read_store();
-    $pages = [];
-    $pagesPath = $dir . '/pages.json';
-
-    if (is_file($pagesPath)) {
-        $raw = @file_get_contents($pagesPath);
-        $decoded = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
-        $pages = is_array($decoded) ? $decoded : [];
-    }
+    $rawPages = data_read('pages.json');
+    $decoded = $rawPages === '' ? null : json_decode($rawPages, true);
+    $pages = is_array($decoded) ? $decoded : [];
 
     $flat = [];
 
@@ -399,7 +537,7 @@ function migrate_numbers(): void
     write_store($posts);
 
     if ($pages !== []) {
-        @file_put_contents($pagesPath, (string) json_encode($pages), LOCK_EX);
+        data_write('pages.json', (string) json_encode($pages));
     }
 
     seq_seed($seq);
@@ -568,60 +706,114 @@ function render_post_text(string $text): string
     );
 }
 
+/**
+ * Cloudflare's published edge ranges. A forwarded address is only believed when
+ * the connection itself came from one of these, so nobody can hand us someone
+ * else's address in a header.
+ */
+function cloudflare_ranges(): array
+{
+    return [
+        '173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22',
+        '141.101.64.0/18', '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20',
+        '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13',
+        '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
+        '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32',
+        '2405:8100::/32', '2a06:98c0::/29', '2c0f:f248::/32',
+    ];
+}
+
+function ip_in_range(string $ip, string $range): bool
+{
+    [$subnet, $bits] = array_pad(explode('/', $range, 2), 2, null);
+    $ipBin = @inet_pton($ip);
+    $netBin = @inet_pton((string) $subnet);
+
+    if ($ipBin === false || $netBin === false || strlen($ipBin) !== strlen($netBin)) {
+        return false;
+    }
+
+    $bits = (int) $bits;
+    $whole = intdiv($bits, 8);
+    $rest = $bits % 8;
+
+    if ($whole > 0 && strncmp($ipBin, $netBin, $whole) !== 0) {
+        return false;
+    }
+
+    if ($rest === 0) {
+        return true;
+    }
+
+    $mask = chr(0xff << (8 - $rest) & 0xff);
+
+    return (($ipBin[$whole] & $mask) === ($netBin[$whole] & $mask));
+}
+
+function from_cloudflare(string $ip): bool
+{
+    foreach (cloudflare_ranges() as $range) {
+        if (ip_in_range($ip, $range)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * The visitor's address. Everything that matters hangs off this - who owns a
+ * message, the posting cooldown, the login lockout - so a header is only
+ * trusted when the request really arrived from Cloudflare.
+ */
 function client_ip(): string
 {
     $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
 
-    if (getenv('VIEWS_TRUST_PROXY') === '1') {
-        $forwarded = (string) ($_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
-
-        if ($forwarded !== '') {
-            $first = trim(explode(',', $forwarded)[0]);
-
-            if (filter_var($first, FILTER_VALIDATE_IP) !== false) {
-                return $first;
-            }
-        }
+    if (getenv('VIEWS_TRUST_PROXY') !== '1' || $ip === '') {
+        return $ip;
     }
 
-    return $ip;
+    if (!from_cloudflare($ip) && getenv('VIEWS_TRUST_ANY_PROXY') !== '1') {
+        return $ip;
+    }
+
+    $forwarded = (string) ($_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
+
+    if ($forwarded === '') {
+        return $ip;
+    }
+
+    $first = trim(explode(',', $forwarded)[0]);
+
+    return filter_var($first, FILTER_VALIDATE_IP) === false ? $ip : $first;
 }
 
 function install_salt(): string
 {
-    $dir = data_dir();
+    static $salt = null;
 
-    if ($dir === '') {
-        return '';
+    if ($salt !== null) {
+        return $salt;
     }
 
-    $file = $dir . '/salt';
+    $value = trim(data_read('salt'));
 
-    if (!is_file($file)) {
-        @file_put_contents($file, bin2hex(random_bytes(32)), LOCK_EX);
-        @chmod($file, 0640);
+    if ($value === '') {
+        $value = bin2hex(random_bytes(32));
+        data_write('salt', $value);
+        @chmod(data_path('salt'), 0640);
     }
 
-    return trim((string) @file_get_contents($file));
-}
+    $salt = $value;
 
-function chat_path(): string
-{
-    $dir = data_dir();
-
-    return $dir === '' ? '' : $dir . '/chat.json';
+    return $salt;
 }
 
 function chat_read(): array
 {
-    $path = chat_path();
-
-    if ($path === '' || !is_file($path)) {
-        return ['messages' => []];
-    }
-
-    $raw = @file_get_contents($path);
-    $store = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+    $raw = data_read('chat.json');
+    $store = $raw === '' ? null : json_decode($raw, true);
 
     if (!is_array($store) || !isset($store['messages']) || !is_array($store['messages'])) {
         return ['messages' => []];
@@ -632,12 +824,6 @@ function chat_read(): array
 
 function chat_write(array $store): bool
 {
-    $path = chat_path();
-
-    if ($path === '') {
-        return false;
-    }
-
     if (count($store['messages']) > CHAT_KEEP) {
         $extra = array_slice($store['messages'], CHAT_KEEP);
 
@@ -648,7 +834,7 @@ function chat_write(array $store): bool
         $store['messages'] = array_slice($store['messages'], 0, CHAT_KEEP);
     }
 
-    return @file_put_contents($path, (string) json_encode($store), LOCK_EX) !== false;
+    return data_write('chat.json', (string) json_encode($store));
 }
 
 function chat_drop_file(array $message): void
@@ -674,20 +860,8 @@ function visitor_hash(): string
 
 function chat_cooldown_left(): int
 {
-    $dir = data_dir();
-
-    if ($dir === '') {
-        return 0;
-    }
-
-    $path = $dir . '/chatrate.json';
-
-    if (!is_file($path)) {
-        return 0;
-    }
-
-    $raw = @file_get_contents($path);
-    $data = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+    $raw = data_read('chatrate.json');
+    $data = $raw === '' ? null : json_decode($raw, true);
 
     if (!is_array($data)) {
         return 0;
@@ -700,15 +874,8 @@ function chat_cooldown_left(): int
 
 function chat_touch_cooldown(): void
 {
-    $dir = data_dir();
-
-    if ($dir === '') {
-        return;
-    }
-
-    $path = $dir . '/chatrate.json';
-    $raw = @file_get_contents($path);
-    $data = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+    $raw = data_read('chatrate.json');
+    $data = $raw === '' ? null : json_decode($raw, true);
     $data = is_array($data) ? $data : [];
     $now = time();
     $data[visitor_hash()] = $now;
@@ -719,7 +886,7 @@ function chat_touch_cooldown(): void
         }
     }
 
-    @file_put_contents($path, (string) json_encode($data), LOCK_EX);
+    data_write('chatrate.json', (string) json_encode($data));
 }
 
 function chat_age(int $seconds): string
@@ -786,20 +953,13 @@ function online_count(bool $touch): int
         return 0;
     }
 
-    $handle = @fopen($dir . '/online.json', 'c+');
+    [$handle, $raw] = data_open('online.json');
 
-    if ($handle === false) {
+    if ($handle === null) {
         return 0;
     }
 
-    if (!flock($handle, LOCK_EX)) {
-        fclose($handle);
-
-        return 0;
-    }
-
-    $raw = stream_get_contents($handle);
-    $seen = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+    $seen = $raw === '' ? null : json_decode($raw, true);
     $seen = is_array($seen) ? $seen : [];
     $now = time();
 
@@ -813,12 +973,7 @@ function online_count(bool $touch): int
         $seen[visitor_hash()] = $now;
     }
 
-    rewind($handle);
-    ftruncate($handle, 0);
-    fwrite($handle, (string) json_encode($seen));
-    fflush($handle);
-    flock($handle, LOCK_UN);
-    fclose($handle);
+    data_close($handle, (string) json_encode($seen));
 
     return count($seen);
 }
@@ -889,15 +1044,8 @@ function views_trim(array $store): array
 
 function views_read(): array
 {
-    $dir = data_dir();
-    $path = $dir === '' ? '' : $dir . '/views.json';
-
-    if ($path === '' || !is_file($path)) {
-        return views_normalise([]);
-    }
-
-    $raw = @file_get_contents($path);
-    $store = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+    $raw = data_read('views.json');
+    $store = $raw === '' ? null : json_decode($raw, true);
 
     return views_normalise(is_array($store) ? $store : []);
 }
@@ -919,24 +1067,11 @@ function views_series(array $days, int $span): array
     return $series;
 }
 
-function admin_name_path(): string
-{
-    $dir = data_dir();
-
-    return $dir === '' ? '' : $dir . '/adminname.json';
-}
-
 function admin_profile(): array
 {
     $fallback = ['name' => 'nysha4real', 'color' => 'yellow'];
-    $path = admin_name_path();
-
-    if ($path === '' || !is_file($path)) {
-        return $fallback;
-    }
-
-    $raw = @file_get_contents($path);
-    $data = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+    $raw = data_read('adminname.json');
+    $data = $raw === '' ? null : json_decode($raw, true);
 
     if (!is_array($data)) {
         return $fallback;
@@ -963,18 +1098,10 @@ function admin_color(): string
 
 function save_admin_name(string $name, string $color): bool
 {
-    $path = admin_name_path();
-
-    if ($path === '') {
-        return false;
-    }
-
-    $body = (string) json_encode([
+    return data_write('adminname.json', (string) json_encode([
         'name' => $name,
         'color' => $color === 'green' ? 'green' : 'yellow',
-    ]);
-
-    return @file_put_contents($path, $body, LOCK_EX) !== false;
+    ]));
 }
 
 function poster_name_html(string $name, bool $isAdmin): string
@@ -1000,39 +1127,23 @@ function next_no(): int
         return 0;
     }
 
-    $handle = @fopen($dir . '/seq.json', 'c+');
+    [$handle, $raw] = data_open('seq.json');
 
-    if ($handle === false) {
+    if ($handle === null) {
         return 0;
     }
 
-    if (!flock($handle, LOCK_EX)) {
-        fclose($handle);
-
-        return 0;
-    }
-
-    $raw = stream_get_contents($handle);
-    $data = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+    $data = $raw === '' ? null : json_decode($raw, true);
     $next = (int) (is_array($data) ? ($data['seq'] ?? 0) : 0) + 1;
 
-    rewind($handle);
-    ftruncate($handle, 0);
-    fwrite($handle, (string) json_encode(['seq' => $next]));
-    fflush($handle);
-    flock($handle, LOCK_UN);
-    fclose($handle);
+    data_close($handle, (string) json_encode(['seq' => $next]));
 
     return $next;
 }
 
 function seq_seed(int $value): void
 {
-    $dir = data_dir();
-
-    if ($dir !== '') {
-        @file_put_contents($dir . '/seq.json', (string) json_encode(['seq' => $value]), LOCK_EX);
-    }
+    data_write('seq.json', (string) json_encode(['seq' => $value]));
 }
 
 function quote_html(array $item): string
@@ -1065,13 +1176,6 @@ function clean_emoji_name(string $name): string
     $name = preg_replace('/[^a-z0-9_-]+/', '', $name) ?? '';
 
     return mb_substr($name, 0, 32);
-}
-
-function geo_path(): string
-{
-    $dir = data_dir();
-
-    return $dir === '' ? '' : $dir . '/geo.json';
 }
 
 /**
@@ -1156,15 +1260,9 @@ function visitor_place(): array
         return $fromHeader;
     }
 
-    $path = geo_path();
-
-    if ($path === '') {
-        return $fromHeader;
-    }
-
     $key = secret_hash('geo', $ip);
-    $raw = @file_get_contents($path);
-    $cache = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+    $raw = data_read('geo.json');
+    $cache = $raw === '' ? null : json_decode($raw, true);
     $cache = is_array($cache) ? $cache : [];
     $now = time();
 
@@ -1194,7 +1292,15 @@ function visitor_place(): array
         'city' => (string) ($place['city'] ?? ''),
         'seen' => $now,
     ];
-    @file_put_contents($path, (string) json_encode($cache), LOCK_EX);
+
+    if (count($cache) > GEO_MAX) {
+        uasort($cache, static function (array $a, array $b): int {
+            return (int) $b['seen'] <=> (int) $a['seen'];
+        });
+        $cache = array_slice($cache, 0, GEO_MAX, true);
+    }
+
+    data_write('geo.json', (string) json_encode($cache));
 
     return [
         'code' => (string) ($place['code'] ?? ''),

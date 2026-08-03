@@ -70,7 +70,13 @@ if ($action === 'comment') {
     $postId = (string) ($_POST['post'] ?? '');
     $author = comment_author($authed);
     $text = mb_substr(trim((string) ($_POST['text'] ?? '')), 0, MAX_CHAT_TEXT);
-    $upload = comment_upload($errors);
+    $left = $authed ? 0 : chat_cooldown_left();
+
+    if ($left > 0) {
+        $errors[] = 'One comment per minute. Wait ' . $left . ' s.';
+    }
+
+    $upload = $errors === [] ? comment_upload($errors) : [];
 
     if ($errors === [] && $text === '' && $upload === []) {
         $errors[] = 'Write something first.';
@@ -112,6 +118,10 @@ if ($action === 'comment') {
             if (!write_store($store)) {
                 $errors[] = 'Could not save the comment: the server cannot write to api/data. Check the folder permissions.';
             } else {
+                if (!$authed) {
+                    chat_touch_cooldown();
+                }
+
                 header('Location: /blog/#p' . (int) ($post['no'] ?? 0));
                 exit;
             }
@@ -168,7 +178,7 @@ $boardTitle = '/n/ - posts by nysha4real';
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($boardTitle) ?> - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=15">
+<link rel="stylesheet" href="/style.css?v=16">
 </head>
 <body class="blue">
 
@@ -270,6 +280,6 @@ $open = !empty($post['comments_open']);
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=15"></script>
+<script src="/script.js?v=16"></script>
 </body>
 </html>

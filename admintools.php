@@ -49,7 +49,7 @@ $broken = in_array(false, $checks, true);
 <meta name="robots" content="noindex, nofollow">
 <title>Admin Tools - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=15">
+<link rel="stylesheet" href="/style.css?v=16">
 </head>
 <body class="blue">
 
@@ -326,6 +326,6 @@ foreach ($series as $date => $hits) {
 
 </div>
 
-<script src="/script.js?v=15"></script>
+<script src="/script.js?v=16"></script>
 </body>
 </html>

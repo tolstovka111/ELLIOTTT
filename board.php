@@ -29,7 +29,7 @@ $fragment = project_root() . '/pages/' . $key . '.html';
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e((string) $board['title']) ?> - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=15">
+<link rel="stylesheet" href="/style.css?v=16">
 </head>
 <body class="blue">
 
@@ -37,7 +37,7 @@ $fragment = project_root() . '/pages/' . $key . '.html';
 
 <div class="page wide">
 
-<?= board_header((string) $board['title'], 'Go to the page', '#pagebody') ?>
+<?= board_header((string) $board['title'], 'Go to the page', '#pagebody', board_subtitle($key)) ?>
 
 	<div class="board">
 
@@ -64,6 +64,6 @@ $fragment = project_root() . '/pages/' . $key . '.html';
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=15"></script>
+<script src="/script.js?v=16"></script>
 </body>
 </html>

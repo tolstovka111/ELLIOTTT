@@ -286,8 +286,8 @@ behind a proxy `VIEWS_TRUST_PROXY=1` is what makes them real rather than the
 proxy's own. The place comes from one lookup per address, cached 30 days in
 `api/data/geo.json`, so the server needs outbound HTTP for it to fill in.
 
-Both live in `api/data/views.json`, which keeps 120 days of daily counts and the
-4000 most recent visitors. Rows recorded before this feature existed show no
+Both live in `api/data/views.json.php`, which keeps 120 days of daily counts and
+the 4000 most recent visitors. Rows recorded before this feature existed show no
 address, only the count they contributed.
 
 ## Phones
@@ -318,6 +318,30 @@ Behind Cloudflare or another reverse proxy, set `VIEWS_TRUST_PROXY=1` so the rea
 visitor address is read from `CF-Connecting-IP` / `X-Forwarded-For`. This also
 drives the chat rate limit and the delete permissions. Leave it unset without a
 proxy in front — those headers can be spoofed by anyone.
+
+## What guards what
+
+Everything under `api/data/` is written as a PHP file that exits on its first
+line, so fetching one over HTTP returns an empty body **even where `.htaccess`
+is ignored or `mod_rewrite` is off**. A file written by an older version is
+moved across the first time it is read and the unguarded copy is deleted. The
+`.htaccess` rules on top of that are belt and braces.
+
+`api/config.php` holds three hashes and nothing else, and is never served
+because PHP executes it.
+
+The visitor's address decides who owns a message, when the posting cooldown
+lapses and when the login lockout bites, so it is only ever read from
+`REMOTE_ADDR`. Setting `VIEWS_TRUST_PROXY=1` makes the site read
+`CF-Connecting-IP` instead — but only when the request actually arrived from one
+of Cloudflare's published ranges, so nobody can hand the site somebody else's
+address in a header. Behind a different proxy, add `VIEWS_TRUST_ANY_PROXY=1` as
+well, and be sure the proxy strips the header from what it receives.
+
+Posting is rate limited to **one message or comment per minute per address**,
+the signed-in admin excepted. The chat keeps its newest 300 messages, the view
+log 4000 visitors and the location cache 20000 addresses, so nothing on disk
+grows without a ceiling.
 
 ## nginx
 

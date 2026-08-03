@@ -34,19 +34,13 @@ if ($clientIp === '') {
 
 $fingerprint = hash('sha256', $salt . '|' . $clientIp);
 $place = visitor_place();
-$handle = @fopen($dir . '/views.json', 'c+');
+[$handle, $raw] = data_open('views.json');
 
-if ($handle === false) {
+if ($handle === null) {
     fail(500, 'storage unavailable');
 }
 
-if (!flock($handle, LOCK_EX)) {
-    fclose($handle);
-    fail(500, 'storage busy');
-}
-
-$raw = stream_get_contents($handle);
-$store = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+$store = $raw === '' ? null : json_decode($raw, true);
 $store = views_normalise(is_array($store) ? $store : []);
 
 $now = time();
@@ -81,11 +75,6 @@ if (!is_array($entry)) {
 $store['days'][$today] = (int) ($store['days'][$today] ?? 0) + 1;
 $store = views_trim($store);
 
-rewind($handle);
-ftruncate($handle, 0);
-fwrite($handle, (string) json_encode($store));
-fflush($handle);
-flock($handle, LOCK_UN);
-fclose($handle);
+data_close($handle, (string) json_encode($store));
 
 echo json_encode(['views' => (int) $store['total']]);
