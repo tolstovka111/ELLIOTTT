@@ -2095,18 +2095,22 @@ body.blue .quotelink a:hover {
 	padding: 22px 4px 30px;
 }
 
+/* Sized by height, so every frame is exactly as tall as its neighbours */
 .boardgrid.trio .boardpic {
-	width: 300px;
+	width: auto;
 }
 
 .boardgrid.trio .boardpic img {
+	width: auto;
 	height: 240px;
+	aspect-ratio: 5 / 4;
 }
 
-/* Shown whole rather than cropped, in a frame the size of its neighbours */
+/* Shown whole: the frame follows the picture instead of cutting it, so it
+   comes out longer than the others but exactly as tall, with no bare edges */
 .boardgrid.trio .boardpic.whole img {
+	aspect-ratio: auto;
 	object-fit: contain;
-	background-color: #ffffff;
 }
 
 .boardgrid.trio figcaption {
@@ -2156,12 +2160,12 @@ body.blue .quotelink a:hover {
 	}
 
 	.boardgrid.trio .boardpic {
-		width: 32%;
-		max-width: 300px;
+		width: auto;
 	}
 
+	/* height in view widths, so all three fit the row on any phone */
 	.boardgrid.trio .boardpic img {
-		height: 96px;
+		height: 20vw;
 	}
 
 	.boardgrid.trio figcaption {

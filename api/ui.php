@@ -92,7 +92,7 @@ function board_header(string $title, string $goLabel, string $goTarget, string $
  */
 function board_shuffled(): array
 {
-    return ['a', 'i'];
+    return ['a', 'i', 'b'];
 }
 
 /**
@@ -100,7 +100,7 @@ function board_shuffled(): array
  */
 function board_staggered(): array
 {
-    return ['i'];
+    return ['i', 'a'];
 }
 
 /**
@@ -128,6 +128,8 @@ function board_subtitle(string $key): string
     $lines = [
         'a' => 'my fav anime characters',
         'i' => 'my fav characters from internet O.O',
+        'o' => 'MY F%%KING AVATAR X_X',
+        'm' => 'SKIN MINECRAFT.png',
     ];
 
     return (string) ($lines[$key] ?? '');
