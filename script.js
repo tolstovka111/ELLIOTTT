@@ -298,43 +298,87 @@
 	var faqDrop = document.getElementById("faqdrop");
 
 	if (faqDrop) {
+		var faqPic = faqDrop.querySelector("img");
 		var crack = null;
 		var src = faqDrop.getAttribute("data-sound");
+		var landed = false;
+		var waiting = false;
+		var flights = 0;
 
 		if (src) {
 			crack = new Audio(src);
 			crack.preload = "auto";
+			crack.load();
 		}
 
+		var fly = function () {
+			landed = false;
+			flights += 1;
+			faqDrop.classList.remove("fly");
+			// read the layout back so the browser sees the class leave and return
+			void faqDrop.offsetWidth;
+			faqDrop.classList.add("fly");
+			// a safety net in case animationend never comes
+			window.setTimeout(land, 2100);
+		};
+
+		// The browser wants a gesture before it makes a sound. Take the next
+		// one and fly the picture in again, so it lands on the crack.
+		var waitForGesture = function () {
+			if (waiting) {
+				return;
+			}
+
+			waiting = true;
+
+			var once = function () {
+				document.removeEventListener("pointerdown", once);
+				document.removeEventListener("keydown", once);
+				document.removeEventListener("touchstart", once);
+				waiting = false;
+
+				if (flights < 2) {
+					fly();
+				} else if (crack) {
+					// the second flight was refused too: just make the sound
+					crack.play().catch(function () { return null; });
+				}
+			};
+
+			document.addEventListener("pointerdown", once);
+			document.addEventListener("keydown", once);
+			document.addEventListener("touchstart", once);
+		};
+
 		var land = function () {
+			if (landed) {
+				return;
+			}
+
+			landed = true;
+
 			if (!crack) {
 				return;
+			}
+
+			try {
+				crack.currentTime = 0;
+			} catch (err) {
+				// a stream that has not loaded yet cannot be rewound; never mind
 			}
 
 			var played = crack.play();
 
 			if (played && played.catch) {
-				played.catch(function () {
-					// The browser wants a gesture first: play on the next one.
-					var once = function () {
-						crack.play().catch(function () { return null; });
-						document.removeEventListener("click", once);
-						document.removeEventListener("keydown", once);
-						document.removeEventListener("touchstart", once);
-					};
-
-					document.addEventListener("click", once, { once: true });
-					document.addEventListener("keydown", once, { once: true });
-					document.addEventListener("touchstart", once, { once: true });
-				});
+				played.catch(waitForGesture);
 			}
 		};
 
-		window.setTimeout(function () {
-			faqDrop.classList.add("fly");
-			// the landing is the tail of the 2s flight
-			window.setTimeout(land, 1620);
-		}, 250);
+		if (faqPic) {
+			faqPic.addEventListener("animationend", land);
+		}
+
+		window.setTimeout(fly, 250);
 	}
 
 	var chart = document.getElementById("views-chart");

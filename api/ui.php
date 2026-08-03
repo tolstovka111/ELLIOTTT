@@ -112,6 +112,15 @@ function board_flowing(): array
 }
 
 /**
+ * Boards showing a handful of large pictures side by side, captioned with
+ * one big letter apiece.
+ */
+function board_trio(): array
+{
+    return ['o', 'm'];
+}
+
+/**
  * The line under the jump link, half its size and not a link itself.
  */
 function board_subtitle(string $key): string
@@ -143,15 +152,20 @@ function board_pictures(string $key): array
             continue;
         }
 
-        $parts = explode('|', $line, 2);
+        $parts = explode('|', $line, 3);
         $file = basename(trim($parts[0]));
         $caption = isset($parts[1]) ? trim($parts[1]) : '';
+        $whole = isset($parts[2]) && strcasecmp(trim($parts[2]), 'whole') === 0;
 
         if ($file === '' || !is_file($dir . '/' . $file)) {
             continue;
         }
 
-        $found[] = ['src' => '/assets/boards/' . $key . '/' . $file, 'caption' => $caption];
+        $found[] = [
+            'src' => '/assets/boards/' . $key . '/' . $file,
+            'caption' => $caption,
+            'whole' => $whole,
+        ];
     }
 
     return $found;
@@ -179,6 +193,10 @@ function board_gallery(string $key): string
         $classes .= ' flowing staged';
     }
 
+    if (in_array($key, board_trio(), true)) {
+        $classes .= ' trio';
+    }
+
     if (in_array($key, board_shuffled(), true)) {
         shuffle($pictures);
     }
@@ -189,7 +207,7 @@ function board_gallery(string $key): string
         $src = e((string) $picture['src']);
         $caption = e((string) $picture['caption']);
 
-        $out .= '<figure class="boardpic">'
+        $out .= '<figure class="boardpic' . (!empty($picture['whole']) ? ' whole' : '') . '">'
             . '<span class="boardpic-frame">'
             . '<img src="' . $src . '" alt="' . $caption . '" loading="lazy"'
             . ' data-full="' . $src . '" data-kind="image"></span>';

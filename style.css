@@ -2088,6 +2088,36 @@ body.blue .quotelink a:hover {
 	word-wrap: break-word;
 }
 
+/* ---- /o/ and /m/ : three big pictures, one big letter under each ----- */
+
+.boardgrid.trio {
+	gap: 26px 24px;
+	padding: 22px 4px 30px;
+}
+
+.boardgrid.trio .boardpic {
+	width: 300px;
+}
+
+.boardgrid.trio .boardpic img {
+	height: 240px;
+}
+
+/* Shown whole rather than cropped, in a frame the size of its neighbours */
+.boardgrid.trio .boardpic.whole img {
+	object-fit: contain;
+	background-color: #ffffff;
+}
+
+.boardgrid.trio figcaption {
+	padding-top: 6px;
+	font-size: 30pt;
+	font-weight: bold;
+	line-height: 1.1;
+	letter-spacing: 1px;
+	color: #34345c;
+}
+
 /* Every second picture drops half a row, for the staggered look */
 .boardgrid.staggered {
 	gap: 30px 26px;
@@ -2116,6 +2146,26 @@ body.blue .quotelink a:hover {
 
 	.boardgrid.staggered .boardpic:nth-child(even) {
 		margin-top: 26px;
+	}
+
+	/* the three keep their row, so the letters still spell their word */
+	.boardgrid.trio {
+		flex-wrap: nowrap;
+		gap: 8px;
+		padding: 16px 4px 22px;
+	}
+
+	.boardgrid.trio .boardpic {
+		width: 32%;
+		max-width: 300px;
+	}
+
+	.boardgrid.trio .boardpic img {
+		height: 96px;
+	}
+
+	.boardgrid.trio figcaption {
+		font-size: 20pt;
 	}
 }
 

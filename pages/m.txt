@@ -1,0 +1,6 @@
+# One line per picture: file | caption | whole
+# Pictures live in assets/boards/m/
+# A third field of "whole" shows the picture uncropped.
+m.jpg | M
+l.jpg | L | whole
+g.jpg | G
