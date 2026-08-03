@@ -1,0 +1,11 @@
+# One line per picture: file | caption
+# Pictures live in assets/boards/a/
+1.jpg | Akira Kogami
+2.jpg | Kagami Hiiragi
+3.jpg | Yuno Gasai
+4.jpg | Tomo Takino
+5.jpg | Sonya
+6.jpg | Nico Yazawa
+7.jpg | Taiga Aisaka
+8.jpg | Yui Nyan
+9.jpg | Dokuro Mitsukai

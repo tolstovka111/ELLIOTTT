@@ -14,7 +14,7 @@ a public chat.
 | `admin.php` | Setup, sign in, and the handler for publish / delete / log out |
 | `404.php` | Not-found page, shows a random picture from `assets/404/` |
 | `board.php` | `/o/` `/m/` `/a/` `/i/` `/b/` `/faq` `/rules` — the standalone pages |
-| `pages/` | Optional HTML fragment that fills a page in |
+| `pages/` | The picture list, and any HTML, that fills a board page in |
 | `.htaccess` | Short URLs, directory index, 404 document |
 | `style.css`, `script.js` | Theme and front-end logic |
 | `api/lib.php` | Storage, posts, chat, emoji and hashing helpers |
@@ -25,6 +25,7 @@ a public chat.
 | `assets/emoji/` | Emoji pack |
 | `assets/404/` | Pictures the 404 page picks from |
 | `assets/banners/` | Banners the /blog/ header picks from |
+| `assets/boards/` | The pictures shown on the board pages |
 | `assets/adbanners/` | Clickable banners under the /blog/ header |
 | `assets/videos/` | Looping clips |
 | `assets/blog/`, `assets/chat/`, `assets/comments/` | Uploaded files |
@@ -175,9 +176,24 @@ share the layout of the blog: the board bar, a random banner, the board title, a
 **[Go to the page]** link and a random ad banner. They carry information only —
 there is nothing to post there.
 
-The middle of the page is yours to fill: drop an HTML fragment into `pages/`
-named after the board — `o.html`, `faq.html` and so on — and it is pasted in.
-Without one the page reads *Nothing here yet.*
+The middle of the page is a **picture wall**. Put the pictures in
+`assets/boards/<board>/` and list them in `pages/<board>.txt`, one line each:
+
+```
+1.jpg | Akira Kogami
+```
+
+Each picture gets a thin frame, grows a little under the pointer and opens at
+full size on click, where it can be downloaded or closed with the **×**. The
+caption sits underneath.
+
+`/a/` keeps the order of the file. `/i/` is **staggered and reshuffled on every
+visit**, so the wall never looks the same twice; which boards behave that way is
+the list in `board_shuffled()` in `api/ui.php`.
+
+A page that needs more than pictures can also have an HTML fragment in
+`pages/<board>.html`, pasted in above the wall. With neither, the page reads
+*Nothing here yet.*
 
 ## Chat
 

@@ -374,6 +374,16 @@
 		}
 	});
 
+	// The quote is there to be looked at, not to jump away to.
+	document.addEventListener("click", function (event) {
+		var link = event.target.closest ? event.target.closest(".quotelink a") : null;
+
+		if (link) {
+			event.preventDefault();
+			openQuotePop(link);
+		}
+	});
+
 	window.addEventListener("scroll", closeQuotePop, { passive: true });
 
 	var chatList = document.getElementById("chat-list");

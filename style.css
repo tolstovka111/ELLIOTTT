@@ -2042,3 +2042,79 @@ body.blue .quotelink a:hover {
 [hidden] {
 	display: none !important;
 }
+
+/* ---- The picture wall on a board page -------------------------------- */
+
+.boardgrid {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items: flex-start;
+	gap: 22px 20px;
+	padding: 14px 4px 20px;
+}
+
+.boardpic {
+	margin: 0;
+	width: 190px;
+	text-align: center;
+}
+
+.boardpic-frame {
+	display: block;
+	overflow: hidden;
+	border: 1px solid #34345c;
+	background-color: #ffffff;
+	line-height: 0;
+}
+
+.boardpic img {
+	display: block;
+	width: 100%;
+	height: 190px;
+	object-fit: cover;
+	cursor: pointer;
+	transition: transform 0.18s ease-out;
+}
+
+.boardpic:hover img {
+	transform: scale(1.07);
+}
+
+.boardpic figcaption {
+	padding-top: 5px;
+	font-size: 9pt;
+	line-height: 1.35;
+	word-wrap: break-word;
+}
+
+/* Every second picture drops half a row, for the staggered look */
+.boardgrid.staggered {
+	gap: 30px 26px;
+	padding-bottom: 60px;
+}
+
+.boardgrid.staggered .boardpic:nth-child(even) {
+	margin-top: 42px;
+}
+
+@media (max-width: 760px) {
+	.boardgrid,
+	.boardgrid.staggered {
+		gap: 16px 12px;
+		padding: 12px 2px 18px;
+	}
+
+	.boardpic {
+		width: 44%;
+		max-width: 190px;
+	}
+
+	.boardpic img {
+		height: 150px;
+	}
+
+	.boardgrid.staggered .boardpic:nth-child(even) {
+		margin-top: 26px;
+	}
+}

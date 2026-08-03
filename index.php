@@ -24,7 +24,7 @@ if ($authed) {
 <title>4real</title>
 <meta name="description" content="4real is a link-in-bio info-hub with every official profile in one place.">
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=13">
+<link rel="stylesheet" href="/style.css?v=14">
 </head>
 <body>
 
@@ -63,6 +63,7 @@ if ($authed) {
 					<li><a href="https://open.spotify.com/user/31rsjobmhmq7unu3h3y4pfn6jeq4" target="_blank" rel="noopener">Spotify</a></li>
 					<li><a href="https://on.soundcloud.com/9eYojPyGN0hkus2GKK" target="_blank" rel="noopener">SoundCloud</a></li>
 					<li><a href="https://steamcommunity.com/id/nysha4real/" target="_blank" rel="noopener">Steam</a></li>
+					<li><a href="https://namemc.com/profile/nysha4real.1" target="_blank" rel="noopener">NameMC</a></li>
 				</ul>
 			</div>
 
@@ -143,6 +144,6 @@ if ($authed) {
 
 </div>
 
-<script src="/script.js?v=13"></script>
+<script src="/script.js?v=14"></script>
 </body>
 </html>

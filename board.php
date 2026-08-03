@@ -29,7 +29,7 @@ $fragment = project_root() . '/pages/' . $key . '.html';
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e((string) $board['title']) ?> - 4real</title>
 <link rel="icon" href="/assets/4real-logo.png">
-<link rel="stylesheet" href="/style.css?v=13">
+<link rel="stylesheet" href="/style.css?v=14">
 </head>
 <body class="blue">
 
@@ -44,7 +44,10 @@ $fragment = project_root() . '/pages/' . $key . '.html';
 		<div class="pagebody" id="pagebody">
 <?php if (is_file($fragment)): ?>
 <?php require $fragment; ?>
-<?php else: ?>
+<?php endif; ?>
+<?php $gallery = board_gallery($key); ?>
+<?= $gallery ?>
+<?php if (!is_file($fragment) && $gallery === ''): ?>
 			<div class="empty">Nothing here yet.</div>
 <?php endif; ?>
 		</div>
@@ -61,6 +64,6 @@ $fragment = project_root() . '/pages/' . $key . '.html';
 	<a class="lightbox-download" id="lightbox-download" download>Download</a>
 </div>
 
-<script src="/script.js?v=13"></script>
+<script src="/script.js?v=14"></script>
 </body>
 </html>

@@ -1,0 +1,24 @@
+# One line per picture: file | caption
+# Pictures live in assets/boards/i/
+1.jpg | Lottie/canihavepromo
+2.jpg | Fandroid
+3.jpg | Tattletail
+4.jpg | Pedobear
+5.jpg | Madobe Nanami
+6.jpg | Ben Drowned
+7.jpg | Moot
+8.jpg | W-tan
+9.jpg | Chiru Kondo
+10.jpg | Nyan cat
+11.jpg | Ayano Aishi/Yandere chan
+12.jpg | PVZ Sunflower
+13.jpg | Natsuki
+14.jpg | Flowey
+15.jpg | Annoying orange
+16.jpg | Yotsuba Koiwai
+17.jpg | Slenderman
+18.jpg | Jeff the killer
+19.jpg | asdf muffin
+20.jpg | Jobbot
+21.jpg | aqua.4chan
+22.jpg | ihascupquake

@@ -82,6 +82,86 @@ function board_header(string $title, string $goLabel, string $goTarget): string
     return $out;
 }
 
+/**
+ * Boards whose pictures are shuffled and staggered on every visit.
+ */
+function board_shuffled(): array
+{
+    return ['i'];
+}
+
+function board_pictures(string $key): array
+{
+    $path = project_root() . '/pages/' . $key . '.txt';
+
+    if (!is_file($path)) {
+        return [];
+    }
+
+    $lines = (array) @file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    $dir = project_root() . '/assets/boards/' . $key;
+    $found = [];
+
+    foreach ($lines as $line) {
+        $line = trim((string) $line);
+
+        if ($line === '' || $line[0] === '#') {
+            continue;
+        }
+
+        $parts = explode('|', $line, 2);
+        $file = basename(trim($parts[0]));
+        $caption = isset($parts[1]) ? trim($parts[1]) : '';
+
+        if ($file === '' || !is_file($dir . '/' . $file)) {
+            continue;
+        }
+
+        $found[] = ['src' => '/assets/boards/' . $key . '/' . $file, 'caption' => $caption];
+    }
+
+    return $found;
+}
+
+/**
+ * The picture wall: a thin frame each, the caption underneath, and the picture
+ * itself opening full size in the lightbox.
+ */
+function board_gallery(string $key): string
+{
+    $pictures = board_pictures($key);
+
+    if ($pictures === []) {
+        return '';
+    }
+
+    $stagger = in_array($key, board_shuffled(), true);
+
+    if ($stagger) {
+        shuffle($pictures);
+    }
+
+    $out = '<div class="boardgrid' . ($stagger ? ' staggered' : '') . '">';
+
+    foreach ($pictures as $picture) {
+        $src = e((string) $picture['src']);
+        $caption = e((string) $picture['caption']);
+
+        $out .= '<figure class="boardpic">'
+            . '<span class="boardpic-frame">'
+            . '<img src="' . $src . '" alt="' . $caption . '" loading="lazy"'
+            . ' data-full="' . $src . '" data-kind="image"></span>';
+
+        if ($caption !== '') {
+            $out .= '<figcaption>' . $caption . '</figcaption>';
+        }
+
+        $out .= '</figure>';
+    }
+
+    return $out . '</div>';
+}
+
 function site_logo(bool $linkTo404): string
 {
     $href = $linkTo404 ? '/404.php' : '/home';
