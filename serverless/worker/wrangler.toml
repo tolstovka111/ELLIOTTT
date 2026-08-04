@@ -1,0 +1,18 @@
+name = "delta-vpn"
+main = "src/worker.js"
+compatibility_date = "2024-12-05"
+# Required for outbound TCP from the edge (`cloudflare:sockets`).
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Path the client connects to. Treat it as a second secret: a wrong path returns 404.
+WS_PATH = "/delta"
+NODE_NAME = "Dельта · Edge"
+# Optional relay for destinations Cloudflare will not dial directly.
+PROXY_IP = ""
+# Extra vless:// links (e.g. your VPS node) appended to the subscription.
+EXTRA_NODES = ""
+
+# Secrets — never put these in this file:
+#   wrangler secret put UUID        # the client id, e.g. `uuidgen`
+#   wrangler secret put SUB_TOKEN   # guards GET /sub
