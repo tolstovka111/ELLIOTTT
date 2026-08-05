@@ -1,21 +1,11 @@
-/* ============================================================
-   Elliot Editor — Audio Mixer
-   1. Фон «жидкий аметист» (тот же шейдер, фиолетовая палитра)
-   2. Пиксельные панели (фиолетовая мозаика)
-   3. Аудио-движок: скорость, тон, реверб, 8-бит, дисторшн,
-      эхо, телефон, тремоло — прослушивание и экспорт WAV/MP3
-   ============================================================ */
-
 'use strict';
-
-/* ================= 1. ФОН ================= */
 
 (function liquidAmethystBackground() {
   const canvas = document.getElementById('bg-canvas');
   if (!canvas) return;
   const gl = canvas.getContext('webgl', { antialias: false, alpha: false, depth: false, stencil: false })
     || canvas.getContext('experimental-webgl', { antialias: false, alpha: false });
-  if (!gl) { document.body.classList.add('no-webgl'); return; } // остаётся CSS-фолбэк
+  if (!gl) { document.body.classList.add('no-webgl'); return; }
 
   const VERT = `
     attribute vec2 a_pos;
@@ -77,7 +67,6 @@
       float lum = clamp(veins * 1.5 + body, 0.0, 1.0);
       lum = pow(lum, 1.5);
 
-      // аметистовая палитра: чёрный -> тёмный пурпур -> фиолет -> лаванда
       vec3 col = vec3(0.0);
       col = mix(col, vec3(0.14, 0.03, 0.24), smoothstep(0.05, 0.4, lum));
       col = mix(col, vec3(0.55, 0.19, 0.93), smoothstep(0.35, 0.75, lum));
@@ -112,7 +101,7 @@
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
     console.error(gl.getProgramInfoLog(prog));
     document.body.classList.add('no-webgl');
-    return; // остаётся CSS-фолбэк вместо чёрного экрана
+    return;
   }
   gl.useProgram(prog);
 
@@ -125,9 +114,6 @@
   const uRes = gl.getUniformLocation(prog, 'u_res');
   const uTime = gl.getUniformLocation(prog, 'u_time');
 
-  /* Шейдер тяжёлый (пять fbm по пять октав на пиксель), поэтому кроме
-     половинного масштаба ограничиваем и абсолютное число пикселей —
-     иначе на больших экранах со слабой видеокартой всё проседает. */
   const MAX_PIXELS = 640 * 360;
   let raf = 0;
 
@@ -138,7 +124,6 @@
     gl.viewport(0, 0, canvas.width, canvas.height);
   }
 
-  // resize стреляет пачками — пересобираем буфер не чаще одного кадра
   let resizeQueued = false;
   addEventListener('resize', () => {
     if (resizeQueued) return;
@@ -160,12 +145,8 @@
   function play() { if (!raf) raf = requestAnimationFrame(frame); }
   play();
 
-  // вкладка в фоне — не жжём GPU впустую
   document.addEventListener('visibilitychange', () => { if (!document.hidden) play(); });
 
-  /* при потере контекста (спящий режим, сброс драйвера) фон навсегда
-     оставался чёрным. Перезагружать страницу нельзя — улетит загруженный
-     трек, поэтому просто отдаём фон CSS-градиенту. */
   canvas.addEventListener('webglcontextlost', e => {
     e.preventDefault();
     cancelAnimationFrame(raf);
@@ -175,14 +156,11 @@
   });
 })();
 
-/* ================= 2. ПИКСЕЛЬНЫЕ ПАНЕЛИ ================= */
-
 (function pixelPanelBackgrounds() {
   const CELL = 14;
   const TICK = 130;
   const CHURN = 0.02;
 
-  // почти чёрный -> очень тёмный пурпур
   const PALETTE = [
     [9, 6, 13], [9, 6, 13], [9, 6, 13], [9, 6, 13],
     [12, 8, 18], [12, 8, 18], [12, 8, 18],
@@ -267,8 +245,6 @@
   });
 })();
 
-/* ================= 3. АУДИО-ДВИЖОК ================= */
-
 const state = {
   speed: 100, pitch: 0, reverb: 0, crush: 0,
   distortion: 0, echo: 0, underwater: 0, tremolo: 0,
@@ -282,11 +258,11 @@ function getAudioCtx() {
   return audioCtx;
 }
 
-let originalBuffer = null;   // AudioBuffer исходника
-let processedBuffer = null;  // AudioBuffer после эффектов
-let playingSource = null;    // текущий проигрываемый источник
+let originalBuffer = null;
+let processedBuffer = null;
+let playingSource = null;
 let fileName = 'track';
-let stale = true;            // слайдеры менялись после последней обработки
+let stale = true;
 
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('file-input');
@@ -308,9 +284,9 @@ const coverInput = document.getElementById('cover-input');
 const btnCover = document.getElementById('btn-cover');
 const coverPreview = document.getElementById('cover-preview');
 
-let coverBytes = null; // Uint8Array картинки для ID3 APIC
+let coverBytes = null;
 let coverMime = '';
-let coverUrl = '';     // текущий objectURL превью — его надо освобождать
+let coverUrl = '';
 
 const MAX_COVER_BYTES = 8 * 1024 * 1024;
 
@@ -323,33 +299,28 @@ coverInput.addEventListener('change', async () => {
     procHint.textContent = 'обложка должна быть картинкой';
     return;
   }
-  // обложка целиком уезжает в ID3-тег, так что великанов не берём
   if (f.size > MAX_COVER_BYTES) {
     procHint.textContent = `обложка тяжелее ${MAX_COVER_BYTES / 1024 / 1024} МБ`;
     return;
   }
   coverBytes = new Uint8Array(await f.arrayBuffer());
   coverMime = f.type || 'image/jpeg';
-  if (coverUrl) URL.revokeObjectURL(coverUrl); // иначе прошлые обложки текли
+  if (coverUrl) URL.revokeObjectURL(coverUrl);
   coverUrl = URL.createObjectURL(f);
   coverPreview.src = coverUrl;
   coverPreview.hidden = false;
   btnCover.textContent = '↺ Обложка';
 });
 
-// MP3 доступен, если lamejs подгрузился
 if (typeof lamejs === 'undefined') {
   formatSelect.querySelector('option[value="mp3"]').disabled = true;
 }
 
-/* ---------- загрузка файла ---------- */
-
 dropzone.addEventListener('click', () => { if (!originalBuffer) fileInput.click(); });
 
-// зона загрузки — это <div>, так что клавиатуре нужно помочь руками
 dropzone.addEventListener('keydown', e => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
-  if (e.target.closest('.wave-wrap')) return; // там свои клавиши
+  if (e.target.closest('.wave-wrap')) return;
   e.preventDefault();
   if (!originalBuffer) fileInput.click();
 });
@@ -357,7 +328,7 @@ dropzone.addEventListener('keydown', e => {
 btnNew.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', () => {
   if (fileInput.files[0]) loadFile(fileInput.files[0]);
-  fileInput.value = ''; // иначе тот же файл повторно не выберется
+  fileInput.value = '';
 });
 
 ['dragenter', 'dragover'].forEach(ev =>
@@ -369,9 +340,6 @@ dropzone.addEventListener('drop', e => {
   if (file) loadFile(file);
 });
 
-/* Обработка идёт по сэмплам в оперативной памяти: реверб и эхо держат
-   ещё несколько копий дорожки. Без потолка длинный концертник просто
-   вешал вкладку, поэтому предупреждаем заранее. */
 const MAX_FILE_BYTES = 150 * 1024 * 1024;
 const MAX_DURATION_SEC = 15 * 60;
 
@@ -387,7 +355,6 @@ async function loadFile(file) {
   let decoded;
   try {
     const data = await file.arrayBuffer();
-    // decodeAudioData вытаскивает аудиодорожку и из видеофайлов
     decoded = await getAudioCtx().decodeAudioData(data);
   } catch {
     trackInfo.textContent = 'не удалось декодировать файл';
@@ -401,7 +368,6 @@ async function loadFile(file) {
 
   stopPlayback();
   playOffset = 0;
-  // старые буферы отпускаем до того, как возьмём память под новый
   originalBuffer = null;
   processedBuffer = null;
   originalBuffer = decoded;
@@ -420,8 +386,6 @@ async function loadFile(file) {
   trackInfo.textContent = `${file.name} — ${originalBuffer.duration.toFixed(1)}с · ${originalBuffer.numberOfChannels}ch`;
   drawWave(originalBuffer, false);
 }
-
-/* ---------- слайдеры и пресеты ---------- */
 
 document.querySelectorAll('#controls input[type="range"]').forEach(input => {
   const ctrl = input.closest('.ctrl');
@@ -469,8 +433,6 @@ function updateStaleUI() {
     : '';
 }
 
-/* ---------- DSP: все эффекты честно считаются по сэмплам ---------- */
-
 function resample(data, factor) {
   const outLen = Math.max(1, Math.floor(data.length / factor));
   const out = new Float32Array(outLen);
@@ -483,7 +445,6 @@ function resample(data, factor) {
   return out;
 }
 
-// гранулярный сдвиг тона: длительность сохраняется
 function pitchShift(data, factor) {
   const GRAIN = 4096, HOP = GRAIN / 2;
   const out = new Float32Array(data.length);
@@ -506,9 +467,9 @@ function pitchShift(data, factor) {
 }
 
 function bitcrush(data, amount) {
-  const bits = 12 - (amount / 100) * 9;           // 12 -> 3 бита
+  const bits = 12 - (amount / 100) * 9;
   const step = 2 / Math.pow(2, bits);
-  const hold = 1 + Math.round((amount / 100) * 24); // + сэмпл-холд
+  const hold = 1 + Math.round((amount / 100) * 24);
   let held = 0;
   for (let i = 0; i < data.length; i++) {
     if (i % hold === 0) held = Math.round(data[i] / step) * step;
@@ -532,10 +493,9 @@ function tremolo(data, amount, sr) {
   }
 }
 
-// «под водой»: глухой лоупасс + медленное «колыхание» задержки
 function underwater(data, amount, sr) {
   const mix = amount / 100;
-  const cutoff = 3800 - 3400 * mix;                 // 3.8кГц -> 400Гц
+  const cutoff = 3800 - 3400 * mix;
   const a = Math.exp(-2 * Math.PI * cutoff / sr);
   const maxDelay = Math.max(2, Math.round(sr * 0.004));
   const bufLen = maxDelay + 4;
@@ -543,7 +503,7 @@ function underwater(data, amount, sr) {
   const lfoW = 2 * Math.PI * 0.7 / sr;
   let w = 0, lp = 0;
   for (let i = 0; i < data.length; i++) {
-    lp = (1 - a) * data[i] + a * lp;                // приглушение
+    lp = (1 - a) * data[i] + a * lp;
     buf[w] = lp;
     const d = (1 + Math.sin(lfoW * i)) * 0.5 * (maxDelay - 2) * mix + 1;
     let rp = w - d;
@@ -565,7 +525,6 @@ function echo(data, amount, sr) {
   }
 }
 
-// реверб Шрёдера: 4 параллельных комб-фильтра + 2 allpass
 function reverb(data, amount, sr) {
   const wet = amount / 100;
   const combDelays = [0.0297, 0.0371, 0.0411, 0.0437].map(t => Math.round(t * sr));
@@ -607,7 +566,6 @@ function processAudio() {
   const speed = state.speed / 100;
   const pitchFactor = Math.pow(2, state.pitch / 12);
 
-  // хвост под реверб и эхо
   const tail = Math.round(sr * ((state.reverb > 0 ? 1.6 : 0) + (state.echo > 0 ? 0.9 : 0)));
 
   const chans = [];
@@ -627,7 +585,6 @@ function processAudio() {
     if (state.echo > 0) echo(d, state.echo, sr);
     if (state.reverb > 0) reverb(d, state.reverb, sr);
 
-    // защитный лимитер
     for (let i = 0; i < d.length; i++) {
       const v = d[i];
       d[i] = v > 1 ? 1 : v < -1 ? -1 : v;
@@ -640,8 +597,6 @@ function processAudio() {
   for (let c = 0; c < nCh; c++) out.getChannelData(c).set(chans[c]);
   return out;
 }
-
-/* ---------- обработка / прослушивание ---------- */
 
 btnProcess.addEventListener('click', () => {
   if (!originalBuffer) return;
@@ -657,7 +612,6 @@ btnProcess.addEventListener('click', () => {
       drawWave(processedBuffer, true);
       trackInfo.textContent = trackInfo.textContent.replace(/ · обработано.*$/, '') + ` · обработано ${processedBuffer.duration.toFixed(1)}с`;
     } catch (err) {
-      // раньше ошибка молча уходила в консоль, и кнопка просто «не работала»
       console.error(err);
       processedBuffer = null;
       procHint.textContent = 'не хватило памяти — попробуй трек покороче или меньше эффектов';
@@ -670,9 +624,8 @@ btnProcess.addEventListener('click', () => {
   }, 30);
 });
 
-/* перемотка: позиция хранится в сек, клик по волне двигает её */
-let playOffset = 0;      // откуда стартовать
-let playStartCtx = 0;    // момент старта в часах AudioContext
+let playOffset = 0;
+let playStartCtx = 0;
 let progressRaf = 0;
 
 function currentBuf() { return processedBuffer || originalBuffer; }
@@ -690,10 +643,6 @@ function startPlayback(offset) {
   playingSource = ctx.createBufferSource();
   playingSource.buffer = buf;
   playingSource.connect(ctx.destination);
-  /* Трек доиграл до конца — встаём на начало.
-     Раньше здесь было `playOffset = 0; stopPlayback();`, но stopPlayback
-     пересчитывал позицию из ещё живого playingSource и возвращал playOffset
-     на конец трека — после чего кнопка «СЛУШАТЬ» больше ничего не играла. */
   playingSource.onended = () => {
     playingSource = null;
     playOffset = 0;
@@ -715,7 +664,6 @@ btnPlay.addEventListener('click', () => {
   startPlayback(playOffset);
 });
 
-// перемотка на позицию 0..1 (и во время игры, и на паузе)
 function seekTo(frac) {
   const buf = currentBuf();
   if (!buf) return;
@@ -723,7 +671,7 @@ function seekTo(frac) {
   const wasPlaying = !!playingSource;
   if (wasPlaying) {
     playingSource.onended = null;
-    try { playingSource.stop(); } catch { /* ок */ }
+    try { playingSource.stop(); } catch { }
     playingSource = null;
   }
   playOffset = frac * buf.duration;
@@ -736,12 +684,11 @@ waveWrap.addEventListener('click', e => {
   seekTo((e.clientX - r.left) / r.width);
 });
 
-// та же перемотка с клавиатуры — волна объявлена как role="slider"
 waveWrap.addEventListener('keydown', e => {
   const buf = currentBuf();
   if (!buf) return;
   const cur = playbackPos() / buf.duration;
-  const stepFrac = 5 / buf.duration; // ±5 секунд
+  const stepFrac = 5 / buf.duration;
   if (e.key === 'ArrowRight' || e.key === 'ArrowUp') seekTo(cur + stepFrac);
   else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') seekTo(cur - stepFrac);
   else if (e.key === 'Home') seekTo(0);
@@ -757,10 +704,9 @@ function setPlayUI(playing) {
 
 function stopPlayback() {
   if (playingSource) {
-    // пауза: запоминаем позицию
     playOffset = Math.min(playbackPos(), currentBuf() ? currentBuf().duration : 0);
     playingSource.onended = null;
-    try { playingSource.stop(); } catch { /* уже остановлен */ }
+    try { playingSource.stop(); } catch { }
     playingSource = null;
   }
   cancelAnimationFrame(progressRaf);
@@ -769,12 +715,7 @@ function stopPlayback() {
   setPlayUI(false);
 }
 
-/* ---------- волна ---------- */
-
-/* Холст раньше жил с фиксированными 280×44 из разметки и растягивался
-   CSS до ~700×220 — волна выглядела мыльной лесенкой. Теперь размер
-   буфера равен реальному размеру элемента с поправкой на DPR. */
-let lastWave = null; // что нарисовано сейчас — нужно для перерисовки при resize
+let lastWave = null;
 
 function fitWave() {
   const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -792,7 +733,7 @@ new ResizeObserver(() => {
 
 function drawWave(buffer, processed, progress = 0) {
   lastWave = { buffer, processed, progress };
-  if (waveWrap.hidden) return; // размеров ещё нет — нарисуем, когда покажем
+  if (waveWrap.hidden) return;
   fitWave();
 
   const W = waveCanvas.width, H = waveCanvas.height;
@@ -801,8 +742,6 @@ function drawWave(buffer, processed, progress = 0) {
 
   const data = buffer.getChannelData(0);
   const perBar = Math.max(1, Math.floor(data.length / W));
-  // шаг выборки внутри столбца: на коротких треках берём каждый сэмпл,
-  // на длинных — прореживаем, иначе отрисовка съедает кадр
   const step = Math.max(1, Math.floor(perBar / 24));
   const playX = Math.round(progress * W);
   const half = H / 2;
@@ -828,11 +767,8 @@ function drawWave(buffer, processed, progress = 0) {
     ctx2d.fillRect(playX, 0, Math.max(1, Math.round(H / 110)), H);
   }
 
-  // экранному диктору сообщаем позицию
   waveWrap.setAttribute('aria-valuenow', String(Math.round(progress * 100)));
 }
-
-/* ---------- экспорт: WAV / MP3 ---------- */
 
 function bufferToInt16(buffer) {
   const nCh = buffer.numberOfChannels;
@@ -849,15 +785,11 @@ function bufferToInt16(buffer) {
   return chans;
 }
 
-/* ID3v2.3-тег: название, исполнитель, обложка (UTF-16 — кириллица ок) */
 function buildId3(title, artist) {
   const frames = [];
 
-  /* UTF-16LE. Идём по code unit'ам, а не по code point'ам: раньше цикл
-     for..of выдавал символы вне BMP (эмодзи) одним числом >0xFFFF и писал
-     из него только два младших байта — тег ломался. */
   const utf16 = s => {
-    const out = [1, 0xFF, 0xFE]; // encoding=UTF-16 + BOM
+    const out = [1, 0xFF, 0xFE];
     for (let i = 0; i < s.length; i++) {
       const c = s.charCodeAt(i);
       out.push(c & 0xFF, (c >> 8) & 0xFF);
@@ -879,9 +811,9 @@ function buildId3(title, artist) {
   if (artist) frame('TPE1', utf16(artist));
   if (coverBytes) {
     const mime = coverMime.includes('png') ? 'image/png' : 'image/jpeg';
-    const head = [0]; // encoding latin1 для mime/описания
+    const head = [0];
     for (const ch of mime) head.push(ch.charCodeAt(0));
-    head.push(0, 3, 0); // конец mime, тип 3 = обложка, пустое описание
+    head.push(0, 3, 0);
     const pic = new Uint8Array(head.length + coverBytes.length);
     pic.set(head);
     pic.set(coverBytes, head.length);
@@ -891,9 +823,8 @@ function buildId3(title, artist) {
 
   const size = frames.reduce((s, a) => s + a.length, 0);
   const tag = new Uint8Array(10 + size);
-  tag[0] = 0x49; tag[1] = 0x44; tag[2] = 0x33; // 'ID3'
-  tag[3] = 3; // v2.3
-  // синксейф-размер
+  tag[0] = 0x49; tag[1] = 0x44; tag[2] = 0x33;
+  tag[3] = 3;
   tag[6] = (size >> 21) & 0x7F; tag[7] = (size >> 14) & 0x7F;
   tag[8] = (size >> 7) & 0x7F; tag[9] = size & 0x7F;
   let off = 10;
@@ -901,7 +832,6 @@ function buildId3(title, artist) {
   return tag;
 }
 
-/* LIST INFO для WAV: название (INAM) и исполнитель (IART) */
 function buildWavInfo(title, artist) {
   const items = [];
   const add = (id, text) => {
@@ -950,7 +880,7 @@ function encodeWav(buffer) {
 
   const info = buildWavInfo(metaTitle.value.trim(), metaArtist.value.trim());
   if (info) {
-    dv.setUint32(4, 36 + dataSize + info.length, true); // RIFF учитывает INFO
+    dv.setUint32(4, 36 + dataSize + info.length, true);
     return new Blob([ab, info], { type: 'audio/wav' });
   }
   return new Blob([ab], { type: 'audio/wav' });
@@ -996,9 +926,6 @@ btnExport.addEventListener('click', () => {
 
       const artist = metaArtist.value.trim();
       const title = metaTitle.value.trim();
-      /* Из полей строится имя файла, поэтому вычищаем не только запрещённые
-         в Windows символы, но и точки/пробелы по краям и управляющие коды —
-         иначе получались имена вроде «..wav», которые система не принимает. */
       const safe = s => s.replace(/[\\/:*?"<>|]/g, '')
         .replace(/[\u0000-\u001f\u007f]/g, '')
         .replace(/^[.\s]+|[.\s]+$/g, '')
@@ -1016,16 +943,14 @@ btnExport.addEventListener('click', () => {
         exportSound.currentTime = 0;
         exportSound.volume = 0.8;
         exportSound.play().catch(() => {});
-      } catch { /* автоплей может быть запрещён */ }
+      } catch { }
 
       const flash = document.createElement('div');
       flash.className = 'flash';
       document.body.appendChild(flash);
       flash.addEventListener('animationend', () => flash.remove());
-      // подстраховка: если анимации отключены, элемент иначе висел бы вечно
       setTimeout(() => flash.remove(), 1500);
     } catch (err) {
-      // раньше ошибка молча уходила в консоль, и кнопка просто «не работала»
       console.error(err);
       procHint.textContent = 'не хватило памяти для экспорта — попробуй трек покороче';
     } finally {
@@ -1035,16 +960,12 @@ btnExport.addEventListener('click', () => {
   }, 30);
 });
 
-/* ================= 4. ДЕКОР И ЗВУК КНОПОК ================= */
-
-/* разные звуки для разных элементов интерфейса */
 function playUI(kind) {
   let ctx;
   try { ctx = getAudioCtx(); } catch { return; }
   const t = ctx.currentTime;
 
   if (kind === 'primary') {
-    // основной глитч-клик: шум с бит-крашем + падающий квадрат
     const len = Math.floor(ctx.sampleRate * 0.07);
     const buf = ctx.createBuffer(1, len, ctx.sampleRate);
     const data = buf.getChannelData(0);
@@ -1065,14 +986,11 @@ function playUI(kind) {
     noise.start(t);
     tone(ctx, t, 'square', 720, 160, 0.06, 0.1);
   } else if (kind === 'chip') {
-    // пресеты: бодрый восходящий блип
     tone(ctx, t, 'triangle', 420, 980, 0.07, 0.09);
     tone(ctx, t + 0.04, 'triangle', 620, 1240, 0.05, 0.07);
   } else if (kind === 'soft') {
-    // ссылки и мелочи: мягкий короткий синус
     tone(ctx, t, 'sine', 520, 340, 0.045, 0.08);
   } else if (kind === 'tick') {
-    // слайдеры: крохотный тик
     tone(ctx, t, 'square', 1500, 1350, 0.02, 0.03);
   }
 }
@@ -1110,8 +1028,6 @@ document.addEventListener('input', e => {
   if (!card || matchMedia('(pointer: coarse)').matches) return;
 
   card.addEventListener('mousemove', e => {
-    // пока панель выезжает, её двигает transform из .reveal — инлайновый
-    // наклон в этот момент отменил бы анимацию появления
     if (card.classList.contains('reveal') && !card.classList.contains('is-visible')) return;
     const rect = card.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;

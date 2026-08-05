@@ -1,28 +1,17 @@
-/* ============================================================
-   LSMP.editor
-   1. Фон «жидкое золото» (WebGL-шейдер по мотивам референс-видео)
-   2. Движок эффектов на Canvas 2D
-   3. Экспорт PNG в полном разрешении
-   ============================================================ */
-
 'use strict';
-
-/* ================= 1. ФОН: ЖИДКОЕ ЗОЛОТО ================= */
 
 (function liquidGoldBackground() {
   const canvas = document.getElementById('bg-canvas');
   if (!canvas) return;
   const gl = canvas.getContext('webgl', { antialias: false, alpha: false, depth: false, stencil: false })
     || canvas.getContext('experimental-webgl', { antialias: false, alpha: false });
-  if (!gl) { document.body.classList.add('no-webgl'); return; } // остаётся CSS-фолбэк
+  if (!gl) { document.body.classList.add('no-webgl'); return; }
 
   const VERT = `
     attribute vec2 a_pos;
     void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
   `;
 
-  // Домен-варпинг fbm-шума + «гребневая» карта даёт текучие золотые
-  // прожилки на чёрном — как в присланном видео с жидким металлом.
   const FRAG = `
     precision highp float;
     uniform vec2 u_res;
@@ -61,7 +50,6 @@
       vec2 uv = (gl_FragCoord.xy - 0.5 * u_res) / min(u_res.x, u_res.y);
       float t = u_time * 0.055;
 
-      // двойной домен-варпинг — «перемешивание» жидкости
       vec2 q = vec2(
         fbm(uv * 1.6 + vec2(0.0, t)),
         fbm(uv * 1.6 + vec2(5.2, 1.3) - t * 0.7)
@@ -72,8 +60,6 @@
       );
       float f = fbm(uv * 1.6 + 2.8 * r);
 
-      // тонкие яркие прожилки: гребневая функция + степень;
-      // основную площадь держим чёрной, как в референсе
       float ridge = 1.0 - abs(2.0 * f - 1.0);
       float veins = pow(ridge, 7.0);
       float body  = pow(max(f - 0.25, 0.0), 3.2) * 0.9;
@@ -81,16 +67,13 @@
       float lum = clamp(veins * 1.5 + body, 0.0, 1.0);
       lum = pow(lum, 1.5);
 
-      // золотая палитра: чёрный -> тёмная бронза -> золото -> тёплый белый
       vec3 col = vec3(0.0);
       col = mix(col, vec3(0.28, 0.13, 0.01), smoothstep(0.05, 0.4, lum));
       col = mix(col, vec3(0.95, 0.62, 0.05), smoothstep(0.35, 0.75, lum));
       col = mix(col, vec3(1.0, 0.92, 0.62), smoothstep(0.75, 1.0, lum));
 
-      // лёгкая зернистость, чтобы не было полос градиента
       col += (hash(gl_FragCoord.xy + u_time) - 0.5) * 0.03;
 
-      // притемняем, чтобы контент читался поверх фона
       col *= 0.72;
 
       gl_FragColor = vec4(col, 1.0);
@@ -119,7 +102,7 @@
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
     console.error(gl.getProgramInfoLog(prog));
     document.body.classList.add('no-webgl');
-    return; // остаётся CSS-фолбэк вместо чёрного экрана
+    return;
   }
   gl.useProgram(prog);
 
@@ -132,10 +115,6 @@
   const uRes = gl.getUniformLocation(prog, 'u_res');
   const uTime = gl.getUniformLocation(prog, 'u_time');
 
-  /* Рендерим фон в пониженном разрешении — быстрее и «маслянистее».
-     Шейдер тяжёлый (пять fbm по пять октав на пиксель), поэтому на больших
-     окнах дополнительно ограничиваем число пикселей — иначе на слабых
-     видеокартах страница проседает по FPS ещё до открытия редактора. */
   const MAX_PIXELS = 640 * 360;
   let raf = 0;
 
@@ -146,7 +125,6 @@
     gl.viewport(0, 0, canvas.width, canvas.height);
   }
 
-  // resize стреляет пачками — пересобираем буфер не чаще одного кадра
   let resizeQueued = false;
   addEventListener('resize', () => {
     if (resizeQueued) return;
@@ -168,12 +146,8 @@
   function play() { if (!raf) raf = requestAnimationFrame(frame); }
   play();
 
-  // вкладка в фоне — не жжём GPU впустую
   document.addEventListener('visibilitychange', () => { if (!document.hidden) play(); });
 
-  /* при потере контекста (спящий режим, сброс драйвера) фон навсегда
-     оставался чёрным. Перезагружать страницу нельзя — улетит загруженное
-     фото и настройки, поэтому просто отдаём фон CSS-градиенту. */
   canvas.addEventListener('webglcontextlost', e => {
     e.preventDefault();
     cancelAnimationFrame(raf);
@@ -183,8 +157,6 @@
   });
 })();
 
-/* ================= 2. РЕДАКТОР ЭФФЕКТОВ ================= */
-
 const state = {
   pixelate: 0, brightness: 0, contrast: 0, saturation: 0,
   glitch: 0, noise: 0, aberration: 0, scanlines: 0,
@@ -192,16 +164,13 @@ const state = {
 };
 
 const DEFAULTS = { ...state };
-const PREVIEW_MAX = 1100; // предел стороны превью — обработка остаётся быстрой
+const PREVIEW_MAX = 1100;
 
-let sourceImage = null;   // исходное изображение (полное разрешение)
-let previewSource = null; // уменьшенная копия для живого превью
+let sourceImage = null;
+let previewSource = null;
 let fileName = 'photo';
 let renderQueued = false;
 
-/* Ограничения, за которыми браузер начинает падать или зависать.
-   Canvas в Safari/iOS не может быть больше ~16.7 млн пикселей: без этой
-   проверки экспорт молча отдавал пустой файл. */
 const MAX_FILE_BYTES = 40 * 1024 * 1024;
 const MAX_EXPORT_PIXELS = 16_000_000;
 
@@ -214,11 +183,8 @@ const btnExport = document.getElementById('btn-export');
 const btnNew = document.getElementById('btn-new');
 const btnReset = document.getElementById('btn-reset');
 
-/* ---------- загрузка ---------- */
-
 dropzone.addEventListener('click', () => { if (!sourceImage) fileInput.click(); });
 
-// зона загрузки — это <div>, так что клавиатуре нужно помочь руками
 dropzone.addEventListener('keydown', e => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
   e.preventDefault();
@@ -228,7 +194,7 @@ dropzone.addEventListener('keydown', e => {
 btnNew.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', () => {
   if (fileInput.files[0]) loadFile(fileInput.files[0]);
-  fileInput.value = ''; // иначе тот же файл повторно не выберется
+  fileInput.value = '';
 });
 
 ['dragenter', 'dragover'].forEach(ev =>
@@ -238,7 +204,6 @@ fileInput.addEventListener('change', () => {
 dropzone.addEventListener('drop', e => {
   const file = e.dataTransfer.files[0];
   if (!file) return;
-  // раньше не-картинка просто игнорировалась молча — теперь объясняем
   if (!file.type.startsWith('image/')) {
     imgInfo.textContent = 'это не изображение';
     return;
@@ -270,7 +235,6 @@ function loadFile(file) {
     }
     sourceImage = img;
 
-    // уменьшенная копия для быстрого живого превью
     const k = Math.min(1, PREVIEW_MAX / Math.max(img.width, img.height));
     previewSource = document.createElement('canvas');
     previewSource.width = Math.max(1, Math.round(img.width * k));
@@ -291,14 +255,12 @@ function loadFile(file) {
   };
 
   img.onerror = () => {
-    URL.revokeObjectURL(url); // без этого blob висел в памяти до перезагрузки
+    URL.revokeObjectURL(url);
     imgInfo.textContent = 'не удалось открыть файл';
   };
 
   img.src = url;
 }
-
-/* ---------- слайдеры ---------- */
 
 document.querySelectorAll('#controls input[type="range"]').forEach(input => {
   const ctrl = input.closest('.ctrl');
@@ -319,8 +281,6 @@ document.querySelectorAll('#controls input[type="range"]').forEach(input => {
 
 btnReset.addEventListener('click', () => applyValues(DEFAULTS));
 
-/* ---------- пресеты ---------- */
-
 const PRESETS = {
   cyber:  { glitch: 55, aberration: 40, contrast: 25, saturation: 20, scanlines: 25 },
   vhs:    { noise: 35, scanlines: 60, aberration: 25, saturation: -25, brightness: 5, vignette: 30 },
@@ -340,10 +300,6 @@ function applyValues(values) {
   });
 }
 
-/* ---------- рендер-конвейер ----------
-   Один и тот же конвейер обрабатывает и превью, и полноразмерный
-   экспорт, поэтому результат в файле совпадает с экраном. */
-
 function scheduleRender() {
   if (renderQueued || !previewSource) return;
   renderQueued = true;
@@ -353,7 +309,6 @@ function scheduleRender() {
   });
 }
 
-// детерминированный ГПСЧ — глитч в экспорте повторяет превью
 function mulberry32(seed) {
   return function () {
     seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
@@ -363,9 +318,6 @@ function mulberry32(seed) {
   };
 }
 
-/* Пул временных холстов. Раньше каждый проход конвейера создавал по
-   3-4 новых canvas полного размера — на живом превью это давало десятки
-   мегабайт мусора в секунду и рывки от сборщика. */
 const scratch = new Map();
 function getScratch(name, w, h) {
   let c = scratch.get(name);
@@ -375,8 +327,6 @@ function getScratch(name, w, h) {
   return c;
 }
 
-/* После экспорта холсты остаются в размере оригинала (до 64 МБ каждый) —
-   сжимаем их до 1×1, чтобы не держать память между сохранениями. */
 function releaseScratch() {
   scratch.forEach(c => { c.width = 1; c.height = 1; });
 }
@@ -387,7 +337,6 @@ function renderPipeline(source, target) {
   target.height = h;
   const ctx = target.getContext('2d');
 
-  /* -- пикселизация: рисуем в маленький буфер и растягиваем -- */
   if (state.pixelate > 0) {
     const factor = 1 + (state.pixelate / 100) * (Math.max(w, h) / 24);
     const pw = Math.max(1, Math.round(w / factor));
@@ -401,7 +350,6 @@ function renderPipeline(source, target) {
     ctx.drawImage(source, 0, 0, w, h);
   }
 
-  /* -- попиксельные эффекты одним проходом -- */
   const perPixel = state.brightness || state.contrast || state.saturation ||
     state.noise || state.gold || state.grayscale || state.invert;
 
@@ -437,7 +385,6 @@ function renderPipeline(source, target) {
 
       if (state.gold) {
         const l = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-        // чёрный -> бронза -> золото -> тёплый белый
         const gr = Math.min(255, l * 2.05 * 255);
         const gg = Math.min(255, Math.pow(l, 1.35) * 1.75 * 255);
         const gb = Math.pow(l, 3.2) * 0.9 * 255;
@@ -471,14 +418,12 @@ function renderPipeline(source, target) {
     ctx.putImageData(imageData, 0, 0);
   }
 
-  /* -- RGB-сдвиг (хроматическая аберрация) -- */
   if (state.aberration > 0) {
     const shift = Math.max(1, Math.round((state.aberration / 100) * w * 0.02));
     const snap = getScratch('snapAb', w, h);
     snap.getContext('2d').drawImage(target, 0, 0);
 
     ctx.globalCompositeOperation = 'multiply';
-    // гасим красный/синий, затем возвращаем их сдвинутыми через screen
     ctx.fillStyle = 'rgb(0,255,255)';
     ctx.fillRect(0, 0, w, h);
     ctx.globalCompositeOperation = 'screen';
@@ -489,7 +434,6 @@ function renderPipeline(source, target) {
     ctx.globalCompositeOperation = 'source-over';
   }
 
-  /* -- глитч: сдвиг горизонтальных полос (сид зависит от силы) -- */
   if (state.glitch > 0) {
     const rnd = mulberry32(1337 + state.glitch * 7);
     const snap = getScratch('snapGl', w, h);
@@ -503,7 +447,6 @@ function renderPipeline(source, target) {
       const sh = Math.max(2, Math.floor(rnd() * h * 0.07));
       const dx = Math.round((rnd() - 0.5) * 2 * maxShift);
       ctx.drawImage(snap, 0, sy, w, sh, dx, sy, w, sh);
-      // цветные «осколки» на сильном глитче
       if (state.glitch > 45 && rnd() > 0.6) {
         ctx.fillStyle = rnd() > 0.5 ? 'rgba(255,196,0,0.16)' : 'rgba(255,255,255,0.10)';
         ctx.fillRect(0, sy, w, Math.max(1, Math.floor(sh * 0.35)));
@@ -511,7 +454,6 @@ function renderPipeline(source, target) {
     }
   }
 
-  /* -- сканлайны -- */
   if (state.scanlines > 0) {
     const alpha = (state.scanlines / 100) * 0.5;
     const step = Math.max(2, Math.round(h / 220));
@@ -519,7 +461,6 @@ function renderPipeline(source, target) {
     for (let y = 0; y < h; y += step * 2) ctx.fillRect(0, y, w, step);
   }
 
-  /* -- виньетка -- */
   if (state.vignette > 0) {
     const strength = state.vignette / 100;
     const grad = ctx.createRadialGradient(
@@ -533,7 +474,6 @@ function renderPipeline(source, target) {
   }
 }
 
-// канвас, где оставлен только один цветовой канал
 function channelOnly(source, channel, slot) {
   const c = getScratch(slot, source.width, source.height);
   const cc = c.getContext('2d');
@@ -545,8 +485,6 @@ function channelOnly(source, channel, slot) {
   return c;
 }
 
-/* ---------- звук ---------- */
-
 let audioCtx = null;
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -554,7 +492,6 @@ function getAudioCtx() {
   return audioCtx;
 }
 
-// разные звуки для разных элементов интерфейса
 function playUI(kind) {
   let ctx;
   try { ctx = getAudioCtx(); } catch { return; }
@@ -620,8 +557,6 @@ document.addEventListener('input', e => {
 
 const exportSound = document.getElementById('export-sound');
 
-/* ---------- экспорт ---------- */
-
 const FORMATS = {
   png:  { mime: 'image/png',  ext: 'png',  quality: undefined },
   jpeg: { mime: 'image/jpeg', ext: 'jpg',  quality: 0.92 },
@@ -630,9 +565,6 @@ const FORMATS = {
 
 const formatSelect = document.getElementById('format-select');
 
-/* Источник для экспорта: обычно оригинал, но если он больше лимита
-   холста, отдаём уменьшенную копию — иначе браузер молча возвращает
-   пустой файл (Safari) или падает по памяти. */
 function exportSource() {
   const w = sourceImage.width, h = sourceImage.height;
   if (w * h <= MAX_EXPORT_PIXELS) return sourceImage;
@@ -650,8 +582,6 @@ btnExport.addEventListener('click', () => {
 
   const fmt = FORMATS[formatSelect.value] || FORMATS.png;
 
-  // кнопку возвращаем только когда файл действительно готов,
-  // а не сразу после запуска асинхронного toBlob
   const done = (message) => {
     btnExport.textContent = original;
     btnExport.disabled = false;
@@ -659,7 +589,6 @@ btnExport.addEventListener('click', () => {
     releaseScratch();
   };
 
-  // даём кадру отрисовать надпись, затем считаем полный размер
   setTimeout(() => {
     let full;
     try {
@@ -672,7 +601,6 @@ btnExport.addEventListener('click', () => {
     }
 
     full.toBlob(blob => {
-      // toBlob отдаёт null, если формат не поддерживается (WEBP в старых Safari)
       if (!blob) {
         done(`браузер не умеет сохранять ${fmt.ext.toUpperCase()} — попробуй PNG`);
         return;
@@ -685,18 +613,16 @@ btnExport.addEventListener('click', () => {
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
 
-      // звук успешного экспорта (прикреплённый пользователем)
       try {
         exportSound.currentTime = 0;
         exportSound.volume = 0.8;
         exportSound.play().catch(() => {});
-      } catch { /* автоплей может быть запрещён — не критично */ }
+      } catch { }
 
       const flash = document.createElement('div');
       flash.className = 'flash';
       document.body.appendChild(flash);
       flash.addEventListener('animationend', () => flash.remove());
-      // подстраховка: если анимации отключены, элемент иначе висел бы вечно
       setTimeout(() => flash.remove(), 1500);
 
       done();
@@ -704,16 +630,11 @@ btnExport.addEventListener('click', () => {
   }, 30);
 });
 
-/* ================= 3. ДЕКОР И АНИМАЦИИ ================= */
-
-/* пиксельный фон панелей редактора: мозаика мерцает
-   от чёрного к очень тёмно-жёлтому */
 (function pixelPanelBackgrounds() {
-  const CELL = 14;      // размер «пикселя» в CSS-px
-  const TICK = 130;     // период мерцания
-  const CHURN = 0.02;   // доля клеток, обновляемых за тик
+  const CELL = 14;
+  const TICK = 130;
+  const CHURN = 0.02;
 
-  // палитра: почти чёрный -> очень тёмное золото (взвешенная к тёмному)
   const PALETTE = [
     [10, 8, 5], [10, 8, 5], [10, 8, 5], [10, 8, 5],
     [13, 11, 5], [13, 11, 5], [13, 11, 5],
@@ -725,15 +646,11 @@ btnExport.addEventListener('click', () => {
 
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* у каждого угла свой несимметричный профиль-лесенка:
-     значение = сколько клеток срезано в этом ряду от угла */
-  /* рваные несимметричные срезы: глубокие «укусы» только в крайних
-     рядах (они за пределами контента), дальше — мелкие ступени */
   const CORNERS = {
-    tl: [3, 6, 1, 2, 1],    // выступ-«клык» и зазубрина
-    tr: [5, 2, 2, 1],       // навес с плато
-    br: [6, 2, 2, 1, 1],    // широкий укус снизу
-    bl: [2, 5, 1, 1],       // ступень с подрезом
+    tl: [3, 6, 1, 2, 1],
+    tr: [5, 2, 2, 1],
+    br: [6, 2, 2, 1, 1],
+    bl: [2, 5, 1, 1],
   };
   const MAXCUT = 7;
 
@@ -745,7 +662,7 @@ btnExport.addEventListener('click', () => {
     const ctx = canvas.getContext('2d');
 
     let cols = 0, rows = 0;
-    let inner = []; // индексы живых клеток мозаики
+    let inner = [];
 
     const paintCell = (x, y) => {
       const [r, g, b] = PALETTE[(Math.random() * PALETTE.length) | 0];
@@ -753,7 +670,6 @@ btnExport.addEventListener('click', () => {
       ctx.fillRect(x, y, 1, 1);
     };
 
-    // клетка вне формы, если попала в срез одного из четырёх углов
     const isOutside = (x, y) => {
       const rx = cols - 1 - x, ry = rows - 1 - y;
       if (y < CORNERS.tl.length && x < CORNERS.tl[y]) return true;
@@ -772,7 +688,7 @@ btnExport.addEventListener('click', () => {
       inner = [];
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-          if (isOutside(x, y)) continue; // прозрачный пиксельный срез
+          if (isOutside(x, y)) continue;
           paintCell(x, y);
           inner.push(y * cols + x);
         }
@@ -784,7 +700,6 @@ btnExport.addEventListener('click', () => {
 
     if (reduceMotion) return;
 
-    // мерцаем только когда панель видна на экране
     let timer = null;
     const io = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting && !timer) {
@@ -804,14 +719,11 @@ btnExport.addEventListener('click', () => {
   });
 })();
 
-/* 3D-наклон карточки превью за курсором */
 (function tiltCard() {
   const card = document.querySelector('.tilt-card');
   if (!card || matchMedia('(pointer: coarse)').matches) return;
 
   card.addEventListener('mousemove', e => {
-    // пока панель выезжает, её двигает transform из .reveal — инлайновый
-    // наклон в этот момент отменил бы анимацию появления
     if (card.classList.contains('reveal') && !card.classList.contains('is-visible')) return;
     const rect = card.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
@@ -821,7 +733,6 @@ btnExport.addEventListener('click', () => {
   card.addEventListener('mouseleave', () => { card.style.transform = ''; });
 })();
 
-/* появление панелей при скролле */
 (function revealOnScroll() {
   const targets = document.querySelectorAll('.panel, .tg-link, .footer__note');
   targets.forEach(el => el.classList.add('reveal'));

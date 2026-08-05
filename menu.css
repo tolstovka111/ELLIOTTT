@@ -1,9 +1,3 @@
-/* ============================================================
-   Expanding hover menu (по референсу): пилюля сверху,
-   иконки расширяются при наведении, выезжает подпись.
-   3 кнопки: IMG Editor / Audio Mixer / My Design
-   ============================================================ */
-
 .xmenu {
   display: flex;
   align-items: center;
@@ -77,18 +71,15 @@
   transform: translateX(0);
 }
 
-/* текущая страница — подсвечена постоянно */
 .xmenu__item.is-active {
   background: rgba(255, 255, 255, .09);
   box-shadow: 0 0 22px var(--halo), inset 0 0 0 1px var(--halo);
 }
 
-/* фирменные цвета разделов */
 .xmenu__item--img    { --c: #ffc400; --halo: rgba(255, 196, 0, .38); }
 .xmenu__item--audio  { --c: #c084fc; --halo: rgba(168, 85, 247, .42); }
 .xmenu__item--design { --c: #6ee7b7; --halo: rgba(52, 211, 153, .42); }
 
-/* на узких экранах пилюля встаёт в поток и ужимается */
 @media (max-width: 720px) {
   .xmenu {
     gap: 6px;

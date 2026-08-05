@@ -1,7 +1,3 @@
-/* ============================================================
-   LSMP.editor — чёрный / жёлтый / белый
-   ============================================================ */
-
 :root {
   --black: #08050c;
   --black-2: #100a18;
@@ -12,16 +8,13 @@
   --white: #f5f0fb;
   --grey: #96889f;
   --line: rgba(168, 85, 247, 0.22);
-  /* пиксельный дисплейный + ретро-дисплейный (оба с кириллицей, лежат локально) */
   --font-pixel: 'Press Start 2P', 'Courier New', monospace;
   --font-retro: 'Handjet', 'Arial Narrow', sans-serif;
   --font-body: system-ui, 'Segoe UI', Roboto, sans-serif;
-  /* 3D-экструзия текста: белая грань с золотыми боками */
   --extrude-gold:
     0 1px 0 #9333ea, 0 2px 0 #7e22ce, 0 3px 0 #6b21a8,
     0 4px 0 #581c87, 0 5px 0 #3b0764, 0 6px 0 #2a0549,
     0 12px 26px rgba(0, 0, 0, .85);
-  /* жёлтая грань с бронзово-чёрными боками */
   --extrude-dark:
     0 1px 0 #7e22ce, 0 2px 0 #6b21a8, 0 3px 0 #581c87,
     0 4px 0 #3b0764, 0 5px 0 #2a0549, 0 6px 0 #1a0330,
@@ -43,14 +36,12 @@ body {
 
 ::selection { background: var(--yellow); color: var(--black); }
 
-/* видимая рамка фокуса — до этого клавиатурная навигация была вслепую */
 :focus-visible {
   outline: 2px solid var(--yellow-hot);
   outline-offset: 3px;
   border-radius: 4px;
 }
 
-/* доступно скринридеру, невидимо на экране */
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -63,7 +54,6 @@ body {
   border: 0;
 }
 
-/* ---------- фон: жидкое золото ---------- */
 #bg-canvas {
   position: fixed;
   inset: 0;
@@ -71,15 +61,12 @@ body {
   height: 100%;
   z-index: -2;
   display: block;
-  /* CSS-фолбэк, если WebGL недоступен */
   background:
     radial-gradient(ellipse 80% 60% at 20% 30%, rgba(147, 51, 234, .25), transparent 60%),
     radial-gradient(ellipse 70% 50% at 80% 70%, rgba(168, 85, 247, .18), transparent 60%),
     var(--black);
 }
 
-/* WebGL недоступен или контекст потерян — холст прячется, градиентный
-   фолбэк переезжает на body, чтобы страница не осталась плоско-чёрной */
 .no-webgl body, body.no-webgl {
   background:
     radial-gradient(ellipse 80% 60% at 20% 30%, rgba(147, 51, 234, .22), transparent 60%),
@@ -94,14 +81,11 @@ body {
   z-index: -1;
   pointer-events: none;
   background:
-    /* мягкая «подложка» слева, где лежит текст героя — без неё
-       светлые прожилки шейдера съедают подзаголовок */
     linear-gradient(100deg, rgba(0,0,0,.62) 0%, rgba(0,0,0,.34) 34%, transparent 62%),
     linear-gradient(to bottom, rgba(0,0,0,.45) 0%, transparent 22%, transparent 74%, rgba(0,0,0,.5) 100%),
     radial-gradient(ellipse 120% 100% at 50% 50%, transparent 38%, rgba(0,0,0,.62) 100%);
 }
 
-/* ---------- кубы / общие 3D-грани ---------- */
 .face { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(168,85,247,.9), rgba(126,34,206,.75)); border: 1px solid rgba(192,132,252,.9); }
 .f-front  { transform: translateZ(calc(var(--cs) / 2)); }
 .f-back   { transform: rotateY(180deg) translateZ(calc(var(--cs) / 2)); }
@@ -110,7 +94,6 @@ body {
 .f-top    { transform: rotateX(90deg) translateZ(calc(var(--cs) / 2)); }
 .f-bottom { transform: rotateX(-90deg) translateZ(calc(var(--cs) / 2)); }
 
-/* ---------- шапка ---------- */
 .site-header {
   position: sticky;
   min-height: 62px;
@@ -178,7 +161,6 @@ body {
   transform: translateY(-2px);
 }
 
-/* ---------- герой ---------- */
 .hero {
   position: relative;
   min-height: calc(100vh - 64px);
@@ -200,8 +182,6 @@ body {
 
 .hero__left { text-align: left; position: relative; }
 
-/* локальный «дым» строго под текстом: заголовок и подзаголовок читаются
-   на любом кадре шейдера, а фон при этом остаётся виден */
 .hero__left::before {
   content: '';
   position: absolute;
@@ -253,7 +233,6 @@ body {
 
 .hero__sub {
   margin: 30px 0 0;
-  /* было var(--grey) — на светлых прожилках фона контраста не хватало */
   color: #cdc2d6;
   text-shadow: 0 2px 14px rgba(0, 0, 0, .95), 0 0 6px rgba(0, 0, 0, .9), 0 0 2px rgba(0, 0, 0, .8);
   font-family: var(--font-retro);
@@ -263,7 +242,6 @@ body {
   animation: title-in 1s .3s cubic-bezier(.2,.9,.25,1) both;
 }
 
-/* плавающие 3D-фигуры */
 .hero__shapes { position: absolute; inset: 0; pointer-events: none; perspective: 800px; }
 
 .shape3d { position: absolute; transform-style: preserve-3d; opacity: .8; }
@@ -294,7 +272,6 @@ body {
   to   { transform: rotateX(65deg) rotateZ(360deg); }
 }
 
-/* бегущая строка */
 .hero__marquee {
   position: absolute;
   bottom: 0;
@@ -324,7 +301,6 @@ body {
   to   { transform: translateX(-50%); }
 }
 
-/* ---------- кнопки: только текст, без фона ---------- */
 .btn {
   position: relative;
   display: inline-block;
@@ -340,7 +316,6 @@ body {
   transition: color .2s, text-shadow .2s, transform .15s;
 }
 
-/* пиксельные скобки по краям — появляются при наведении */
 .btn::before, .btn::after {
   content: '[';
   opacity: 0;
@@ -354,7 +329,6 @@ body {
 
 .btn:hover {
   color: var(--white);
-  /* лёгкий RGB-глитч текста */
   text-shadow:
     2px 0 0 rgba(255, 60, 60, .8),
     -2px 0 0 rgba(60, 190, 255, .8),
@@ -366,7 +340,6 @@ body {
 
 .btn--big { font-size: clamp(1rem, 1.7vw, 1.4rem); animation: title-in 1s .45s cubic-bezier(.2,.9,.25,1) both; }
 
-/* стрелки «вниз» + лёгкое подпрыгивание */
 .btn__arrow {
   display: inline-block;
   transform: rotate(90deg);
@@ -397,7 +370,6 @@ body {
   text-shadow: 1.5px 0 0 rgba(255, 60, 60, .6), -1.5px 0 0 rgba(60, 190, 255, .6);
 }
 
-/* выбор формата экспорта */
 .export-group { display: flex; align-items: center; gap: 12px; }
 
 .format-label {
@@ -428,7 +400,6 @@ body {
 #format-select:hover, #format-select:focus { border-color: var(--yellow); color: var(--yellow-hot); outline: none; }
 #format-select option { background: var(--black-2); color: var(--white); }
 
-/* ---------- редактор ---------- */
 .editor { padding: 90px 24px; max-width: 1280px; margin: 0 auto; }
 
 .editor__grid {
@@ -440,14 +411,11 @@ body {
 
 .panel {
   position: relative;
-  /* углы и рамку рисует пиксельная мозаика — никаких CSS-скруглений */
   background: transparent;
-  /* отступ больше максимального углового среза — контент не вылезает за форму */
   padding: 40px 36px 38px;
   filter: drop-shadow(0 24px 40px rgba(0, 0, 0, .55));
 }
 
-/* пиксельная мозаика под контентом панели */
 .pixel-bg {
   position: absolute;
   inset: 0;
@@ -481,7 +449,6 @@ body {
 
 .panel__hint { color: var(--grey); font-family: var(--font-retro); font-size: 1.15rem; text-align: right; }
 
-/* зона загрузки */
 .dropzone {
   position: relative;
   min-height: 340px;
@@ -548,7 +515,6 @@ body {
   flex-wrap: wrap;
 }
 
-/* контролы эффектов */
 .controls { display: flex; flex-direction: column; gap: 16px; }
 
 .ctrl__label {
@@ -628,7 +594,6 @@ input[type="range"]::-moz-range-thumb {
   text-shadow: 1.5px 0 0 rgba(255, 60, 60, .6), -1.5px 0 0 rgba(60, 190, 255, .6);
 }
 
-/* пресеты */
 .presets {
   margin-top: 26px;
   padding-top: 20px;
@@ -665,7 +630,6 @@ input[type="range"]::-moz-range-thumb {
 
 .chip:active { transform: translateY(2px); }
 
-/* ---------- подвал ---------- */
 .site-footer {
   position: relative;
   text-align: center;
@@ -704,7 +668,6 @@ input[type="range"]::-moz-range-thumb {
 
 .footer__note { margin-top: 64px; color: var(--grey); font-family: var(--font-retro); font-size: 1.3rem; line-height: 1.6; }
 
-/* пиксельный самолётик — рядом с надписью, часть той же кнопки */
 .tg-plane {
   color: #fff;
   flex-shrink: 0;
@@ -718,7 +681,6 @@ input[type="range"]::-moz-range-thumb {
   50%      { transform: translateY(-10px) rotate(-5deg); }
 }
 
-/* наведение на всю кнопку: самолётик «взлетает», надпись глитчится */
 .tg-link:hover .tg-plane {
   animation: plane-fly .9s ease-in-out infinite;
   filter: drop-shadow(0 0 18px rgba(255, 255, 255, .8)) drop-shadow(0 0 40px rgba(168, 85, 247, .5));
@@ -740,7 +702,6 @@ input[type="range"]::-moz-range-thumb {
     0 12px 26px rgba(0, 0, 0, .85);
 }
 
-/* ---------- вспышка при экспорте ---------- */
 .flash {
   position: fixed;
   inset: 0;
@@ -755,11 +716,9 @@ input[type="range"]::-moz-range-thumb {
   to   { opacity: 0; }
 }
 
-/* ---------- появление при скролле ---------- */
 .reveal { opacity: 0; transform: translateY(40px); transition: opacity .7s, transform .7s cubic-bezier(.2,.8,.3,1); }
 .reveal.is-visible { opacity: 1; transform: none; }
 
-/* ---------- адаптив ---------- */
 @media (max-width: 900px) {
   .editor__grid { grid-template-columns: 1fr; }
   .site-nav a { padding: 8px 9px; font-size: 1rem; }
@@ -772,18 +731,14 @@ input[type="range"]::-moz-range-thumb {
 
 @media (max-width: 520px) {
   .site-header { padding: 12px 14px; gap: 10px; }
-  /* логотип ужимается первым, меню-пилюля остаётся целой */
   .logo { font-size: .62rem; gap: 9px; min-width: 0; }
   .logo__cube { --cs: 17px; }
   .editor { padding: 56px 14px; }
-  /* отступ должен перекрывать угловые срезы мозаики (до 2 клеток по 14px
-     ниже верхнего ряда), иначе контент вылезает за пиксельную форму */
   .panel { padding: 32px 30px 30px; }
   .panel__actions { justify-content: center; }
   .hero__left::before { inset: -6% -8%; }
 }
 
-/* совсем узкие экраны: подпись логотипа прячем, оставляем куб + меню */
 @media (max-width: 380px) {
   .logo__text { display: none; }
 }
@@ -792,14 +747,8 @@ input[type="range"]::-moz-range-thumb {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
 
-
-/* ================== AUDIO MIXER ================== */
-
 .wave-wrap {
   position: relative;
-  /* .dropzone — флекс-контейнер, а раньше здесь не было ширины: блок
-     сжимался до собственного размера холста (280px) вместо ширины панели.
-     Явные width/flex разрывают эту зависимость «размер от содержимого». */
   width: 100%;
   flex: 1 1 auto;
   min-width: 0;
@@ -816,8 +765,6 @@ input[type="range"]::-moz-range-thumb {
   display: block;
   width: 100%;
   height: 220px;
-  /* холст теперь рисуется в реальном разрешении (audio.js учитывает DPR),
-     поэтому pixelated больше не нужен — он только мылил картинку */
 }
 
 .transport {
@@ -835,7 +782,6 @@ input[type="range"]::-moz-range-thumb {
 
 .track-hint { font-family: var(--font-retro); font-size: 1.15rem; color: var(--grey); }
 
-/* подвал аудио-страницы: немного другой стиль DIRECT ME */
 .tg-link--audio .footer__title {
   color: var(--yellow);
   text-shadow: var(--extrude-dark);
@@ -863,8 +809,6 @@ input[type="range"]::-moz-range-thumb {
     0 12px 26px rgba(0, 0, 0, .85);
 }
 
-
-/* ---------- скобки кнопок без сдвига макета ---------- */
 .btn::before, .btn::after {
   position: absolute;
   top: 50%;
@@ -875,7 +819,6 @@ input[type="range"]::-moz-range-thumb {
 .btn:hover::before { transform: translate(0, -50%); }
 .btn:hover::after  { transform: translate(0, -50%); }
 
-/* ---------- плавное появление панелей редактора ---------- */
 .panel--preview.reveal { transform: translateX(-70px); }
 .panel--controls.reveal { transform: translateX(70px); }
 .reveal.is-visible { transform: none; }
@@ -911,11 +854,8 @@ input[type="range"]::-moz-range-thumb {
 .reveal.is-visible .ctrl:nth-child(12) { transition-delay: .82s; }
 .reveal.is-visible .presets { transition-delay: .88s; }
 
-
-/* заголовок в одну строку */
 .hero__title--one { font-size: clamp(1.4rem, 3.5vw, 3.2rem); }
 
-/* кнопка слушать: иконка и текст по центру */
 .btn--play { display: inline-flex; align-items: center; gap: .6em; }
 .btn--process { display: inline-flex; align-items: center; }
 
@@ -930,11 +870,9 @@ input[type="range"]::-moz-range-thumb {
 .t-ico--play { clip-path: polygon(0 0, 100% 50%, 0 100%); }
 .t-ico--stop { clip-path: none; }
 
-/* подсказка — своей строкой, по одной линии с кнопками и текстом */
 .transport { row-gap: 12px; }
 .track-hint { flex-basis: 100%; padding-left: 4px; }
 
-/* ссылка на фото-редактор — жёлтый акцент */
 .nav-photo {
   color: #ffc400 !important;
   border-color: rgba(255, 196, 0, .35) !important;
@@ -947,8 +885,6 @@ input[type="range"]::-moz-range-thumb {
   box-shadow: 0 0 22px rgba(255, 196, 0, .6);
 }
 
-
-/* ссылка на страницу My Design — стеклянный белый акцент */
 .nav-design {
   color: #e9e9ee !important;
   border-color: rgba(255, 255, 255, .28) !important;
@@ -961,15 +897,11 @@ input[type="range"]::-moz-range-thumb {
   box-shadow: 0 0 22px rgba(255, 255, 255, .45);
 }
 
-
-/* фикс: скрытые элементы не должны раскладываться флексом */
 [hidden] { display: none !important; }
 
-/* волна кликабельна — перемотка (мышью или стрелками с клавиатуры) */
 .wave-wrap { cursor: pointer; }
 .wave-wrap:focus-visible { outline: 2px solid var(--yellow-hot); outline-offset: 2px; }
 
-/* метаданные трека: две плашки + обложка */
 .meta {
   display: flex;
   align-items: center;

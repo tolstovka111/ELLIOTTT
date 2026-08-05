@@ -1,8 +1,3 @@
-/* ============================================================
-   Elliot Design — «разбитое стекло» (по мотивам референса)
-   Монохром: тёмный графит, белый текст, тонкие швы
-   ============================================================ */
-
 :root {
   --bg: #020604;
   --pane-a: #0f1f15;
@@ -28,14 +23,12 @@ body {
 
 ::selection { background: #6ee7b7; color: #04150c; }
 
-/* видимая рамка фокуса — до этого клавиатурная навигация была вслепую */
 :focus-visible {
   outline: 2px solid #6ee7b7;
   outline-offset: 3px;
   border-radius: 4px;
 }
 
-/* доступно скринридеру, невидимо на экране */
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -48,7 +41,6 @@ body {
   border: 0;
 }
 
-/* ---------- шапка ---------- */
 .site-header {
   position: fixed;
   min-height: 62px;
@@ -101,7 +93,6 @@ body {
 .nav-current { color: #fff; border-color: rgba(255, 255, 255, .3); }
 .nav-current:hover { color: #000; background: #fff; }
 
-/* ---------- сцена ---------- */
 .glass-stage {
   position: relative;
   height: 100vh;
@@ -112,7 +103,6 @@ body {
   cursor: crosshair;
 }
 
-/* общая 3D-поверхность: наклонена в перспективе, как в референсе */
 .glass-surface {
   position: absolute;
   inset: -4%;
@@ -120,7 +110,6 @@ body {
   will-change: transform;
 }
 
-/* осколок — отдельная 3D-плита на своей глубине */
 .pane {
   position: absolute;
   inset: 0;
@@ -128,19 +117,15 @@ body {
   transform-style: preserve-3d;
 }
 
-/* «печёная» тень: тёмная копия полигона позади плиты — дёшево и объёмно */
 .pane__shadow {
   position: absolute;
   inset: 0;
-  /* точный контур ставит design.js инлайном (он зависит от размера окна);
-     фолбэк none нужен, чтобы правило было валидным до первого setClips() */
   clip-path: var(--clip-outer, none);
   background: rgba(0, 0, 0, .5);
   transform: translate3d(22px, 30px, -40px);
   pointer-events: none;
 }
 
-/* фаска: внешний полигон — светящийся торец стекла */
 .pane__clip {
   position: absolute;
   inset: 0;
@@ -157,7 +142,6 @@ body {
   box-shadow: inset 0 0 120px rgba(0, 0, 0, .55);
 }
 
-/* солнечный блик: тёплая полоса света периодически проходит по стеклу */
 .pane__inner::before {
   content: '';
   position: absolute;
@@ -180,7 +164,6 @@ body {
   100%    { transform: translateX(130%) skewX(-8deg); }
 }
 
-/* блик, следующий за курсором */
 .pane__inner::after {
   content: '';
   position: absolute;
@@ -189,7 +172,6 @@ body {
   pointer-events: none;
 }
 
-/* контент дублируется в каждом осколке и ломается на швах */
 .content {
   position: absolute;
   inset: 0;
@@ -241,7 +223,6 @@ body {
 
 .glass-btn--solid { background: #b8f5d4; color: #04150c; border-color: transparent; }
 
-/* реальные кликабельные кнопки поверх сцены (контент в осколках не ловит клики) */
 .stage-actions {
   position: absolute;
   z-index: 5;
@@ -266,7 +247,6 @@ body {
 
 .stage-actions a:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(110, 231, 183, .25); }
 
-/* ---------- подвал ---------- */
 .site-footer {
   position: relative;
   text-align: center;
@@ -328,7 +308,6 @@ body {
   font-size: 1.2rem;
 }
 
-/* ---------- адаптив и доступность ---------- */
 @media (max-width: 700px) {
   .site-nav a { padding: 7px 10px; font-size: .95rem; }
   .content__block { padding: 0 8vw; }
@@ -338,8 +317,6 @@ body {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
 
-
-/* лайт-режим: без блеска и теней, если устройству тяжело */
 .glass-lite .pane__shadow,
 .glass-lite .pane__inner::before,
 .glass-lite .pane__inner::after { display: none; }

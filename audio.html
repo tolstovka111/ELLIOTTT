@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Elliot Audio Mixer — обработка звука в браузере</title>
   <meta name="description" content="Audio Mixer — обработка звука в браузере: скорость, тон, реверб, 8-бит, дисторшн. Прослушай и скачай в WAV или MP3.">
-  <!-- всё считается локально: сети не нужны вообще, и CSP это гарантирует -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="color-scheme" content="dark">
@@ -21,11 +20,9 @@
 </head>
 <body>
 
-  <!-- Фон: жидкий аметист (тот же шейдер, фиолетовая палитра) -->
   <canvas id="bg-canvas" aria-hidden="true"></canvas>
   <div class="bg-vignette" aria-hidden="true"></div>
 
-  <!-- ======== ШАПКА ======== -->
   <header class="site-header">
     <a class="logo" href="index.html">
       <span class="logo__cube" aria-hidden="true">
@@ -57,7 +54,6 @@
     </nav>
   </header>
 
-  <!-- ======== ГЕРОЙ ======== -->
   <section class="hero" id="top">
     <div class="hero__shapes" aria-hidden="true">
       <div class="shape3d shape3d--cube s1">
@@ -94,11 +90,9 @@
     </div>
   </section>
 
-  <!-- ======== МИКШЕР ======== -->
   <main class="editor" id="mixer">
     <div class="editor__grid">
 
-      <!-- Трек -->
       <section class="panel panel--preview tilt-card">
         <div class="panel__head">
           <h2>ТРЕК</h2>
@@ -119,7 +113,6 @@
             <p><b>Перетащи аудио или видео сюда</b><br>или нажми, чтобы выбрать файл</p>
             <span class="dropzone__formats">MP3 · WAV · OGG · MP4 · WEBM</span>
           </div>
-          <!-- размер холста выставляет audio.js под реальную ширину и DPR -->
           <div class="wave-wrap" id="wave-wrap" role="slider" tabindex="0"
                aria-label="Позиция воспроизведения — кликни или тяни стрелками"
                aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
@@ -156,7 +149,6 @@
         </div>
       </section>
 
-      <!-- Панель эффектов -->
       <section class="panel panel--controls" id="effects">
         <div class="panel__head">
           <h2>ЭФФЕКТЫ</h2>
@@ -220,7 +212,6 @@
     </div>
   </main>
 
-  <!-- ======== ПОДВАЛ ======== -->
   <footer class="site-footer" id="contact">
     <div class="footer__glow" aria-hidden="true"></div>
     <a class="tg-link tg-link--audio" href="https://t.me/pighig" target="_blank" rel="noopener" aria-label="Написать в Telegram: @pighig">

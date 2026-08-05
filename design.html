@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Elliot Design — интерактивное 3D-стекло</title>
   <meta name="description" content="Elliot Design — интерактивный эффект разбитого стекла: осколки следуют за курсором.">
-  <!-- всё считается локально: сети не нужны вообще, и CSP это гарантирует -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="color-scheme" content="dark">
@@ -21,7 +20,6 @@
 </head>
 <body>
 
-  <!-- ======== ШАПКА ======== -->
   <header class="site-header">
     <a class="logo" href="index.html">
       <span class="logo__text">ELLIOT<em> EDITOR</em></span>
@@ -48,14 +46,9 @@
     </nav>
   </header>
 
-  <!-- ======== СЦЕНА: РАЗБИТОЕ СТЕКЛО ======== -->
   <section class="glass-stage" id="stage" aria-label="Elliot Design — интерактивное разбитое стекло">
-    <!-- Единственный настоящий заголовок страницы. Копии внутри осколков
-         декоративные: их шесть, поэтому там обычный <p>, иначе на странице
-         оказалось бы шесть <h1> — плохо и для поиска, и для скринридеров. -->
     <h1 class="visually-hidden">Elliot Design</h1>
 
-    <!-- осколки строит design.js: каждый — полигон с полной копией контента -->
     <template id="pane-content">
       <div class="content">
         <div class="content__block">
@@ -71,7 +64,6 @@
     </template>
   </section>
 
-  <!-- ======== ПОДВАЛ ======== -->
   <footer class="site-footer" id="contact">
     <a class="tg-link" href="https://t.me/pighig" target="_blank" rel="noopener" aria-label="Написать в Telegram: @pighig">
       <h2 class="footer__title">DIRECT ME</h2>

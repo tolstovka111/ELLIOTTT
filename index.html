@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Elliot Editor — фото-редактор эффектов в браузере</title>
   <meta name="description" content="Elliot Editor — онлайн фото-редактор: пикселизация, глитч, шум, яркость, контраст и другие эффекты. Экспорт в один клик.">
-  <!-- всё считается локально: сети не нужны вообще, и CSP это гарантирует -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="color-scheme" content="dark">
@@ -21,11 +20,9 @@
 </head>
 <body>
 
-  <!-- Фон: жидкое золото (WebGL-шейдер по мотивам присланного видео) -->
   <canvas id="bg-canvas" aria-hidden="true"></canvas>
   <div class="bg-vignette" aria-hidden="true"></div>
 
-  <!-- ======== ШАПКА ======== -->
   <header class="site-header">
     <a class="logo" href="#top">
       <span class="logo__cube" aria-hidden="true">
@@ -57,7 +54,6 @@
     </nav>
   </header>
 
-  <!-- ======== ГЕРОЙ ======== -->
   <section class="hero" id="top">
     <div class="hero__shapes" aria-hidden="true">
       <div class="shape3d shape3d--cube s1">
@@ -94,11 +90,9 @@
     </div>
   </section>
 
-  <!-- ======== РЕДАКТОР ======== -->
   <main class="editor" id="editor">
     <div class="editor__grid">
 
-      <!-- Превью / загрузка -->
       <section class="panel panel--preview tilt-card">
         <div class="panel__head">
           <h2>ХОЛСТ</h2>
@@ -136,7 +130,6 @@
         </div>
       </section>
 
-      <!-- Панель эффектов -->
       <section class="panel panel--controls" id="effects">
         <div class="panel__head">
           <h2>ЭФФЕКТЫ</h2>
@@ -220,14 +213,11 @@
     </div>
   </main>
 
-  <!-- ======== ПОДВАЛ ======== -->
   <footer class="site-footer" id="contact">
     <div class="footer__glow" aria-hidden="true"></div>
-    <!-- единая кнопка: надпись + пиксельный самолётик -->
     <a class="tg-link" href="https://t.me/pighig" target="_blank" rel="noopener" aria-label="Написать в Telegram: @pighig">
       <h2 class="footer__title">DIRECT ME</h2>
       <svg class="tg-plane" viewBox="0 0 16 10" width="88" height="55" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true">
-        <!-- пиксельный бумажный самолётик (носом вправо) -->
         <rect x="0"  y="0" width="3"  height="1"/>
         <rect x="1"  y="1" width="5"  height="1"/>
         <rect x="1"  y="2" width="8"  height="1"/>

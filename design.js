@@ -1,11 +1,3 @@
-/* ============================================================
-   Elliot Design — интерактивное «разбитое стекло»
-   Каждый осколок — полноэкранный слой с копией контента,
-   обрезанный полигоном. Осколки по-разному следуют за
-   курсором, дрейфуют и вздрагивают по клику — текст ломается
-   на швах, как в референсе.
-   ============================================================ */
-
 'use strict';
 
 (function glassStage() {
@@ -13,8 +5,6 @@
   const template = document.getElementById('pane-content');
   if (!stage || !template) return;
 
-  /* осколки: полигон (в % сцены), сила сдвига за мышью,
-     наклоны и фаза дрейфа */
   const PANES = [
     { poly: [[0, 0], [30, 0], [24, 78], [0, 92]],                 k: [8, 5],    rot: [3.2, -2.4], z: 0,   phase: 0.0 },
     { poly: [[30, 0], [58, 0], [50, 52], [24, 78]],               k: [-13, 9],  rot: [-4.4, 3.4], z: -38, phase: 1.3 },
@@ -24,7 +14,6 @@
     { poly: [[50, 52], [78, 44], [100, 60], [100, 100], [64, 100]], k: [-15, -9], rot: [-5.2, 5.6], z: -46, phase: 5.0 },
   ];
 
-  // сжимаем полигон к центроиду — образуются тонкие швы
   function insetPoly(poly, inset) {
     const cx = poly.reduce((s, p) => s + p[0], 0) / poly.length;
     const cy = poly.reduce((s, p) => s + p[1], 0) / poly.length;
@@ -35,17 +24,11 @@
     });
   }
 
-  /* Общая наклонённая 3D-поверхность.
-     Контент внутри осколков — декоративные копии одного и того же блока
-     (их шесть), поэтому целиком прячем поверхность от скринридеров:
-     иначе заголовок и текст зачитывались бы шесть раз подряд. */
   const surface = document.createElement('div');
   surface.className = 'glass-surface';
   surface.setAttribute('aria-hidden', 'true');
   stage.appendChild(surface);
 
-  /* скруглённый контур плиты (как в референсе): углы полигона
-     срезаются дугами радиуса r — clip-path: path() в пикселях */
   function roundedPath(pts, r) {
     const n = pts.length;
     let d = '';
@@ -90,7 +73,6 @@
     return { el: pane, cfg, shadow, clip, inner, cx, cy, imp: 0, impX: 0, impY: 0 };
   });
 
-  // контуры в пикселях — пересчитываются при изменении окна
   function setClips() {
     const w = surface.offsetWidth, h = surface.offsetHeight;
     for (const p of panes) {
@@ -104,18 +86,11 @@
   }
   setClips();
 
-  /* реальные кликабельные кнопки поверх стекла — контент в осколках
-     декоративный (дублируется), поэтому ссылки кладём отдельным слоем */
   const actions = document.createElement('div');
   actions.className = 'stage-actions';
   actions.innerHTML = '<a href="index.html">IMG Editor</a><a href="audio.html">Audio Mixer&nbsp;→</a>';
   stage.appendChild(actions);
 
-  /* Позицию считаем по цепочке offsetLeft/offsetTop, а не через
-     getBoundingClientRect: осколок в этот момент уже сдвинут анимацией
-     (параллакс, дрейф, импульс от клика), и rect вернул бы координаты
-     вместе с этим сдвигом — кнопки уезжали бы от текста на десятки
-     пикселей. offsetLeft трансформы игнорирует и даёт честный макет. */
   function placeActions() {
     const ref = panes[0].el.querySelector('.content__actions');
     if (!ref) return;
@@ -129,8 +104,6 @@
   }
   placeActions();
 
-  /* Оба пересчёта дорогие (шесть clip-path из path() и замер геометрии),
-     а resize стреляет пачками по 30-60 событий — сводим к одному кадру. */
   let layoutQueued = false;
   function relayout() {
     if (layoutQueued) return;
@@ -143,22 +116,15 @@
   }
   addEventListener('resize', relayout, { passive: true });
 
-  /* Пиксельные шрифты подгружаются позже первого кадра и меняют высоту
-     блока — без этого кнопки поверх стекла оставались смещёнными. */
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
   new ResizeObserver(relayout).observe(stage);
 
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduceMotion) return;
 
-  /* движение: параллакс за курсором + медленный дрейф + импульс от клика */
-  let tx = 0, ty = 0;   // цель (курсор), -1..1
-  let mx = 0, my = 0;   // сглаженное значение
+  let tx = 0, ty = 0;
+  let mx = 0, my = 0;
 
-  /* Только запоминаем позицию. Раньше здесь же переписывались CSS-переменные
-     --mx/--my, а от них зависит радиальный градиент в шести осколках —
-     каждое движение мыши вызывало шесть перерисовок вне кадра. Теперь
-     переменные обновляются один раз за кадр, вместе с трансформами. */
   stage.addEventListener('mousemove', e => {
     const r = stage.getBoundingClientRect();
     tx = ((e.clientX - r.left) / r.width) * 2 - 1;
@@ -167,7 +133,6 @@
 
   stage.addEventListener('mouseleave', () => { tx = 0; ty = 0; });
 
-  // клик — осколки разлетаются от точки удара и возвращаются
   stage.addEventListener('click', e => {
     const r = stage.getBoundingClientRect();
     const px = ((e.clientX - r.left) / r.width) * 100;
@@ -187,11 +152,9 @@
     mx += (tx - mx) * 0.06;
     my += (ty - my) * 0.06;
 
-    // вся поверхность наклонена в перспективе и следует за курсором
     surface.style.transform =
       `rotateX(${9 - my * 3.4}deg) rotateY(${-4 + mx * 4.5}deg)`;
 
-    // блик за курсором — раз в кадр, а не на каждое движение мыши
     stage.style.setProperty('--mx', ((mx + 1) * 50) + '%');
     stage.style.setProperty('--my', ((my + 1) * 50) + '%');
 
@@ -211,13 +174,11 @@
     raf = document.hidden ? 0 : requestAnimationFrame(frame);
   }
 
-  // вкладка в фоне — не крутим шесть 3D-слоёв впустую
   let raf = requestAnimationFrame(frame);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && !raf) raf = requestAnimationFrame(frame);
   });
 
-  /* автодеградация: если рендер не тянет, убираем блеск и тени */
   (function watchFps() {
     let n = 0;
     const t0 = performance.now();
@@ -228,7 +189,6 @@
     })();
   })();
 
-  /* короткий стеклянный «дзынь» на клик */
   let audioCtx = null;
   function clink() {
     try {
